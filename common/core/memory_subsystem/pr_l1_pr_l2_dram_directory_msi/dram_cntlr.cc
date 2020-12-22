@@ -11,6 +11,9 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+unsigned long count_getdata;
+
+unsigned long count_putdata;
 
 #if 0
   extern Lock iolock;
@@ -21,6 +24,67 @@
 #  define MYLOG(...) {}
 #endif
 
+// #define DEFAULT_BANK_COUNTERS 
+// #define COSKUN_DATE2012        //  Analysis and runtime management of 3D systems with stacked DRAM for boosting energy efficiency. 
+// #define COSKUN_DAC2012         //  Optimizing energy efficiency of 3-D multicore systems with stacked DRAM under power and thermal constraints  
+#define MY_COUNTERS               //   
+    #if defined(DEFAULT_BANK_COUNTERS) || defined(COSKUN_DATE2012) || defined(COSKUN_DAC2012) || defined(MY_COUNTERS)
+    #define BANK_COUNTERS
+#endif
+
+#ifdef MY_COUNTERS
+    #define NUM_OF_BANKS          (128)
+    #define BANK_ADDRESS_BITS     (7)
+    #define BANK_OFFSET_IN_PA     (6)     // Bank Address starts bank_offset bits from LSB, least significant bits
+
+    #define HMC_LAYER_MASK        (7)     // Layers - 1
+    #define BANKS_PER_LAYER       (16) 
+#endif
+
+#ifdef COSKUN_DATE2012
+    #define NUM_OF_BANKS          (16)
+    #define BANK_ADDRESS_BITS     (4)     // Bit required, log(NUM_OF_BANKS)
+    #define BANK_OFFSET_IN_PA     (6)     // Bank Address starts bank_offset bits from LSB, least significant bits
+#endif
+
+#ifdef DEFAULT_BANK_COUNTERS
+    #define NUM_OF_BANKS          (8)
+    #define BANK_ADDRESS_BITS     (3)     // Bit required, log(NUM_OF_BANKS)
+    #define PHYSICAL_MEMORY_SIZE  (4096)  // 4096MB = 4GB
+    #define BANK_OFFSET_IN_PA     (14)    // Bank Address starts bank_offset bits from LSB
+#endif
+
+#ifdef BANK_COUNTERS
+    #define ACCUMALATION_TIME     (1000)    // Till 200 us bank counts will be accumalated
+    #define PRINT_DELAY           (20)     // Every 205(=200 + 5) us print access counts for the last 200 us  
+    #define PRINT_TIME_IN_PHASE2  (ACCUMALATION_TIME + PRINT_DELAY)    // Till 200 us bank counts will be accumalated
+    #define PRINT_TIME_IN_PHASE1  (PRINT_DELAY)    // Till 200 us bank counts will be accumalated
+    #define BANK_MASK             ( ( ( 1<<(BANK_ADDRESS_BITS) ) - 1) << BANK_OFFSET_IN_PA) // Bank Address starts bank_offset bits from LSB
+
+    // Global variables are initialized to 0 by default
+    UInt32 bank_access_counts_phase1[NUM_OF_BANKS];
+    UInt32 in_phase1 = 0;
+    UInt32 print_in_phase1 = 0;           // We donot want to print in the first phase
+    UInt32 read_access_count_phase1 = 0;
+    UInt32 write_access_count_phase1 = 0;
+    UInt32 total_access_count_phase1 = 0;
+    UInt32 bank_access_counts_phase2[NUM_OF_BANKS];
+    UInt32 in_phase2 = 0;
+    UInt32 print_in_phase2 = 1; // First print in phase2
+    UInt32 read_access_count_phase2 = 0;
+    UInt32 write_access_count_phase2 = 0;
+    UInt32 total_access_count_phase2 = 0;
+    UInt32 read_access_count = 0;
+    UInt32 write_access_count = 0;
+    UInt32 total_access_count = 0;
+    UInt32 print_done = 0;
+    UInt32 last_printed_timestamp= 0;
+
+    UInt64 interval_start_time;
+    UInt32 bank_accessed;
+    uintptr_t address_ptr;
+#endif
+ 
 //#define CALL_TRACE 0
 
 class TimeDistribution;
@@ -59,7 +123,7 @@ DramCntlr::~DramCntlr()
 boost::tuple<SubsecondTime, HitWhere::where_t>
 DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, SubsecondTime now, ShmemPerf *perf)
 {
-
+   address_ptr = address;
    #ifdef CALL_TRACE
        printf("\nEntry : getDataFromDram common/core/memory_subsystem/pr_l1_pr_l2_dram_directory_msi/dram_cntlr.cc\n");
    #endif
@@ -87,17 +151,124 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
    #endif
    MYLOG("R @ %08lx latency %s", address, itostr(dram_access_latency).c_str());
 
+   if(Sim()->getMagicServer()->inROI())
+   {
+    count_getdata++;
+
+     #ifdef DEBUG
+     static int access_count = 1;
+     printf("Dir. MSI: Read Access Count = %d\n",access_count++);
+     #endif
+
+
+     #ifdef BANK_COUNTERS
+        UInt32 i = 0;
+        if(total_access_count==0){
+           registerStatsMetric("dram", 0 , "myreads", &m_reads);
+         for(i = 0; i < NUM_OF_BANKS; i = i + 1){
+                    bank_access_counts_phase1[i]=0;
+                    bank_access_counts_phase2[i]=0;
+         }
+        }
+
+        ++read_access_count;
+        ++total_access_count;
+
+        //  UInt32 bank_accessed = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+        //UInt32 bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
+        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
+        //  bank_accessed = bank_accessed & HMC_LAYER_MASK;
+	//  bank_accessed = requester + bank_accessed * (16);
+        //printf("requester = %d\n", requester);
+        //   if( (total_access_count%200==0) || (total_access_count == 1) )
+        if(total_access_count == 1)
+           printf("\n   \tTime\t#READs\t#WRITEs\t#Access\tAddress\t\t#BANK\tBank Counters\n");
+
+        UInt64 current_time = now.getUS();
+        //printf("Current time is %u\n", current_time);
+        UInt64 phase_time = current_time%(2 * ACCUMALATION_TIME);
+        //UInt64 interval_start_time;
+        // Check in which phase 1 or phase 2
+        if (phase_time > ACCUMALATION_TIME){ //Accumulation time implies phase 1
+           in_phase2 = 1;
+           in_phase1 = 0;
+           ++bank_access_counts_phase2[bank_accessed];   // During, phase2 keep on incrementing phase2 counters
+           ++read_access_count_phase2;
+        }
+        else{
+           in_phase2 = 0;
+           in_phase1 = 1;
+           ++bank_access_counts_phase1[bank_accessed];   // During, phase1 keep on incrementing phase1 counters
+           ++read_access_count_phase1;
+        }
+
+        if (in_phase2 == 1){
+           if (phase_time > PRINT_TIME_IN_PHASE2 && print_in_phase2 == 1 ){
+              print_in_phase2 = 0;      // In phase 2, reset the phase 2 print flag, print phase 1 bank counters , reset them, enable phase 1 printing
+              interval_start_time = current_time - current_time%(ACCUMALATION_TIME);
+
+              while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
+                  printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
+                      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                       printf("%u,",0);
+                  }
+                  last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
+              }
+
+              total_access_count_phase1 = read_access_count_phase1 + write_access_count_phase1;
+              printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
+              for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase1[i]);
+                 bank_access_counts_phase1[i]=0;
+              }
+
+              read_access_count_phase1=0;
+              write_access_count_phase1=0;
+              print_in_phase1 = 1;      // enable phase 1 printing
+              last_printed_timestamp = interval_start_time;
+           }
+	}
+        else{
+         if (phase_time > PRINT_TIME_IN_PHASE1 && print_in_phase1 == 1 ){
+              print_in_phase1 = 0;      // In phase 1, reset the phase 1 print flag, print phase 2 bank counters , reset them, enable phase 2 printing
+              interval_start_time = current_time - current_time%(ACCUMALATION_TIME);
+
+              while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
+                 printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
+                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                    printf("%u,",0);
+                 }
+                 last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
+              }
+
+              total_access_count_phase2 = read_access_count_phase2 + write_access_count_phase2;
+              printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,total_access_count_phase2,address,bank_accessed);
+              for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase2[i]);
+                 bank_access_counts_phase2[i]=0;
+              }
+
+              read_access_count_phase2=0;
+              write_access_count_phase2=0;
+              print_in_phase2 = 1;      // enable phase 2 printing
+              last_printed_timestamp = interval_start_time;
+           }
+        }
+
+     #endif
+    }
 
    #ifdef CALL_TRACE
       printf("\nExit : getDataFromDram common/core/memory_subsystem/pr_l1_pr_l2_dram_directory_msi/dram_cntlr.cc");
    #endif
-
+    
    return boost::tuple<SubsecondTime, HitWhere::where_t>(dram_access_latency, HitWhere::DRAM);
 }
 
 boost::tuple<SubsecondTime, HitWhere::where_t>
 DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, SubsecondTime now)
 {
+   address_ptr = address;
    if (Sim()->getFaultinjectionManager())
    {
       if (m_data_map[address] == NULL)
@@ -119,6 +290,110 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
    #endif
    MYLOG("W @ %08lx", address);
 
+   if(Sim()->getMagicServer()->inROI())
+   {
+    count_putdata++;
+
+     #ifdef DEBUG
+     static int access_count = 1;
+     printf("Dir. MSI: Write Access Count = %d\n",access_count++);
+     #endif
+
+
+     #ifdef BANK_COUNTERS
+        UInt32 i = 0;
+        if(total_access_count==0){
+           registerStatsMetric("dram", 0 , "mywrites", &m_writes);
+         for(i = 0; i < NUM_OF_BANKS; i = i + 1){
+              bank_access_counts_phase1[i]=0;
+              bank_access_counts_phase2[i]=0;
+         }
+        }
+
+        ++write_access_count;
+        ++total_access_count;
+
+        //  UInt32 bank_accessed = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
+        //  bank_accessed = bank_accessed & HMC_LAYER_MASK;
+        //  bank_accessed = requester + bank_accessed * (16);
+        //printf("requester = %d\n", requester);
+        //   if( (total_access_count%200==0) || (total_access_count == 1) )
+        if(total_access_count == 1)
+           printf("\n   \tTime\t#READs\t#WRITEs\t#Access\tAddress\t\t#BANK\tBank Counters\n");
+
+        UInt64 current_time = now.getUS();
+        //printf("Current time is %u\n", current_time);
+        UInt64 phase_time = current_time%(2 * ACCUMALATION_TIME);
+        //UInt64 interval_start_time;
+        // Check in which phase 1 or phase 2
+        if (phase_time > ACCUMALATION_TIME){ //Accumulation time implies phase 1
+           in_phase2 = 1;
+           in_phase1 = 0;
+           ++bank_access_counts_phase2[bank_accessed];   // During, phase2 keep on incrementing phase2 counters
+           ++write_access_count_phase2;
+        }
+        else{
+           in_phase2 = 0;
+           in_phase1 = 1;
+           ++bank_access_counts_phase1[bank_accessed];   // During, phase1 keep on incrementing phase1 counters
+           ++write_access_count_phase1;
+        }
+        if (in_phase2 == 1){
+           if (phase_time > PRINT_TIME_IN_PHASE2 && print_in_phase2 == 1 ){
+              print_in_phase2 = 0;      // In phase 2, reset the phase 2 print flag, print phase 1 bank counters , reset them, enable phase 1 printing
+              interval_start_time = current_time - current_time%(ACCUMALATION_TIME);
+
+              while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
+                  printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
+                  for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                   printf("%u,",0);
+                  }
+                  last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
+              }
+
+              total_access_count_phase1 = read_access_count_phase1 + write_access_count_phase1;
+              printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
+              for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase1[i]);
+                 bank_access_counts_phase1[i]=0;
+              }
+
+              read_access_count_phase1=0;
+              write_access_count_phase1=0;
+              print_in_phase1 = 1;      // enable phase 1 printing
+              last_printed_timestamp = interval_start_time;
+           }
+        }
+        else{
+           if (phase_time > PRINT_TIME_IN_PHASE1 && print_in_phase1 == 1 ){
+              print_in_phase1 = 0;      // In phase 1, reset the phase 1 print flag, print phase 2 bank counters , reset them, enable phase 2 printing
+              interval_start_time = current_time - current_time%(ACCUMALATION_TIME);
+
+              while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
+                 printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
+                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                    printf("%u,",0);
+                 }
+                 last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
+              }
+
+              total_access_count_phase2 = read_access_count_phase2 + write_access_count_phase2;
+              printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,total_access_count_phase2,address,bank_accessed);
+              for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase2[i]);
+                 bank_access_counts_phase2[i]=0;
+              }
+
+              read_access_count_phase2=0;
+              write_access_count_phase2=0;
+              print_in_phase2 = 1;      // enable phase 2 printing
+              last_printed_timestamp = interval_start_time;
+           }
+        }
+
+     #endif
+    }
 
    return boost::tuple<SubsecondTime, HitWhere::where_t>(dram_access_latency, HitWhere::DRAM);
 }

@@ -6,9 +6,6 @@
 #include "logmem.h"
 #include "exceptions.h"
 #include "sim_api.h"
-extern unsigned long count_getdata;
-extern unsigned long count_putdata;
-
 
 int main(int argc, char* argv[])
 {
