@@ -12,6 +12,25 @@
 #include "timer.h"
 #include "thread.h"
 
+#define NUM_OF_BANKS		(128)
+
+// Global variables are initialized to 0 by default
+
+extern UInt32 read_access_count_phase1;
+extern UInt32 write_access_count_phase1;
+extern UInt32 total_access_count_phase1;
+extern UInt32 read_access_count_phase2;
+extern UInt32 write_access_count_phase2;
+extern UInt32 total_access_count_phase2;
+extern UInt32 read_access_count;
+extern UInt32 write_access_count;
+extern UInt32 total_access_count;
+extern UInt64 interval_start_time;
+extern UInt32 bank_accessed;
+extern uintptr_t address_ptr;
+extern UInt32 bank_access_counts_phase2[NUM_OF_BANKS];
+
+
 MagicServer::MagicServer()
       : m_performance_enabled(false)
 {
@@ -185,6 +204,11 @@ UInt64 MagicServer::setPerformance(bool enabled)
    else
    {
       Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+//      printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase1,total_access_count_phase2,address_ptr,bank_accessed);
+//      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+//                 printf("%u,",bank_access_counts_phase2[i]);
+//      }
+      printf("\n");
       printf("[SNIPER] Disabling performance models\n");
       float seconds = t_start.getTime() / 1e9;
       printf("[SNIPER] Leaving ROI after %.2f seconds\n", seconds);
