@@ -1,0 +1,7 @@
+.*stop reason = breakpoint 1.*
+.*main.*at simple.c:22.*
+.*stop reason = breakpoint 2.*
+.*main.*at simple.c:24.*
+.*= 21
+.*= 6
+Process.*exited with status = 0 .*

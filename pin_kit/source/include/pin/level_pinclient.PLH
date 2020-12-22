@@ -1,0 +1,76 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software and the related documents are Intel copyrighted materials, and your
+ * use of them is governed by the express license under which they were provided to
+ * you ("License"). Unless the License provides otherwise, you may not use, modify,
+ * copy, publish, distribute, disclose or transmit this software or the related
+ * documents without Intel's prior written permission.
+ * 
+ * This software and the related documents are provided as is, with no express or
+ * implied warranties, other than those that are expressly stated in the License.
+ */
+
+/*! @file
+ *
+ * Creates the namespace and includes header files for
+ * LEVEL_PINCLIENT. These are the functions that are accessed in libpin.a
+ * that are not part of vm or lower levels. Should only be included in
+ * pin.H
+ */
+
+#ifdef LEVEL_PINCLIENT_H
+#error duplicate inclusion
+#else
+#define LEVEL_PINCLIENT_H
+
+#include <stdarg.h>
+#include <vector>
+
+namespace LEVEL_PINCLIENT
+{
+
+// This includes the subset of vm types that pintools must access
+using namespace LEVEL_VM;
+
+#include "pin_client.PH"
+#include "versions_client.PH"
+#include "pin_client_replay.PH"
+#include "thread_client.PH"
+#include "debugger_client.PH"
+#include "stopped_thread_client.PH"
+#include "deprecated_client.PH"
+#include "opin_client.PH"
+#include "tls_client.PH"
+#include "child_process_client.PH"
+#include "image.PH"
+#include "debug.PH"
+#include "internal_exception_client.PH"
+
+#if defined(TARGET_LINUX)
+#include "image_elf.PH"
+#include "symbol_elf.PH"
+#include "probe_instrument.PH"
+#include "backtrace_u.PH"
+#elif defined(TARGET_MAC)
+#include "image_macho.PH"
+#include "symbol_macho.PH"
+#include "debug_macho.PH"
+#include "probe_instrument.PH"
+#include "backtrace_u.PH"
+#elif defined(TARGET_WINDOWS)
+#include "os_info_client_windows.PH"
+#include "image_win.PH"
+#include "symbol_win.PH"
+#include "debug_win.PH"
+#elif defined(TARGET_BSD)
+#include "image_elf.PH"
+#include "symbol_elf.PH"
+#include "probe_instrument.PH"
+#else
+#error "Unknown OS"
+#endif
+
+}
+
+#endif

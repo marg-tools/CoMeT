@@ -1,0 +1,164 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software and the related documents are Intel copyrighted materials, and your
+ * use of them is governed by the express license under which they were provided to
+ * you ("License"). Unless the License provides otherwise, you may not use, modify,
+ * copy, publish, distribute, disclose or transmit this software or the related
+ * documents without Intel's prior written permission.
+ * 
+ * This software and the related documents are provided as is, with no express or
+ * implied warranties, other than those that are expressly stated in the License.
+ */
+
+/*! @file
+ *
+ * this headerfile contains defines the types that are the foundation of
+ * other code
+ *
+ */
+
+#ifndef TYPES_FOUNDATION_H
+#define TYPES_FOUNDATION_H
+
+#ifdef PIN_CRT
+# include <types.h>
+#endif
+
+#if defined(_MSC_VER)
+    #define PIN_C_ASSERT(e) typedef char __PIN_C_ASSERT__[(e)?1:-1]
+#elif defined(__GNUC__)
+    #define PIN_C_ASSERT(e) extern void  __PIN_C_ASSERT__(int [(e)?1:-1])
+#else
+    #define PIN_C_ASSERT(e)
+#endif
+
+#ifdef  __cplusplus
+typedef bool BOOL;
+#else
+typedef unsigned char BOOL;
+#endif
+
+#if !defined(TRUE)
+#   define TRUE 1
+#endif
+#if !defined(FALSE)
+#   define FALSE 0
+#endif
+
+typedef signed int      SIZE;
+
+#ifdef PIN_CRT
+using ::UINT32;
+using ::UINT64;
+using ::ADDRINT;
+
+#define STRTOUINT64 strtoull
+#define STRTOINT64  strtoll
+
+#else // !PIN_CRT
+#if !defined(VOID)
+typedef void VOID;
+#endif
+
+typedef char            CHAR;
+typedef unsigned int    UINT;
+typedef int             INT;
+typedef double          FLT64;
+typedef float           FLT32;
+typedef unsigned int    USIZE;
+
+/*
+ * Generic type for three-state logic.
+ */
+enum TRI
+{
+    TRI_YES,
+    TRI_NO,
+    TRI_MAYBE
+};
+
+#if defined(_MSC_VER)
+typedef unsigned __int8 UINT8 ;
+typedef unsigned __int16 UINT16;
+typedef unsigned __int32 UINT32;
+typedef unsigned __int64 UINT64;
+typedef __int8 INT8;
+typedef __int16 INT16;
+typedef __int32 INT32;
+typedef __int64 INT64;
+
+#else
+
+typedef uint8_t  UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+typedef int8_t  INT8;
+typedef int16_t INT16;
+typedef int32_t INT32;
+typedef int64_t INT64;
+# endif
+
+
+/*
+ * Unsigned integer of the same size as a pointer on the TARGET architecture.
+ * This quantity can be converted to and from an OADDR/IADDR
+ *
+ * There is an option of overflow and underflow when using ADDRDELTA.
+ * For example, let's look at a 32 bit address.
+ * 32 bit address is 32 bit unsigned int number.
+ * This means that the maximum delta between two addresses is (2^32 - 1), which means that the ADDRDELTA which is signed may overflow.
+ */
+#if defined(TARGET_IA32)
+typedef UINT32 ADDRINT;
+typedef INT32 ADDRDELTA;
+
+#elif defined(TARGET_IA32E)
+typedef UINT64 ADDRINT;
+typedef INT64 ADDRDELTA;
+
+#else
+#error "Unsupported target architecture"
+#endif
+
+#if defined(_MSC_VER)
+
+#define STRTOUINT64 _strtoui64
+#define STRTOINT64  _strtoi64
+#define ALIGNMENT_OF(t) __alignof(t)
+
+#else
+
+#define STRTOUINT64 strtoull
+#define STRTOINT64  strtoll
+#define ALIGNMENT_OF(t) __alignof__(t)
+
+#endif
+
+#endif // PIN_CRT
+
+#if defined(HOST_IA32)
+typedef UINT32 VOIDINT;
+#elif defined(HOST_IA32E)
+typedef UINT64 VOIDINT;
+#else
+typedef ADDRINT VOIDINT;
+#endif
+
+typedef UINT64 REG_CLASS_BITS;
+typedef UINT32 REG_SUBCLASS_BITS;
+
+/*
+ * Generic macro definitions
+ */
+
+#ifndef MAX
+#define MAX(a, b) (((a)>(b))?(a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a, b) (((a)<(b))?(a) : (b))
+#endif
+
+#endif

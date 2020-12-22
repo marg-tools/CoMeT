@@ -1,0 +1,11 @@
+#! /bin/bash
+
+# this function prints the version number of the Linux distribution
+# The version is retrieved from VERSION_ID="<version>" line in the /etc/*-release file
+# If there is no VERSION_ID in this file then we fall back to extracting the name from lsb_release.
+
+dist_ver="`cat /etc/*-release | grep VERSION_ID | cut -d '=' -f 2 | sed 's/[ "=]//g' | head -1`"
+if [ -z "$dist_ver" ]; then
+    dist_ver="$(lsb_release -r | awk -F ':' '{print $2}' | awk '{print $1 }')"
+fi
+echo $dist_ver

@@ -1,0 +1,22 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software is provided to you as Sample Source Code as defined in the accompanying
+ * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
+ * section 1.L.
+ * 
+ * This software and the related documents are provided as is, with no express or implied
+ * warranties, other than those that are expressly stated in the License.
+ */
+
+.intel_syntax noprefix	
+.globl main
+main:	
+	call l
+	addr32 mov rax,[eax+8]
+	mov rax,0
+	ret
+l:
+	mov rax, [rsp]
+	ret
+	

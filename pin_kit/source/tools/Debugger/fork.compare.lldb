@@ -1,0 +1,7 @@
+.*stop reason = breakpoint 1.*
+.*main.*at fork.cpp:(19|20|21).*
+.*stop reason = breakpoint 2.*
+.*main.*at fork.cpp:22.*
+.*stop reason = breakpoint 3.*
+.*DoCommon.*at fork.cpp:(38|41).*
+Process.*exited with status = 0 .*

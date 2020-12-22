@@ -1,0 +1,124 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software and the related documents are Intel copyrighted materials, and your
+ * use of them is governed by the express license under which they were provided to
+ * you ("License"). Unless the License provides otherwise, you may not use, modify,
+ * copy, publish, distribute, disclose or transmit this software or the related
+ * documents without Intel's prior written permission.
+ * 
+ * This software and the related documents are provided as is, with no express or
+ * implied warranties, other than those that are expressly stated in the License.
+ */
+
+/*! @file
+  
+ */
+
+#ifdef LEVEL_BASE_H
+#error duplicate inclusion
+#else
+#define LEVEL_BASE_H
+
+// Define macros used by the "extras/components" headers.
+#if defined(TARGET_LINUX)
+#define FUND_TC_HOSTOS      FUND_OS_LINUX
+#define FUND_TC_TARGETOS    FUND_OS_LINUX
+#endif
+#if defined(TARGET_WINDOWS)
+#define FUND_TC_HOSTOS      FUND_OS_WINDOWS
+#define FUND_TC_TARGETOS    FUND_OS_WINDOWS
+#endif
+#if defined(TARGET_MAC)
+#define FUND_TC_HOSTOS      FUND_OS_MAC
+#define FUND_TC_TARGETOS    FUND_OS_MAC
+#endif
+#if defined(HOST_IA32)
+#define FUND_TC_HOSTCPU     FUND_CPU_IA32
+#endif
+#if defined(TARGET_IA32)
+#define FUND_TC_TARGETCPU   FUND_CPU_IA32
+#endif
+#if defined(HOST_IA32E)
+#define FUND_TC_HOSTCPU     FUND_CPU_INTEL64
+#endif
+#if defined(TARGET_IA32E)
+#define FUND_TC_TARGETCPU   FUND_CPU_INTEL64
+#endif
+
+
+// Component headers should use the Pin ASSERT macro.  Disable slow asserts
+// in the component headers.
+//
+#if !defined(ATOMIC_ASSERT)
+#   define ATOMIC_ASSERT   ASSERTX
+#endif
+#if !defined(SYNC_ASSERT)
+#   define SYNC_ASSERT     ASSERTX
+#endif
+#if !defined(ATOMIC_NO_ASSERTSLOW)
+#   define ATOMIC_NO_ASSERTSLOW
+#endif
+
+
+#include <string>
+#include <stdarg.h>
+#include "foundation.PLH"
+#include "pin-errtype.h"
+
+// We need the ASSERT macros to be defined early.
+namespace LEVEL_BASE
+{
+#   include "types_base.TLH"
+#   include "message.PH"
+}
+
+#include "util/intel-fp.hpp"
+#include "atomic.hpp"
+#include "pinsync.hpp"
+
+extern "C" {
+#include "xed-iclass-enum.h"
+#include "xed-category-enum.h"
+}
+
+namespace LEVEL_BASE
+{
+#include "util.PH"
+
+#include "knob.PH"
+#include "lock.PH"
+
+#if defined(TARGET_IA32)
+#include "fpstate_ia32.PH"
+#endif
+#if defined(TARGET_IA32E)
+#include "fpstate_ia32e.PH"
+#endif
+
+#include "reginfo_ia32.PH"
+#include "reg_ia32.PH"
+#include "reg_partial_ia32.PH"
+#include "base_ia32.PH"
+GLOBALTYPE typedef PREDICATE_IA32 PREDICATE;
+
+#include "tls.PH"
+#include "exception.PH"
+
+#include "child_process.PH"
+
+#if defined(TARGET_WINDOWS)
+#   include "os_info_win.PH"
+#   include "sysfuncs_windows.PH"
+#elif defined(TARGET_LINUX)
+#   include "sysfuncs_linux.PH"
+#elif defined(TARGET_MAC)
+#   include "sysfuncs_mac.PH"
+#elif defined(TARGET_BSD)
+#   include "sysfuncs_bsd.PH"
+#else
+#   error "no target OS defined"
+#endif
+
+}
+#endif

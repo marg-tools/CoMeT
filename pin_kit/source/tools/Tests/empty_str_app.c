@@ -1,0 +1,28 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software is provided to you as Sample Source Code as defined in the accompanying
+ * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
+ * section 1.L.
+ * 
+ * This software and the related documents are provided as is, with no express or implied
+ * warranties, other than those that are expressly stated in the License.
+ */
+
+#include <string.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+    if (argc != 4) {
+        fprintf(stderr, "Usage: <arg> \"\" <arg2>\n");
+        return 1;
+    }
+
+    if (strlen(argv[1]) == 0 || strlen(argv[2]) != 0 || strlen(argv[3]) == 0) {
+        fprintf(stderr, "Usage: <arg> \"\" <arg2>");
+        return 1;
+    }
+    printf("ok\n");
+    return 0;
+}

@@ -1,0 +1,3 @@
+Breakpoint 1,\s*main.*at\s*exec.cpp:(16|17|18)
+Breakpoint 2,\s*main.*at\s*exec.cpp:25
+(Program exited normally.$|\[Inferior 1 \(Remote target\) exited normally\])

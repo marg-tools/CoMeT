@@ -1,0 +1,44 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software and the related documents are Intel copyrighted materials, and your
+ * use of them is governed by the express license under which they were provided to
+ * you ("License"). Unless the License provides otherwise, you may not use, modify,
+ * copy, publish, distribute, disclose or transmit this software or the related
+ * documents without Intel's prior written permission.
+ * 
+ * This software and the related documents are provided as is, with no express or
+ * implied warranties, other than those that are expressly stated in the License.
+ */
+
+/*! @file
+ *
+ * These are the bare minimum types and definitions for writing coding
+ * standard compliant code. This is necessary when code cannot include all
+ * of level_base.
+ *
+ */
+
+#ifdef FOUNDATION_H
+#error duplicate inclusion
+#else
+#define FOUNDATION_H
+
+#if defined(__GNUC__)
+//required for base [u]int{8,16,32,64}_t types. 
+// must be at this level so that we don't put these types
+// in the LEVEL_* namespace, most notably because the elf.h
+// header also uses these types and is included many places.
+# include <stdint.h>
+#endif
+
+#include "types_marker.h"
+
+namespace LEVEL_BASE
+{
+
+#include "types_foundation.TLH"
+
+}
+
+#endif

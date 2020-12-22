@@ -1,0 +1,16 @@
+This text file is the file (e.g., redist.txt, etc) specified in the accompanying
+End User License Agreement for the Intel(R) Software Development Products
+("Agreement"). All capitalized terms used but not defined in this text file have
+the same meaning as specified in the Agreement.
+
+The Redistributables files are listed below, and are subject to all of the terms
+and conditions of the Agreement.
+
+All files in, or any subdirectory of, <installdir>/source/tools/
+All files in, or any subdirectory of, <installdir>/source/launcher/
+
+Also included as Redistributables are executables and shared libraries you create
+by linking your program with libraries provided by Intel as part of the Materials
+for this product but which are not listed in this redist.txt file provided that
+you do not redistribute those Intel provided libraries or any other portion of
+those Intel provided libraries in any other way.

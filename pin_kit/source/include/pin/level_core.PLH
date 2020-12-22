@@ -1,0 +1,56 @@
+/*
+ * Copyright 2002-2019 Intel Corporation.
+ * 
+ * This software and the related documents are Intel copyrighted materials, and your
+ * use of them is governed by the express license under which they were provided to
+ * you ("License"). Unless the License provides otherwise, you may not use, modify,
+ * copy, publish, distribute, disclose or transmit this software or the related
+ * documents without Intel's prior written permission.
+ * 
+ * This software and the related documents are provided as is, with no express or
+ * implied warranties, other than those that are expressly stated in the License.
+ */
+
+/*! @file
+ *
+ * Creates the namespace for LEVEL_CORE and includes all necessary header
+ * files. This should only be included by pin.H
+ */
+
+#ifdef LEVEL_CORE_H
+#error duplicate inclusion
+#else
+#define LEVEL_CORE_H
+
+namespace LEVEL_CORE
+{
+
+using namespace LEVEL_BASE;
+    
+#include "types_core.TLH"
+#include "val.PH"
+#include "sec.PH"
+#include "img.PH"
+#include "bbl.PH"
+#include "edg.PH"
+#include "ins.PH"
+#include "regset.PH"
+
+#include "ins_ia32.PH"
+#include "regset_ia32.PH"
+
+#if defined(TARGET_LINUX) || defined(TARGET_MAC)
+# include "ins_syscall_ia32_unix.PH"
+#elif defined(TARGET_WINDOWS)
+# include "ins_syscall_ia32_windows.PH"
+#else
+# error "No target os"
+#endif
+
+# include "ins_api_xed_ia32.PH"
+# include "ins_xed_ia32.PH"
+# include "operand_ia32.PH"
+
+} // namespace LEVEL_CORE
+
+#endif // LEVEL_CORE_H
