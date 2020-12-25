@@ -30,6 +30,8 @@ extern UInt32 bank_accessed;
 extern uintptr_t address_ptr;
 extern UInt32 bank_access_counts_phase1[NUM_OF_BANKS];
 extern UInt32 bank_access_counts_phase2[NUM_OF_BANKS];
+extern UInt32 in_phase1;
+extern UInt32 in_phase2;
 
 
 MagicServer::MagicServer()
@@ -205,10 +207,20 @@ UInt64 MagicServer::setPerformance(bool enabled)
    else
    {
       Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
-//      printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase2,address_ptr,bank_accessed);
-//      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-//                 printf("%u,",bank_access_counts_phase1[i]);
-//      }
+      if (in_phase1 == 1){
+          Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,(read_access_count_phase1+write_access_count_phase1),address_ptr,bank_accessed);
+          for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase1[i]);
+          }
+      }
+      else {
+          Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,(read_access_count_phase2+write_access_count_phase2),address_ptr,bank_accessed);
+          for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase2[i]);
+          }
+      }
       printf("\n");
       printf("[SNIPER] Disabling performance models\n");
       float seconds = t_start.getTime() / 1e9;
