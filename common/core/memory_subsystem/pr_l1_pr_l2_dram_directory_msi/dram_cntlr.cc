@@ -10,6 +10,8 @@
 #include "magic_server.h"
 #include <stdint.h>
 #include <inttypes.h>
+#include "config.hpp"
+#include "config.h"
 
 unsigned long count_getdata;
 
@@ -151,6 +153,9 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
    #endif
    MYLOG("R @ %08lx latency %s", address, itostr(dram_access_latency).c_str());
 
+   SInt32 memory_controllers_interleaving = 0;
+   memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
    if(Sim()->getMagicServer()->inROI())
    {
     count_getdata++;
@@ -176,7 +181,7 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
 
         //  UInt32 bank_accessed = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
         //UInt32 bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
-        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
+        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
         //  bank_accessed = bank_accessed & HMC_LAYER_MASK;
 	//  bank_accessed = requester + bank_accessed * (16);
         //printf("requester = %d\n", requester);
@@ -290,6 +295,10 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
    #endif
    MYLOG("W @ %08lx", address);
 
+   SInt32 memory_controllers_interleaving = 0;
+   memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+
    if(Sim()->getMagicServer()->inROI())
    {
     count_putdata++;
@@ -314,7 +323,7 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
         ++total_access_count;
 
         //  UInt32 bank_accessed = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
-        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + requester;
+        bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
         //  bank_accessed = bank_accessed & HMC_LAYER_MASK;
         //  bank_accessed = requester + bank_accessed * (16);
         //printf("requester = %d\n", requester);
