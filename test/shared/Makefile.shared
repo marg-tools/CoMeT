@@ -32,4 +32,4 @@ run: $(TARGET) run_$(TARGET)
 endif
 
 clean:
-	rm -rf $(TARGET) sim.* *.log *.out *.png *.o topo.* power.* $(CLEAN_EXTRA)
+	rm -rf $(TARGET) sim.* *.log *.out *.png *.o topo.* power.* *.sift $(CLEAN_EXTRA)

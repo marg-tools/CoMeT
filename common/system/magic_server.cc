@@ -11,6 +11,7 @@
 #include "stats.h"
 #include "timer.h"
 #include "thread.h"
+#include "subsecond_time.h"
 
 #define NUM_OF_BANKS		(128)
 
@@ -207,16 +208,18 @@ UInt64 MagicServer::setPerformance(bool enabled)
    else
    {
       Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+      //UInt64 current_time = now.getUS();
+      //interval_start_time = current_time - current_time%1000;
       if (in_phase1 == 1){
           Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
-          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,(read_access_count_phase1+write_access_count_phase1),address_ptr,bank_accessed);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time+1000,read_access_count_phase1,write_access_count_phase1,(read_access_count_phase1+write_access_count_phase1),address_ptr,bank_accessed);
           for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                  printf("%u,",bank_access_counts_phase1[i]);
           }
       }
       else {
           Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
-          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,(read_access_count_phase2+write_access_count_phase2),address_ptr,bank_accessed);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time+1000,read_access_count_phase2,write_access_count_phase2,(read_access_count_phase2+write_access_count_phase2),address_ptr,bank_accessed);
           for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                  printf("%u,",bank_access_counts_phase2[i]);
           }
