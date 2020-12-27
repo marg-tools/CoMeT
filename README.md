@@ -25,7 +25,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- cd test/my\_test\_case
 	- make run
 	
-- Sample output
+- Sample output: Apart from Sniper messages and commandline, we see a detailed bank level trace for DRAM accesses. Please note the output like shown below in the terminal output.
 
 ```
    	Time	#READs	#WRITEs	#Access	Address		#BANK	Bank Counters
