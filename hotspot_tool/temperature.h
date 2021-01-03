@@ -214,6 +214,8 @@ typedef struct thermal_config_t_st
 	char grid_map_mode[STR_SIZE];
        /* output transient temperatures in the format of init file, to be used for next iteration initialization */
  	char all_transient_file[STR_SIZE];	
+       /* disable printing of steady state temperature on stdout */
+ 	int steady_state_print_disable;	
 	int detailed_3D_used; //BU_3D: Added parameter to check for heterogenous R-C model 
 }thermal_config_t;
 

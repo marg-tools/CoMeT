@@ -25,12 +25,12 @@ no_refesh_commands_in_t_refw = int(sim.config.get('mem3D/no_refesh_commands_in_t
 rows_refreshed_in_refresh_interval = no_rows/no_refesh_commands_in_t_refw  # for 512Mb bank, 8 rows per refresh => for 64Mb bank, 1 rows per refresh
 bank_static_power = 0
 
+#define constants
 _enable = 1
 _disable = 0
 _WIO = 1
 _HMC = 0
 _2D = 2
-
 is_2_5d = 0
 type_of_stack = _HMC
 
@@ -58,6 +58,7 @@ banks_in_z = number_of_banks/banks_in_x/banks_in_y
 #bank_printing_pattern = [6,3,5,1,4,0,7,2]
 bank_printing_pattern = [] 
 
+# generate some variables according to the 3D memory architecture used
 if type_of_stack== _WIO:
     mem_name = "WIO/"
 if type_of_stack== _HMC:
@@ -76,12 +77,11 @@ else:
     else:
         hotspot_test_dir    =   "hotspot/test_2_5_D" + str(banks_in_z) + "/" + mem_name 
 
-
+#hotspot integration starts
+#parse various settings from the config file and assign to local variables
 hotspot_path = sim.config.get('hotspot/tool_path')
 hotspot_config_path = sim.config.get('hotspot/config_path') 
 executable = hotspot_path + 'hotspot'
-#floorplan = hotspot_path + '4by4.flp'
-#grid_layer_file =  hotspot_config_path + 'test8/4by4.lcf'
 sampling_interval = int(sim.config.get('hotspot/sampling_interval'))
 power_trace_file = sim.config.get('hotspot/power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/temperature_trace_file')
@@ -98,7 +98,10 @@ hotspot_steady_temp_file = sim.config.get('hotspot/hotspot_steady_temp_file')
 hotspot_grid_steady_file = sim.config.get('hotspot/hotspot_grid_steady_file')
 hotspot_all_transient_file = sim.config.get('hotspot/all_transient_file')
 
-##"%s -c %s -init_file 4by4.init -f %s -p %s -o %s -model_secondary 1 -model_type grid -detailed_3D on -grid_layer_file %s -steady_file %s -grid_steady_file %s" %(hotspot_tool,hotspot_config,hotspot_floorplan,hotspot_ptrace,hotspot_temp_trace,hotspot_layer_file,hotspot_steady_temp,hotspot_grid_steady)
+#Basic idea of the flow is:
+#Generate power trace using access trace from sniper in a periodic manner.
+#Invoke hotspot to generate temperature trace for the corresponding power trace. 
+#The generated transient temperature trace (all_transient_file) is used as an init file for the next iteration
 
 hotspot_command = executable  \
                   + ' -f ' + hotspot_floorplan_file \
@@ -111,6 +114,7 @@ hotspot_command = executable  \
                   + ' -steady_file ' + hotspot_steady_temp_file \
                   + ' -all_transient_file ' + hotspot_all_transient_file \
                   + ' -grid_steady_file ' + hotspot_grid_steady_file \
+                  + ' -steady_state_print_disable 1 ' \
                   + ' -l 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, ' \
                   # + ' -sampling_intvl ' + sampling_interval \
 print hotspot_command                  
@@ -123,6 +127,7 @@ os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
 os.system("rm -f full_temperature.trace")
 os.system("rm -f full_power.trace")
 
+#generates ptrace header as per the memory floorplan and architecture
 def gen_ptrace_header():
     # For a 2by1 ptrace with four layers header should be B0_0    B0_1    B0_0    B0_1    B0_0    B0_1    B0_0    B0_1
     # For WIO: core is at the top, whereas for HMC, 2.5D config. the HMC is at the bottom.
@@ -163,14 +168,14 @@ def gen_ptrace_header():
     return ptrace_header
     
 
+#The main portion which invokes hotspot to generate temperature.trace
 class memTherm:
   def setup(self, args):
     args = dict(enumerate((args or '').split(':')))
     filename = args.get(1, None)
-    #interval_ns = long(args.get(2, 1000000))
     interval_ns = sampling_interval
     # print interval_ns 
-    stat = 'dram.bank_access_counter'
+    stat = 'dram.bank_access_counter'       #from sniper C-code
     self.stat_name = stat
     stat_component, stat_name = stat.rsplit('.', 1)
 
@@ -187,6 +192,7 @@ class memTherm:
       'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
       'stat': [ self.getStatsGetter(stat_component, core, stat_name) for core in range(NUM_BANKS) ],
     }
+    #print the initial header into different log/trace files
     gen_ptrace_header()
     ptrace_header = gen_ptrace_header()
     with open("full_temperature.trace", "w") as f:
@@ -195,8 +201,10 @@ class memTherm:
     with open("full_power.trace", "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
+    #setup to invoke the hotspot tool every interval_ns time and invoke calc_temperature_trace function
     sim.util.Every(interval_ns * sim.util.Time.NS, self.calc_temperature_trace, statsdelta = self.sd, roi_only = True)
 
+    #return access rates of various memory banks
   def periodic(self, time, time_delta):
     if self.isTerminal:
       self.fd.write('[STAT:%s] ' % self.stat_name)
@@ -212,6 +220,7 @@ class memTherm:
 #    print access_rates
     return access_rates
 
+    # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
     accesses = self.periodic(time, time_delta)
 #    print accesses
@@ -220,19 +229,21 @@ class memTherm:
     refresh_energy_in_timestep =  avg_no_refresh_rows_in_timestep * energy_per_refresh_access                   # 20.48 * 100 nJ = 2048 nJ, 100 nJ (say) is the energy per refresh access
     avg_refresh_power = refresh_energy_in_timestep/(timestep*1000)
     bank_power_trace = [0 for number in xrange(NUM_BANKS)]
+     #total power = access_count*energy per access + leakage power + refresh power
     for bank in range(NUM_BANKS):
       bank_power_trace[bank] = (accesses[bank] * energy_per_access)/(timestep*1000) + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = [logic_core_power for number in xrange(NUM_LC)]
     power_trace = ''
+    # convert power trace into a concatenated string for formated output
     for p in logic_power_trace:
         power_trace = power_trace + str(p) + '\t'
     for p in bank_power_trace:
         power_trace = power_trace + str(p) + '\t'
     power_trace = power_trace + "\r\n"
     ptrace_header = gen_ptrace_header()
-#    print s
 ###Needs fixing. currently adding new lines to the older power trace. However, init of previous runs should be done and used for the next iteration
+   #write power information into the trace file for use by hotspot
     with open("%s" %(power_trace_file), "w") as f:
         f.write("%s\n" %(ptrace_header))
 #    with open("%s" %(power_trace_file), "a") as f:
@@ -240,10 +251,12 @@ class memTherm:
     f.close()
     return power_trace
 
+  # invokes hotspot to generate the temperature trace
   def calc_temperature_trace(self, time, time_delta):
 #   print power_trace
     self.calc_power_trace(time, time_delta)
     os.system(hotspot_command)
+      #concatenate the per interval temperatuer trace into a single file
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + "temperature.trace" + ">>" + "full_temperature.trace")
     os.system("tail -1 " + power_trace_file + " >>" + "full_power.trace")

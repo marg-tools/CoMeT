@@ -583,8 +583,11 @@ for (i = 0; i < 32; ++i)
   //BU_3D: Only print steady state results to stdout when DEBUG3D flag is not set
     // printf(" HERE 1\n");
 #if DEBUG3D < 1
+// printf("Value=%d\n",model->config->steady_state_print_disable);
+ if(model->config->steady_state_print_disable == 0) {
   fprintf(stdout, "Unit\tSteady(Kelvin)\n");
   dump_temp(model, steady_temp, "stdout");
+ }
 #endif //end->BU_3D
 
   /* dump steady state temperatures on to file if needed	*/

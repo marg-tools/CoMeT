@@ -103,6 +103,7 @@ thermal_config_t default_thermal_config(void)
 	 */
 	strcpy(config.grid_map_mode, GRID_CENTER_STR);
 
+        config.steady_state_print_disable = 0;
 	config.detailed_3D_used = 0;	//BU_3D: by default detailed 3D modeling is disabled.	
 	return config;
 }
@@ -264,6 +265,10 @@ void thermal_config_add_from_strs(thermal_config_t *config, str_pair *table, int
         if ((idx = get_str_index(table, size, "all_transient_file")) >= 0)
                 if(sscanf(table[idx].value, "%s", config->all_transient_file) != 1)
                         fatal("invalid format for configuration  parameter all_transient_file\n");
+        if ((idx = get_str_index(table, size, "steady_state_print_disable")) >= 0)
+                if(sscanf(table[idx].value, "%d", &config->steady_state_print_disable) != 1)
+                        fatal("invalid format for configuration  parameter steady_state_print_disable\n");
+	
 	
 	if ((config->t_chip <= 0) || (config->s_sink <= 0) || (config->t_sink <= 0) || 
 		(config->s_spreader <= 0) || (config->t_spreader <= 0) || 
@@ -303,7 +308,7 @@ void thermal_config_add_from_strs(thermal_config_t *config, str_pair *table, int
  */
 int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_entries)
 {
-	if (max_entries < 49)
+	if (max_entries < 51)
 		fatal("not enough entries in table\n");
 
 	sprintf(table[0].name, "t_chip");
@@ -356,6 +361,7 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[47].name, "grid_steady_file");
 	sprintf(table[48].name, "grid_map_mode");
         sprintf(table[49].name, "all_transient_file");
+        sprintf(table[50].name, "steady_state_print_disable");
 
 	sprintf(table[0].value, "%lg", config->t_chip);
 	sprintf(table[1].value, "%lg", config->k_chip);
@@ -406,9 +412,10 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[46].value, "%s", config->grid_layer_file);
 	sprintf(table[47].value, "%s", config->grid_steady_file);
 	sprintf(table[48].value, "%s", config->grid_map_mode);
-	sprintf(table[48].value, "%s", config->all_transient_file);
+	sprintf(table[49].value, "%s", config->all_transient_file);
+	sprintf(table[50].value, "%d", config->steady_state_print_disable);
 
-	return 50;
+	return 51;
 }
 
 /* package parameter routines	*/
