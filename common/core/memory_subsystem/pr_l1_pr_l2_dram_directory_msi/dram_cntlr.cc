@@ -85,6 +85,10 @@ unsigned long count_putdata;
     UInt64 interval_start_time;
     UInt32 bank_accessed;
     uintptr_t address_ptr;
+
+//Added by rajesh
+    UInt32 stats_initialized=0;
+    UInt64 bank_access_counts_overall[NUM_OF_BANKS];
 #endif
  
 //#define CALL_TRACE 0
@@ -112,6 +116,14 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    m_dram_access_count = new AccessCountMap[DramCntlrInterface::NUM_ACCESS_TYPES];
    registerStatsMetric("dram", memory_manager->getCore()->getId(), "reads", &m_reads);
    registerStatsMetric("dram", memory_manager->getCore()->getId(), "writes", &m_writes);
+
+//Added by rajesh
+  if (stats_initialized == 0) {
+     for (int i=0; i<NUM_OF_BANKS;i++)
+          registerStatsMetric("dram", i, "bank_access_counter", &bank_access_counts_overall[i]);
+          stats_initialized = 1;
+  }
+
 }
 
 DramCntlr::~DramCntlr()
@@ -173,6 +185,8 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
          for(i = 0; i < NUM_OF_BANKS; i = i + 1){
                     bank_access_counts_phase1[i]=0;
                     bank_access_counts_phase2[i]=0;
+//Added by rajesh
+		    bank_access_counts_overall[i]=0;
          }
         }
 
@@ -215,7 +229,9 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
               while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
                   printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
                       for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                       printf("%u,",0);
+//Added by rajesh
+                       //printf("%u,",0);
+		       bank_access_counts_overall[i]= 0;
                   }
                   last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
               }
@@ -223,14 +239,22 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
               total_access_count_phase1 = read_access_count_phase1 + write_access_count_phase1;
               printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
               for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                 printf("%u,",bank_access_counts_phase1[i]);
+//Added by rajesh
+                 //printf("%u,",bank_access_counts_phase1[i]);
+	         bank_access_counts_overall[i]= bank_access_counts_phase1[i];
                  bank_access_counts_phase1[i]=0;
               }
+ 	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase1=0;
               write_access_count_phase1=0;
               print_in_phase1 = 1;      // enable phase 1 printing
               last_printed_timestamp = interval_start_time;
+//Added by rajesh
+      	      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+      	        printf("%lu,",bank_access_counts_overall[i]);
+      	      }
+      	      printf("\n");
            }
 	}
         else{
@@ -241,7 +265,9 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
               while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
                  printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
                  for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                    printf("%u,",0);
+//Added by rajesh
+                       //printf("%u,",0);
+		       bank_access_counts_overall[i]= 0;
                  }
                  last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
               }
@@ -249,14 +275,22 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
               total_access_count_phase2 = read_access_count_phase2 + write_access_count_phase2;
               printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,total_access_count_phase2,address,bank_accessed);
               for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                 printf("%u,",bank_access_counts_phase2[i]);
+//Added by rajesh
+                 //printf("%u,",bank_access_counts_phase2[i]);
+	         bank_access_counts_overall[i]= bank_access_counts_phase2[i];
                  bank_access_counts_phase2[i]=0;
               }
+ 	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase2=0;
               write_access_count_phase2=0;
               print_in_phase2 = 1;      // enable phase 2 printing
               last_printed_timestamp = interval_start_time;
+//Added by rajesh
+      	      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+      	        printf("%lu,",bank_access_counts_overall[i]);
+      	      }
+      	      printf("\n");
            }
         }
 
@@ -356,7 +390,9 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
               while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
                   printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
                   for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                   printf("%u,",0);
+//Added by rajesh
+                       //printf("%u,",0);
+		       bank_access_counts_overall[i]= 0;
                   }
                   last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
               }
@@ -364,14 +400,22 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
               total_access_count_phase1 = read_access_count_phase1 + write_access_count_phase1;
               printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
               for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                 printf("%u,",bank_access_counts_phase1[i]);
+//Added by rajesh
+                 //printf("%u,",bank_access_counts_phase1[i]);
+	         bank_access_counts_overall[i]= bank_access_counts_phase1[i];
                  bank_access_counts_phase1[i]=0;
               }
+ 	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase1=0;
               write_access_count_phase1=0;
               print_in_phase1 = 1;      // enable phase 1 printing
               last_printed_timestamp = interval_start_time;
+//Added by rajesh
+      	      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+      	        printf("%lu,",bank_access_counts_overall[i]);
+      	      }
+      	      printf("\n");
            }
         }
         else{
@@ -382,7 +426,9 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
               while(last_printed_timestamp + ACCUMALATION_TIME < interval_start_time){
                  printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",(UInt64)(last_printed_timestamp + ACCUMALATION_TIME),0,0,0,(IntPtr)0,0);
                  for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                    printf("%u,",0);
+//Added by rajesh
+                       //printf("%u,",0);
+		       bank_access_counts_overall[i]= 0;
                  }
                  last_printed_timestamp =  last_printed_timestamp + ACCUMALATION_TIME;
               }
@@ -390,14 +436,22 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
               total_access_count_phase2 = read_access_count_phase2 + write_access_count_phase2;
               printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase2,write_access_count_phase2,total_access_count_phase2,address,bank_accessed);
               for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                 printf("%u,",bank_access_counts_phase2[i]);
+//Added by rajesh
+                 //printf("%u,",bank_access_counts_phase2[i]);
+	         bank_access_counts_overall[i]= bank_access_counts_phase2[i];
                  bank_access_counts_phase2[i]=0;
               }
+ 	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase2=0;
               write_access_count_phase2=0;
               print_in_phase2 = 1;      // enable phase 2 printing
               last_printed_timestamp = interval_start_time;
+//Added by rajesh
+      	      for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+      	        printf("%lu,",bank_access_counts_overall[i]);
+      	      }
+      	      printf("\n");
            }
         }
 
