@@ -1,0 +1,152 @@
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+    "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg width="900px" height="500px"
+    viewBox="0 0 8193.6 6828">
+<title>Sample Temperature Map For HotSpot Grid Model</title>
+<g id="floorplan" style="stroke: none; fill: red;">
+	<rect x="0" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="0" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="853.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="1707" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="2560.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="3414" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="4267.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="5121" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="0" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="853.5" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="1707" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="2560.5" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="3414" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="4267.5" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5121" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<rect x="5974.5" y="5974.5" width="853.5" height="853.5" style="fill:rgb(255,255,0)" />
+	<line x1="0" y1="5121" x2="1707" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="5121" x2="0" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="5121" x2="1707" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="6828" x2="1707" y2="6828" style="stroke:black;stroke-width:30" />
+	<text x="100" y="6321" fill="black" text_anchor="start" style="font-size:570" > 0 </text>
+	<line x1="1707" y1="5121" x2="3414" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="5121" x2="1707" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="5121" x2="3414" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="6828" x2="3414" y2="6828" style="stroke:black;stroke-width:30" />
+	<text x="1807" y="6321" fill="black" text_anchor="start" style="font-size:570" > 1 </text>
+	<line x1="3414" y1="5121" x2="5121" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="5121" x2="3414" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="5121" x2="5121" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="6828" x2="5121" y2="6828" style="stroke:black;stroke-width:30" />
+	<text x="3514" y="6321" fill="black" text_anchor="start" style="font-size:570" > 2 </text>
+	<line x1="5121" y1="5121" x2="6828" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="5121" x2="5121" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="6828" y1="5121" x2="6828" y2="6828" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="6828" x2="6828" y2="6828" style="stroke:black;stroke-width:30" />
+	<text x="5221" y="6321" fill="black" text_anchor="start" style="font-size:570" > 3 </text>
+	<line x1="0" y1="3414" x2="1707" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="3414" x2="0" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="3414" x2="1707" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="5121" x2="1707" y2="5121" style="stroke:black;stroke-width:30" />
+	<text x="100" y="4614" fill="black" text_anchor="start" style="font-size:570" > 4 </text>
+	<line x1="1707" y1="3414" x2="3414" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="3414" x2="1707" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="3414" x2="3414" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="5121" x2="3414" y2="5121" style="stroke:black;stroke-width:30" />
+	<text x="1807" y="4614" fill="black" text_anchor="start" style="font-size:570" > 5 </text>
+	<line x1="3414" y1="3414" x2="5121" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="3414" x2="3414" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="3414" x2="5121" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="5121" x2="5121" y2="5121" style="stroke:black;stroke-width:30" />
+	<text x="3514" y="4614" fill="black" text_anchor="start" style="font-size:570" > 6 </text>
+	<line x1="5121" y1="3414" x2="6828" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="3414" x2="5121" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="6828" y1="3414" x2="6828" y2="5121" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="5121" x2="6828" y2="5121" style="stroke:black;stroke-width:30" />
+	<text x="5221" y="4614" fill="black" text_anchor="start" style="font-size:570" > 7 </text>
+	<line x1="0" y1="1707" x2="1707" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="1707" x2="0" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="1707" x2="1707" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="3414" x2="1707" y2="3414" style="stroke:black;stroke-width:30" />
+	<text x="100" y="2907" fill="black" text_anchor="start" style="font-size:570" > 8 </text>
+	<line x1="1707" y1="1707" x2="3414" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="1707" x2="1707" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="1707" x2="3414" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="3414" x2="3414" y2="3414" style="stroke:black;stroke-width:30" />
+	<text x="1807" y="2907" fill="black" text_anchor="start" style="font-size:570" > 9 </text>
+	<line x1="3414" y1="1707" x2="5121" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="1707" x2="3414" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="1707" x2="5121" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="3414" x2="5121" y2="3414" style="stroke:black;stroke-width:30" />
+	<text x="3514" y="2907" fill="black" text_anchor="start" style="font-size:570" > 10 </text>
+	<line x1="5121" y1="1707" x2="6828" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="1707" x2="5121" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="6828" y1="1707" x2="6828" y2="3414" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="3414" x2="6828" y2="3414" style="stroke:black;stroke-width:30" />
+	<text x="5221" y="2907" fill="black" text_anchor="start" style="font-size:570" > 11 </text>
+	<line x1="0" y1="0" x2="1707" y2="0" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="0" x2="0" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="0" x2="1707" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="0" y1="1707" x2="1707" y2="1707" style="stroke:black;stroke-width:30" />
+	<text x="100" y="1200" fill="black" text_anchor="start" style="font-size:570" > 12 </text>
+	<line x1="1707" y1="0" x2="3414" y2="0" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="0" x2="1707" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="0" x2="3414" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="1707" y1="1707" x2="3414" y2="1707" style="stroke:black;stroke-width:30" />
+	<text x="1807" y="1200" fill="black" text_anchor="start" style="font-size:570" > 13 </text>
+	<line x1="3414" y1="0" x2="5121" y2="0" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="0" x2="3414" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="0" x2="5121" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="3414" y1="1707" x2="5121" y2="1707" style="stroke:black;stroke-width:30" />
+	<text x="3514" y="1200" fill="black" text_anchor="start" style="font-size:570" > 14 </text>
+	<line x1="5121" y1="0" x2="6828" y2="0" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="0" x2="5121" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="6828" y1="0" x2="6828" y2="1707" style="stroke:black;stroke-width:30" />
+	<line x1="5121" y1="1707" x2="6828" y2="1707" style="stroke:black;stroke-width:30" />
+	<text x="5221" y="1200" fill="black" text_anchor="start" style="font-size:570" > 15 </text>
+</g>
+</svg>

@@ -1,0 +1,91 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+#Example
+
+#0
+#Y
+#Y
+#1.75e6
+#0.01
+#0.000075
+#3d/3d.flp
+
+# Layer 0: Silicon
+0
+Y
+Y
+1.75e6
+0.01
+0.000075
+16by16.flp
+
+# Layer 1: thermal interface material (TIM)
+1
+Y
+N
+4e6
+0.25
+2.0e-05
+TIM_16by16.flp
+
+# Layer 2: Silicon
+2
+Y
+Y
+1.75e6
+0.01
+0.000075
+16by16.flp
+
+# Layer 3: thermal interface material (TIM)
+3
+Y
+N
+4e6
+0.25
+2.0e-05
+TIM_16by16.flp
+
+# Layer 4: Silicon
+4
+Y
+Y
+1.75e6
+0.01
+0.000075
+16by16.flp
+
+# Layer 5: thermal interface material (TIM)
+5
+Y
+N
+4e6
+0.25
+2.0e-05
+TIM_16by16.flp
+
+# Layer 6: Silicon
+6
+Y
+Y
+1.75e6
+0.01
+0.000075
+TIM_16by16.flp
+
+# Layer 7: thermal interface material (TIM)
+7
+Y
+N
+4e6
+0.25
+2.0e-05
+TIM_16by16.flp

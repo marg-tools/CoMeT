@@ -1,0 +1,18 @@
+Checking Layouts	: (Floorplan folder)
+tofig.pl 2by1.flp  | fig2dev -L ps | ps2pdf - 2by1.pdf
+tofig.pl TIM_2by1.flp  | fig2dev -L ps | ps2pdf - TIM_2by1.pdf
+
+Checking LCF File	:
+Check 2by1.lcf and the pointers to the floorplan files
+
+Run Simulation		:	
+hotspot -c hotspot.config -f ../floorplan/2by1.flp -p 2by1.ptrace -o 2by1.ttrace -model_type grid -grid_layer_file 2by1.lcf -steady_file 2by1.steady -grid_steady_file gcc.grid.steady
+
+Base Layer Thermal Map	:	
+./grid_thermal_map.pl ../floorplan/2by1.flp gcc.grid.steady > gcc.svg ; convert -density 200 -font Helvetica svg:gcc.svg gcc.pdf
+
+hotspot -c hotspot.config -f ../floorplan/2by1.flp -p 2by1.ptrace -o 2by1.ttrace -model_type grid -grid_layer_file 2by1.lcf -steady_file 2by1.steady -grid_steady_file gcc.grid.steady
+./grid_thermal_map.pl ../floorplan/2by1.flp gcc.grid.steady > gcc.svg ; convert -density 200 -font Helvetica svg:gcc.svg gcc.pdf
+
+Notes : 
+

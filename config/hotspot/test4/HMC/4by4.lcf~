@@ -1,0 +1,100 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+#Example
+
+#0
+#Y
+#Y
+#1.75e6
+#0.01
+#0.00015
+#3d/3d.flp
+
+# Layer 0: Silicon DRAM
+0
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4by4.flp
+
+# Layer 1: thermal interface material (TIM)
+1
+Y
+N
+4e6
+0.25
+2.0e-05
+hotspot/floorplan/TIM_4by4.flp
+
+# Layer 3: Silicon DRAM
+2
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4by4.flp
+
+# Layer 4: thermal interface material (TIM)
+3
+Y
+N
+4e6
+0.25
+2.0e-05
+hotspot/floorplan/TIM_4by4.flp
+
+# Layer 5: Silicon DRAM
+4
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4by4.flp
+
+# Layer 6: thermal interface material (TIM)
+5
+Y
+N
+4e6
+0.25
+2.0e-05
+hotspot/floorplan/TIM_4by4.flp
+
+# Layer 7: Silicon DRAM
+6
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4by4.flp
+
+# Layer 8: thermal interface material (TIM)
+7
+Y
+N
+4e6
+0.25
+2.0e-05
+hotspot/floorplan/TIM_4by4.flp
+
+# Layer 9: Silicon Core
+8
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4by4C.flp

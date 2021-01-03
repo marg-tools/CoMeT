@@ -1,0 +1,41 @@
+echo "model_secondary:" > x
+grep -ir "model_secondary" *.c	>> x
+
+echo "r_convec_sec" >> x
+grep -ir "r_convec_sec" *.c >> x
+
+echo "c_convec_sec" *.c >> x
+grep -ir "c_convec_sec" *.c >> x
+
+echo "n_metal" *.c >> x	
+grep -ir "n_metal" *.c >> x	
+
+echo "t_metal" *.c >> x	
+grep -ir "t_metal" *.c >> x	
+
+echo "t_c4" *.c >> x
+grep -ir "t_c4" *.c >> x
+
+echo "s_c4" *.c >> x
+grep -ir "s_c4" *.c >> x
+
+echo "n_c4" *.c >> x
+grep -ir "n_c4" *.c >> x
+
+echo "s_sub" *.c >> x
+grep -ir "s_sub" *.c >> x
+
+echo "t_sub" *.c >> x
+grep -ir "t_sub" *.c >> x
+
+echo "s_solder" *.c >> x
+grep -ir "s_solder" *.c >> x
+
+echo "t_solder" *.c >> x
+grep -ir "t_solder" *.c >> x
+
+echo "s_pcb" *.c >> x
+grep -ir "s_pcb" *.c >> x
+
+echo "t_pcb" *.c >> x
+grep -ir "t_pcb" *.c >> x

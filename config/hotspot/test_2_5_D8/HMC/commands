@@ -1,0 +1,116 @@
+Checking Layouts	: (Floorplan folder)
+tofig.pl 2by1.flp  | fig2dev -L ps | ps2pdf - 2by1.pdf
+tofig.pl TIM_2by1.flp  | fig2dev -L ps | ps2pdf - TIM_2by1.pdf
+tofig.pl 4by4_2_5_D.flp  | fig2dev -L ps | ps2pdf - 4by4_2_5_D.pdf
+tofig.pl 4by4B_2_5_D.flp  | fig2dev -L ps | ps2pdf - 4by4B_2_5_D.pdf
+tofig.pl TIM_4by4_2_5_D.flp  | fig2dev -L ps | ps2pdf - TIM_4by4_2_5_D.pdf
+
+
+Checking LCF File	:
+Check 2by1.lcf and the pointers to the floorplan files
+
+Run Simulation		:	
+hotspot -c hotspot.config -f ../floorplan/2by1.flp -p 2by1.ptrace -o 2by1.ttrace -model_type grid -grid_layer_file 2by1.lcf -steady_file 2by1.steady -grid_steady_file gcc.grid.steady
+
+Base Layer Thermal Map	:	
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4_2_5_D.flp gcc.grid.steady 8 8 318 388 > gcc.svg 
+inkscape -z -e gcc.png gcc.svg --export-area-drawing --export-dpi=160
+convert -density 200 -font Helvetica svg:gcc.svg gcc.pdf
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4_2_5_D.flp gcc.grid.steady 8 8 318 388 > compute.svg 
+inkscape -z -e compute.png compute.svg --export-area-drawing --export-dpi=160
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4_2_5_D.flp gcc.grid.steady 8 8 318 388 > mem.svg 
+inkscape -z -e mem.png mem.svg --export-area-drawing --export-dpi=160
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4_2_5_D.flp gcc.grid.steady 16 16 318 388 > mix.svg 
+inkscape -z -e mix.png mix.svg --export-area-drawing --export-dpi=160
+
+
+Hotspot command:
+hotspot -c hotspot.config -f ../floorplan/2by1.flp -p 2by1.ptrace -o 2by1.ttrace -model_type grid -grid_layer_file 2by1.lcf -steady_file 2by1.steady -grid_steady_file gcc.grid.steady
+
+Notes : 
+
+Upper layer Thermal Map:
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 4.txt 8 8 318 388 > 4.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 6.txt 8 8 318 388 > 6.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 8.txt 8 8 318 388 > 8.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 10.txt 8 8 318 388 > 10.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 12.txt 8 8 318 388 > 12.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 14.txt 8 8 318 388 > 14.svg 
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 16.txt 8 8 318 388 > 16.svg 
+
+inkscape -z -e 4.png 4.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 6.png 6.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 8.png 8.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 10.png 10.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 12.png 12.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 14.png 14.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 16.png 16.svg --export-area-drawing --export-dpi=160
+
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 7.txt 16 16 318 388 > 7.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 9.txt 16 16 318 388 > 9.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 11.txt 16 16 318 388 > 11.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 13.txt 16 16 318 388 > 13.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 15.txt 16 16 318 388 > 15.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 17.txt 16 16 318 388 > 17.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 19.txt 16 16 318 388 > 19.svg 
+./../grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/4by4B_2_5_D.flp 21.txt 16 16 318 388 > 21.svg 
+
+inkscape -z -e 7.png 7.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 9.png 9.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 11.png 11.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 13.png 13.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 15.png 15.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 17.png 17.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 19.png 19.svg --export-area-drawing --export-dpi=160
+inkscape -z -e 21.png 21.svg --export-area-drawing --export-dpi=160
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp leak.txt 8 8 318 388 > leak.svg 
+inkscape -z -e WithLeakage.png leak.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp noleak.txt 8 8 318 388 > noleak.svg 
+inkscape -z -e WithoutLeakage.png noleak.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp leak25.txt 8 8 318 388 > leak25.svg 
+inkscape -z -e ConstantLeakage.png leak25.svg --export-area-drawing --export-dpi=160
+
+
+
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp leak.txt 8 8 333 383 > leak.svg 
+inkscape -z -e WithLeakage.png leak.svg --export-area-drawing --export-dpi=160
+
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp noleak.txt 8 8 333 383 > noleak.svg 
+inkscape -z -e WithoutLeakage.png noleak.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp leak25.txt 8 8 333 383 > leak25.svg 
+inkscape -z -e ConstantLeakage.png leak25.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp leak80.txt 8 8 333 383 > leak80.svg 
+inkscape -z -e leak80.png leak80.svg --export-area-drawing --export-dpi=160
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp gcc.grid.steady 16 16 333 383 > try.svg 
+inkscape -z -e try.png try.svg --export-area-drawing --export-dpi=160
+
+
+
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp LEAK16.steady 16 16 333 383 > LEAK16.svg 
+inkscape -z -e LEAK16.png LEAK16.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp No_LEAK16.steady 16 16 333 383 > No_LEAK16.svg 
+inkscape -z -e No_LEAK16.png No_LEAK16.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp LEAK80_16.steady 16 16 333 383 > LEAK80_16.svg 
+inkscape -z -e LEAK80_16.png LEAK80_16.svg --export-area-drawing --export-dpi=160
+
+./grid_thermal_map.pl /home/siddhulokesh/sniper/test/benchmarks/exp/coskun_date2012_new_parser/hotspot/floorplan/DATE.flp LEAK25_16.steady 16 16 333 383 > LEAK25_16.svg 
+inkscape -z -e LEAK25_16.png LEAK25_16.svg --export-area-drawing --export-dpi=160
+
