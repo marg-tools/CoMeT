@@ -16,8 +16,8 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 - Compile
 	- In the main folder, make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
-        - Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool
-        - Configure the path of the hotspot tool and config directory in the config/gainstown_my3D.cfg file (search for tool\_path and config\_path variables)
+	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool
+	- Configure the path of the hotspot tool and config directory in the config/gainstown\_my3D.cfg file (search for tool\_path and config\_path variables)
 
 - Running an application 
 	- cd test/app\_name
@@ -61,9 +61,9 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 
 - An example testcase which calls the thermal simulation periodically using hotspot is also created in the thermal\_example folder
-        - cd test/thermal\_example
-        - make run > logfile
+	- cd test/thermal\_example
+	- `make run > logfile`
 	
     - Multiple files would be generated, but the useful ones are described below:
-        - full_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory
-        - logfile - the simulation output from the terminal. bank_access_counter lists the access counts for different banks
+	- full\_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory
+	- logfile - the simulation output from the terminal. bank\_access\_counter lists the access counts for different banks
