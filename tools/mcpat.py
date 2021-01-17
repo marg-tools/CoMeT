@@ -2,6 +2,8 @@
 
 import os, sys, math, re, collections, buildstack, gnuplot, getopt, pprint, sniper_lib, sniper_config, sniper_stats
 import math
+import subprocess
+from cpistack import cpistack_compute
 
 #ISSUE_WIDTH = 4
 #ALU_per_core = 6
@@ -20,6 +22,7 @@ DRAM_POWER_STATIC_TSV_INTERFACE = .00934/8 # 9.34mW for 64-bit data bus
 
 DRAM_CHIPS_PER_DIMM = 8
 DRAM_DIMMS_PER_SOCKET = 4
+
 
 # Round up to the next nearest power of 2 if the number isn't already a power of two
 # Inspiration from http://stackoverflow.com/questions/53161/find-the-highest-order-bit-in-c
@@ -124,17 +127,112 @@ all_names = buildstack.get_names(all_items)
 def get_all_names():
   return all_names
 
+def log_frequencies(results):
+  ncores = int(results['config']['general/total_cores'])
+  frequencies = [float(results['config']['perf_model/core/frequency'].get(i)) for i in range(ncores)]
+
+  filename = 'PeriodicFrequency.log'
+  os.system("touch "+ filename)
+  write_header = os.stat(filename).st_size == 0
+  with open(filename, 'a') as f:
+    if write_header:
+      f.write('\t'.join('Core{}'.format(i) for i in range(ncores)))
+      f.write('\n')
+
+    f.write('\t'.join('{:.3f}'.format(f) for f in frequencies))
+    f.write('\n')
+
+def log_vdd(results):
+  ncores = int(results['config']['general/total_cores'])
+  size_nm = int(results['config']['power/technology_node'])
+  if size_nm >= 22:
+      scale = 1.0
+  elif size_nm == 14:
+      scale = 0.89
+  elif size_nm == 10:
+      scale = 0.81
+  elif size_nm == 8:
+      scale =  0.74
+  else:
+      raise Exception('do not know how to scale vdd to {} nm'.format(size_nm))
+  vdd = [float(results['config']['power/vdd'].get(i))*scale for i in range(ncores)]
+  filename = 'PeriodicVdd.log'
+  os.system("touch "+ filename)
+  write_header = os.stat(filename).st_size == 0
+  with open(filename, 'a') as f:
+    if write_header:
+      f.write('\t'.join('Core{}'.format(i) for i in range(ncores)))
+      f.write('\n')
+    f.write('\t'.join('{:.3f}'.format(f) for f in vdd))
+    f.write('\n')
+
+def log_cpi_stack(results):
+  cpiStack = cpistack_compute(data=results)
+  cpiStackData = cpiStack.get_data('cpi')
+
+  ncores = int(results['config']['general/total_cores'])
+  cpi_stack_file = 'InstantaneousCPIStack.log'
+  cpi_stack_periodic_file = 'PeriodicCPIStack.log'
+  os.system("touch "+ cpi_stack_periodic_file)
+
+  labels = cpiStack.cpiitems.names
+  compactify = ('issue', 'sync', 'imbalance')
+
+  for filename, write_header, mode in ((cpi_stack_file, True, 'w'),
+                                       (cpi_stack_periodic_file, os.stat(cpi_stack_periodic_file).st_size == 0, 'a')):
+    with open(filename, mode) as f:
+      if write_header:
+        f.write('Metric\t')
+        f.write('\t'.join('Core{}'.format(i) for i in range(ncores)))
+        f.write('\n')
+
+      f.write('total\t')
+      f.write('\t'.join('{:.3f}'.format(sum(cpiStackData[i].values())) for i in range(ncores)))
+      f.write('\n')
+
+      for label in labels:
+        if any(label.startswith(c) for c in compactify):
+          if label not in compactify:
+            continue
+          values = []
+          for i in range(ncores):
+            h = 0
+            coreStack = cpiStackData[i]
+            for key, value in coreStack.items():
+              if key.startswith(label):
+                h += value
+            values.append(h)
+        else:
+          values = [cpiStackData[i].get(label, 0) for i in range(ncores)]
+        f.write('{}\t'.format(label))
+        if any(v > 0.001 for v in values):
+          f.write('\t'.join('{:.3f}'.format(v) for v in values))
+        else:
+          f.write('-')
+        f.write('\n')
+
 def main(jobid, resultsdir, outputfile, powertype = 'dynamic', config = None, no_graph = False, partial = None, print_stack = True, return_data = False):
   tempfile = outputfile + '.xml'
 
   results = sniper_lib.get_results(jobid, resultsdir, partial = partial)
   if config:
+    # update using energystats-temp.cfg
     results['config'] = sniper_config.parse_config(file(config).read(), results['config'])
+
+    # recompute cycle counts with updated frequencies
+    _results = sniper_lib.parse_results_from_dir(resultsdir, partial=partial, metrics=None)
+    results['results'] = sniper_lib.stats_process(results['config'], _results)
+
   stats = sniper_stats.SniperStats(resultsdir = resultsdir, jobid = jobid)
 
   power, nuca_at_level = edit_XML(stats, results['results'], results['config'])
   power = map(lambda v: v[0], power)
   file(tempfile, "w").write('\n'.join(power))
+
+  # Log Performance Counters
+  log_frequencies(results)
+  log_vdd(results)
+  log_cpi_stack(results)
 
   # Run McPAT
   mcpat_run(tempfile, outputfile + '.txt')
@@ -212,7 +310,7 @@ def main(jobid, resultsdir, outputfile, powertype = 'dynamic', config = None, no
   time0_begin = results['results']['global.time_begin']
   time0_end = results['results']['global.time_end']
   seconds = (time0_end - time0_begin)/1e15
-  results = power_stack(power_dat, powertype)
+  results = power_stack(power_dat,results['config'], powertype)  
   # Plot stack
   plot_labels = []
   plot_data = {}
@@ -272,13 +370,29 @@ def main(jobid, resultsdir, outputfile, powertype = 'dynamic', config = None, no
   if return_data:
     return {'labels': plot_labels, 'power_data': plot_data, 'ncores': ncores, 'time_s': seconds}
 
+def scale_power(suffix, power, size_nm):
+  if suffix == 'Runtime Dynamic':
+    if size_nm >= 22:
+      return power
+    elif size_nm == 14:
+      return 0.89**2 * 0.64 * power
+    elif size_nm == 10:
+      return 0.81**2 * 0.39 * power
+    elif size_nm == 8:
+      return 0.74**2 * 0.24 * power
+    else:
+      raise Exception('do not know how to scale power to {} nm'.format(size_nm))
+  elif suffix in ('Subthreshold Leakage with power gating', 'Gate Leakage'):
+    return power
+  else:
+    raise Exception('do not know how to scale power: {}'.format(suffix))
 
-
-def power_stack(power_dat, powertype = 'total', nocollapse = False):
+def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
+  size_nm = int(sniper_config.get_config(cfg, "power/technology_node"))
   def getpower(powers, key = None):
     def getcomponent(suffix):
-      if key: return powers.get(key+'/'+suffix, 0)
-      else: return powers.get(suffix, 0)
+      if key: return scale_power(suffix, powers.get(key+'/'+suffix, 0), size_nm)
+      else: return scale_power(suffix, powers.get(suffix, 0), size_nm)        
     if powertype == 'dynamic':
       return getcomponent('Runtime Dynamic')
     elif powertype == 'static':
@@ -323,7 +437,214 @@ def power_stack(power_dat, powertype = 'total', nocollapse = False):
                               for core in power_dat['Core']
                             ]),
   }
+  full_power_trace_file = cfg.get('hotspot_c/full_power_trace_file')
+  power_trace_file = cfg.get('hotspot_c/power_trace_file')
+  full_temperature_trace_file = cfg.get('hotspot_c/full_temperature_trace_file')
+  temperature_trace_file = cfg.get('hotspot_c/temperature_trace_file')
+  hotspot_path = cfg.get('hotspot_c/tool_path')
+  hotspot_config_path = cfg.get('hotspot_c/config_path') 
+  executable = hotspot_path + 'hotspot'
+  init_file_external = hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/init_file_external')
+  init_file = cfg.get('hotspot_c/init_file')
+  
+  hotspot_config_file      =   hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/hotspot_config_file')
+  hotspot_floorplan_file   =   cfg.get('hotspot_c/hotspot_floorplan_file')
+  hotspot_floorplan_folder   = hotspot_config_path + cfg.get('hotspot_c/hotspot_floorplan_folder')
+ #hotspot_steady_temp_file = config.get('hotspot_c/hotspot_steady_temp_file')
+ #hotspot_grid_steady_file = config.get('hotspot_c/hotspot_grid_steady_file')
+ #hotspot_all_transient_file = config.get('hotspot_c/all_transient_file')
+
+  sampling_interval = int(cfg.get('hotspot_c/sampling_interval'))    #time in ns
+
   data['core-other'] = getpower(power_dat['Processor']) - (sum(data.values()) - data['dram'])
+  powerLogFileName = file(full_power_trace_file, 'a');
+  powerInstantaneousFileName = file(power_trace_file, 'w');
+  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+   thermalLogFileName = file(full_temperature_trace_file, 'a');
+
+  
+#Need to find means of deleting the older full trace files before starting a new simulation
+  #os.system("rm -f " + full_temperature_trace_file)
+  #os.system("rm -f " + full_power_trace_file)
+  os.system('mkdir -p hotspot')
+  os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
+
+  id = 0
+  Headings = ""
+
+  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
+    Headings += "L3\t" # Private L3
+
+  for core in power_dat['Core']:
+   
+   if sniper_config.get_config_bool(cfg, "core_power/l2"):  
+    Headings += "Core"+str(id)+"-L2\t" # Private L2
+   
+   if sniper_config.get_config_bool(cfg, "core_power/is"):
+    Headings += "Core"+str(id)+"-IS\t" # Instruction Scheduler
+   
+   if sniper_config.get_config_bool(cfg, "core_power/rf"):
+    Headings += "Core"+str(id)+"-RF\t" # Register Files
+   
+   if sniper_config.get_config_bool(cfg, "core_power/rbb"):
+    Headings += "Core"+str(id)+"-RBB\t" # Result Broadcast Bus
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ru"):
+    Headings += "Core"+str(id)+"-RU\t" # Renaming Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/bp"):
+    Headings += "Core"+str(id)+"-BP\t" # Branch Predictor
+   
+   if sniper_config.get_config_bool(cfg, "core_power/btb"):
+    Headings += "Core"+str(id)+"-BTB\t" # Branch Target Buffer
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ib"):
+    Headings += "Core"+str(id)+"-IB\t" # Instruction Buffer
+   
+   if sniper_config.get_config_bool(cfg, "core_power/id"):
+    Headings += "Core"+str(id)+"-ID\t" # Instruction Decoder
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ic"):
+    Headings += "Core"+str(id)+"-IC\t" # Instruction Cache
+   
+   if sniper_config.get_config_bool(cfg, "core_power/dc"):
+    Headings += "Core"+str(id)+"-DC\t" # Data Cache
+   
+   if sniper_config.get_config_bool(cfg, "core_power/calu"):
+    Headings += "Core"+str(id)+"-CALU\t" # Complex ALU
+   
+   if sniper_config.get_config_bool(cfg, "core_power/falu"):
+    Headings += "Core"+str(id)+"-FALU\t" # Floating Point ALU
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ialu"):
+    Headings += "Core"+str(id)+"-IALU\t" # Integer ALU
+   
+   if sniper_config.get_config_bool(cfg, "core_power/lu"):
+    Headings += "Core"+str(id)+"-LU\t" # Load Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/su"):
+    Headings += "Core"+str(id)+"-SU\t" # Store Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/mmu"):
+    Headings += "Core"+str(id)+"-MMU\t" # Memory Management Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ifu"):
+    Headings += "Core"+str(id)+"-IFU\t" # Instruction Fetch Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/lsu"):
+    Headings += "Core"+str(id)+"-LSU\t" # Load Store Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/eu"):
+    Headings += "Core"+str(id)+"-EU\t" # Execution Unit
+   
+   if sniper_config.get_config_bool(cfg, "core_power/tp"):
+    Headings += "Core"+str(id)+"-TP\t" # Total Power
+
+   id = id+1
+   
+  os.system("touch " + full_power_trace_file)
+  needInitializing = os.stat(full_power_trace_file).st_size == 0
+  if needInitializing:
+    powerLogFileName.write (Headings+"\n")
+    if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+     thermalLogFileName.write (Headings+"\n")
+
+  powerInstantaneousFileName.write (Headings+"\n")
+   
+  Readings = ""
+
+  L3Power = sum([ getpower(cache) for cache in power_dat.get('L3', []) ]) 
+
+  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
+    Readings += str(L3Power)+"\t"  # Private L3
+  
+  amtCores = len(power_dat['Core'])
+  for i, core in enumerate(power_dat['Core']):
+    totalPower = getpower(core)
+    IFUPower =  getpower(core, 'Instruction Fetch Unit/Branch Predictor') + getpower(core, 'Instruction Fetch Unit/Branch Target Buffer') + getpower(core, 'Instruction Fetch Unit/Instruction Buffer') + getpower(core, 'Instruction Fetch Unit/Instruction Decoder') + getpower(core, 'Instruction Fetch Unit/Instruction Cache') 
+    LSUPower =  getpower(core, 'Load Store Unit/Data Cache') + getpower(core, 'Load Store Unit/LoadQ') + getpower(core, 'Load Store Unit/StoreQ')
+    EUPower = getpower(core, 'Execution Unit/Instruction Scheduler') + getpower(core, 'Execution Unit/Register Files') + getpower(core, 'Execution Unit/Results Broadcast Bus') + getpower(core, 'Execution Unit/Complex ALUs') + getpower(core, 'Execution Unit/Floating Point Units') + getpower(core, 'Execution Unit/Integer ALUs')
+
+    if sniper_config.get_config_bool(cfg, "core_power/l2"):  
+      Readings += str(getpower(core, 'L2'))+"\t"  # Private L2
+    if sniper_config.get_config_bool(cfg, "core_power/is"):
+      Readings += str(getpower(core, 'Execution Unit/Instruction Scheduler'))+"\t" # Instruction Scheduler
+    if sniper_config.get_config_bool(cfg, "core_power/rf"):
+      Readings += str(getpower(core, 'Execution Unit/Register Files'))+"\t"  # Register Files
+    if sniper_config.get_config_bool(cfg, "core_power/rbb"):
+      Readings += str(getpower(core, 'Execution Unit/Results Broadcast Bus'))+"\t"  # Result Broadcast Bus
+    if sniper_config.get_config_bool(cfg, "core_power/ru"):
+      Readings += str(getpower(core, 'Renaming Unit'))+"\t" # Renaming Unit
+    if sniper_config.get_config_bool(cfg, "core_power/bp"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Predictor'))+"\t"  # Branch Predictor
+    if sniper_config.get_config_bool(cfg, "core_power/btb"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Target Buffer'))+"\t"  # Branch Target Buffer
+    if sniper_config.get_config_bool(cfg, "core_power/ib"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Buffer'))+"\t" # Instruction Buffer
+    if sniper_config.get_config_bool(cfg, "core_power/id"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Decoder'))+"\t"  # Instruction Decoder
+    if sniper_config.get_config_bool(cfg, "core_power/ic"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Cache'))+"\t"  # Instruction Cache
+    if sniper_config.get_config_bool(cfg, "core_power/dc"):
+      Readings += str(getpower(core, 'Load Store Unit/Data Cache'))+"\t" # Data Cache 
+    if sniper_config.get_config_bool(cfg, "core_power/calu"):
+      Readings += str(getpower(core, 'Execution Unit/Complex ALUs'))+"\t"  # Complex ALU
+    if sniper_config.get_config_bool(cfg, "core_power/falu"):
+      Readings += str(getpower(core, 'Execution Unit/Floating Point Units'))+"\t"  # Floating Point ALU
+    if sniper_config.get_config_bool(cfg, "core_power/ialu"):
+      Readings += str(getpower(core, 'Execution Unit/Integer ALUs'))+"\t"  # Integer ALU
+    if sniper_config.get_config_bool(cfg, "core_power/lu"): # Load Unit
+      Readings += str(getpower(core, 'Load Store Unit/LoadQ'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/su"):  # Store Unit
+      Readings += str(getpower(core, 'Load Store Unit/StoreQ'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/mmu"): # Memory Management Unit
+      Readings += str(getpower(core, 'Memory Management Unit'))+"\t"  # Memory Management Unit
+    if sniper_config.get_config_bool(cfg, "core_power/ifu"):
+      Readings += str(IFUPower) +"\t" # Instruction Fetch Unit
+    if sniper_config.get_config_bool(cfg, "core_power/lsu"):
+      Readings += str(LSUPower) +"\t"  # Load Store Unit
+    if sniper_config.get_config_bool(cfg, "core_power/eu"):
+      Readings += str(EUPower) +"\t"  # Execution Unit
+    if sniper_config.get_config_bool(cfg, "core_power/tp"):
+      Readings += str(totalPower) +"\t" # Total Power
+
+  powerInstantaneousFileName.write (Readings+"\n")
+  powerInstantaneousFileName.close ()
+
+  powerLogFileName.write (Readings+"\n")
+  powerLogFileName.close()
+
+
+  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+
+   #HotSpot Integration Code
+#   floorplan = os.path.abspath(os.path.join('.', sniper_config.get_config(cfg, "core_thermal/floorplan")))
+
+   #with open("Interval.dat", 'r') as f:
+   #  interval_ns = float(f.read())
+   interval_s = sampling_interval * 1e-9
+
+   hotspot_binary = executable
+   hotspot_args = ['-c', hotspot_config_file,
+                  '-f', hotspot_floorplan_file,
+                  '-sampling_intvl', str(interval_s),
+                  '-p', power_trace_file,
+                  '-o', temperature_trace_file]
+   if not needInitializing:
+     hotspot_args += ['-init_file', init_file_external]
+
+   #print hotspot_binary, hotspot_args
+   temperatures = subprocess.check_output([hotspot_binary] + hotspot_args)
+   with open(init_file, 'w') as f:
+     f.write(temperatures)
+
+   with open(temperature_trace_file, 'r') as instTemperatureFile:
+     instTemperatureFile.readline()  # ignore first line that contains the header
+     thermalLogFileName.write(instTemperatureFile.readline())
+
+   thermalLogFileName.close()
+
+  
   return buildstack.merge_items({ 0: data }, all_items, nocollapse = nocollapse)
 
 
@@ -332,6 +653,8 @@ def edit_XML(statsobj, stats, cfg):
 
   ncores = int(cfg['general/total_cores'])
   technology_node = int(sniper_config.get_config_default(cfg, 'power/technology_node', 45))
+  if technology_node < 22:
+    technology_node = 22  # McPAT does not support smaller technology nodes. We will do the scaling from 22nm to the target technology node manually (scale_power).
 
   l3_cacheSharedCores = long(sniper_config.get_config_default(cfg, 'perf_model/l3_cache/shared_cores', 0))
   l2_cacheSharedCores = long(sniper_config.get_config_default(cfg, 'perf_model/l2_cache/shared_cores', 0))
@@ -787,6 +1110,7 @@ def edit_XML(statsobj, stats, cfg):
   return template, nuca_at_level
 #----------
 def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
+  device_type = 0  # 0: HP, 1: LSTP, 2: LOP        
   Count = 0
   template=[]
   template.append(["<?xml version=\"1.0\" ?>",""])
@@ -813,7 +1137,8 @@ def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
   template.append(["\t\t<param name=\"temperature\" value=\"330\"/> <!-- Kelvin -->",""])
   template.append(["\t\t<param name=\"number_cache_levels\" value=\"3\"/>",""])
   template.append(["\t\t<param name=\"interconnect_projection_type\" value=\"0\"/><!--0: agressive wire technology; 1: conservative wire technology -->",""])
-  template.append(["\t\t<param name=\"device_type\" value=\"0\"/><!--0: HP(High Performance Type); 1: LSTP(Low standby power) 2: LOP (Low Operating Power)  -->",""])
+#  template.append(["\t\t<param name=\"device_type\" value=\"0\"/><!--0: HP(High Performance Type); 1: LSTP(Low standby power) 2: LOP (Low Operating Power)  -->",""])
+  template.append(["\t\t<param name=\"device_type\" value=\"{:d}\"/><!--0: HP(High Performance Type); 1: LSTP(Low standby power) 2: LOP (Low Operating Power)  -->".format(device_type),""])  
   template.append(["\t\t<param name=\"longer_channel_device\" value=\"1\"/><!-- 0 no use; 1 use when approperiate -->",""])
   template.append(["\t\t<param name=\"power_gating\" value=\"1\"/><!-- 0 not enabled; 1 enabled -->",""])
   template.append(["\t\t<param name=\"machine_bits\" value=\"64\"/>",""])
@@ -1073,7 +1398,8 @@ def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
     template.append(["\t\t\t\t<param name=\"buffer_sizes\" value=\"8, 8, 8, 8\"/>",""])
     template.append(["\t\t\t\t<param name=\"clockrate\" value=\"%i\"/>",["core_clock","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"ports\" value=\"1,1,1\"/>",""])
-    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+#    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+    template.append(["\t\t\t\t<param name=\"device_type\" value=\"{:d}\"/>".format(device_type),""])    
     template.append(["\t\t\t\t<!-- altough there are multiple access types, Performance simulator needs to cast them into reads or writes         e.g. the invalidates can be considered as writes -->",""])
     template.append(["\t\t\t\t<stat name=\"read_accesses\" value=\"%i\"/>",["L1_directory.read_accesses","stat",iCount]])
     template.append(["\t\t\t\t<stat name=\"write_accesses\" value=\"%i\"/>",["L1_directory.write_accesses","stat",iCount]])
@@ -1089,7 +1415,8 @@ def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
     template.append(["\t\t\t\t<param name=\"buffer_sizes\" value=\"8, 8, 8, 8\"/>",""])
     template.append(["\t\t\t\t<param name=\"clockrate\" value=\"%i\"/>",["core_clock","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"ports\" value=\"1,1,1\"/>",""])
-    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+#    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+    template.append(["\t\t\t\t<param name=\"device_type\" value=\"{:d}\"/>".format(device_type),""])    
     template.append(["\t\t\t\t<!-- altough there are multiple access types, Performance simulator needs to cast them into reads or writes         e.g. the invalidates can be considered as writes -->",""])
     template.append(["\t\t\t\t<stat name=\"read_accesses\" value=\"%i\"/>",["L2_directory.read_accesses","stat",iCount]])
     template.append(["\t\t\t\t<stat name=\"write_accesses\" value=\"%i\"/>",["L2_directory.write_accesses","stat",iCount]])
@@ -1106,7 +1433,8 @@ def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
     template.append(["\t\t\t\t<param name=\"clockrate\" value=\"%i\"/>",["L2_clock","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"vdd\" value=\"%f\"/><!-- 0 means using ITRS default vdd -->",["L2_vdd","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"ports\" value=\"1,1,1\"/>",""])
-    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+#    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+    template.append(["\t\t\t\t<param name=\"device_type\" value=\"{:d}\"/>".format(device_type),""])   
     template.append(["\t\t\t\t<stat name=\"read_accesses\" value=\"%i\"/>",["L2.read_accesses","stat",iCount]])
     template.append(["\t\t\t\t<stat name=\"write_accesses\" value=\"%i\"/>",["L2.write_accesses","stat",iCount]])
     template.append(["\t\t\t\t<stat name=\"read_misses\" value=\"%i\"/>",["L2.read_misses","stat",iCount]])
@@ -1123,7 +1451,8 @@ def readTemplate(ncores, num_l2s, private_l2s, num_l3s, technology_node):
     template.append(["\t\t\t\t<param name=\"clockrate\" value=\"%i\"/>",["L3_clock","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"vdd\" value=\"%f\"/><!-- 0 means using ITRS default vdd -->",["L3_vdd","cfg",iCount]])
     template.append(["\t\t\t\t<param name=\"ports\" value=\"1,1,1\"/>",""])
-    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+#    template.append(["\t\t\t\t<param name=\"device_type\" value=\"0\"/>",""])
+    template.append(["\t\t\t\t<param name=\"device_type\" value=\"{:d}\"/>".format(device_type),""])    
     template.append(["\t\t\t\t<param name=\"buffer_sizes\" value=\"16, 16, 16, 16\"/>",""])
     template.append(["\t\t\t\t<!-- cache controller buffer sizes: miss_buffer_size(MSHR),fill_buffer_size,prefetch_buffer_size,wb_buffer_size-->",""])
     template.append(["\t\t\t\t<stat name=\"read_accesses\" value=\"%i\"/>",["L3.read_accesses","stat",iCount]])                #populate with stats file

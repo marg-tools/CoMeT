@@ -373,8 +373,6 @@ void populate_default_layers(grid_model_t *model, flp_t *flp_default)
   model->layers[intidx].b2gmap = model->layers[silidx].b2gmap;
   model->layers[intidx].g2bmap = model->layers[silidx].g2bmap;
 
-//  printf(" CAME  HERE  CAME  HERE  CAME  HERE  CAME  HERE  CAME  HERE ....................................................\n");
-
   if (model->config.model_secondary) {
       /* metal layer	*/
       model->layers[metalidx].no = metalidx;
@@ -397,9 +395,6 @@ void populate_default_layers(grid_model_t *model, flp_t *flp_default)
       model->layers[c4idx].flp = flp_default;
       model->layers[c4idx].b2gmap = model->layers[silidx].b2gmap;
       model->layers[c4idx].g2bmap = model->layers[silidx].g2bmap;
-  
-//    printf("Initializing metal layer and C4/underfill layer....................................................\n");
-
   }
 }
 
@@ -443,7 +438,6 @@ void append_package_layers(grid_model_t *model)
   /*end->BU_3D*/
 
   if (model->config.model_secondary) {
- //   printf("Line Number 446\n");
       if(model->has_lcf)
         silidx = SEC_PACK_LAYERS;
       else
@@ -595,51 +589,6 @@ void parse_layer_file(grid_model_t *model, FILE *fp)
       if (!model->layers[i].g2bmap)
         fatal("memory allocation error\n");
   }
-
-// Added by LOKESH
-//   int silidx, intidx, metalidx, c4idx;
-
-//   if (!model->config.model_secondary) {
-//       silidx = LAYER_SI;
-//       intidx = LAYER_INT;
-//   } else {
-//       silidx = SEC_PACK_LAYERS + SEC_CHIP_LAYERS + LAYER_SI;
-//       intidx = SEC_PACK_LAYERS + SEC_CHIP_LAYERS + LAYER_INT;
-//       c4idx  = SEC_PACK_LAYERS + LAYER_C4;
-//       metalidx = SEC_PACK_LAYERS + LAYER_METAL;   
-//   }
-
-
-//   printf(" CAME  HERE  CAME  HERE  CAME  HERE  CAME  HERE  CAME  HERE ....................................................\n");
-
-//   if (model->config.model_secondary) {
-//       /* metal layer  */
-//       model->layers[metalidx].no = metalidx;
-//       model->layers[metalidx].has_lateral = TRUE;
-//       model->layers[metalidx].has_power = FALSE;
-//       model->layers[metalidx].k = K_METAL;
-//       model->layers[metalidx].thickness = model->config.t_metal;
-//       model->layers[metalidx].sp = SPEC_HEAT_METAL;
-//       model->layers[metalidx].flp = flp_default;
-//       model->layers[metalidx].b2gmap = model->layers[silidx].b2gmap;
-//       model->layers[metalidx].g2bmap = model->layers[silidx].g2bmap;
-
-//       /* C4/underfill layer*/
-//       model->layers[c4idx].no = c4idx;
-//       model->layers[c4idx].has_lateral = TRUE;
-//       model->layers[c4idx].has_power = FALSE;
-//       model->layers[c4idx].k = K_C4;
-//       model->layers[c4idx].thickness = model->config.t_c4;
-//       model->layers[c4idx].sp = SPEC_HEAT_C4;
-//       model->layers[c4idx].flp = flp_default;
-//       model->layers[c4idx].b2gmap = model->layers[silidx].b2gmap;
-//       model->layers[c4idx].g2bmap = model->layers[silidx].g2bmap;
-  
-//   printf("Initializing metal layer and C4/underfill layer....................................................\n");  
-// }
-
-
-
 }
 
 /* populate layer info either from the default floorplan or from
@@ -885,7 +834,7 @@ void populate_R_model_grid(grid_model_t *model, flp_t *flp)
             (model->config.s_sink * model->config.s_sink) / (cw * ch);
       }
       //if (model_secondary && (i == pcbidx)){
-      //    /* PCB  is connected to ambient. divide r_convec_sec proportional to cell area */
+      //    /* PCB	is connected to ambient. divide r_convec_sec proportional to cell area */
       //      model->layers[i].rz += model->config.r_convec_sec * 
       //        (model->config.s_pcb * model->config.s_pcb) / (cw * ch);
       //}
@@ -1086,7 +1035,7 @@ void set_temp_grid(grid_model_t *model, double *temp, double val)
 }
 
 /* dump the steady state grid temperatures of the top layer onto 'file'	*/
-void dump_top_layer_temp_grid (grid_model_t *model, char *file, grid_model_vector_t *temp, int layer)
+void dump_top_layer_temp_grid (grid_model_t *model, char *file, grid_model_vector_t *temp)
 {
   int i, j;
   char str[STR_SIZE];
@@ -1094,16 +1043,12 @@ void dump_top_layer_temp_grid (grid_model_t *model, char *file, grid_model_vecto
   int silidx;
 
   if (!model->config.model_secondary) {
-//      silidx = LAYER_SI;
-      silidx = layer;
+      silidx = LAYER_SI;
   } else {
       if(model->has_lcf)
         silidx = SEC_PACK_LAYERS;
       else
         silidx = SEC_PACK_LAYERS + SEC_CHIP_LAYERS;
-
-      silidx = layer;
-
   }
 
   if (!model->r_ready)
@@ -1159,110 +1104,12 @@ void dump_top_layer_temp_grid (grid_model_t *model, char *file, grid_model_vecto
     fclose(fp);	
 }
 
-/*
-// dump the steady state grid temperatures of the top layer onto 'file' 
+/* dump the steady state grid temperatures of the top layer onto 'file'	*/
 void dump_steady_temp_grid (grid_model_t *model, char *file)
 {
-  // top layer of the most-recently computed steady state temperature 
-  dump_top_layer_temp_grid(model, file, model->last_steady, 0);
-
-  int k;
-  int k_match;
-  
-  for (k = 0; k<strlen(file);k++)
-        if (file[k] == '/')
-          k_match = k;
-  
-  char dir_path[400];
-  strncpy (dir_path, file, k_match +1 );
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "2.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 2);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "4.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 4);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "6.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 6);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "8.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 8);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "10.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 10);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "12.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 12);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "14.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 14);
-  dir_path[k_match + 1] = '\0';
-
-  strcat(dir_path, "16.txt");
-  dump_top_layer_temp_grid(model, dir_path, model->last_steady, 16);
-  dir_path[k_match + 1] = '\0';
-
+  /* top layer of the most-recently computed steady state temperature	*/
+  dump_top_layer_temp_grid(model, file, model->last_steady);
 }
-*/
-
-// dump the steady state grid temperatures of the top layer onto 'file'	
-void dump_steady_temp_grid (grid_model_t *model, char *file)
-{
-  // top layer of the most-recently computed steady state temperature	
-  dump_top_layer_temp_grid(model, file, model->last_steady, 5);
-
-  // int k;
-  // int k_match;
-  
-  // for (k = 0; k<strlen(file);k++)
-  //       if (file[k] == '/')
-  //         k_match = k;
-  
-  // char dir_path[400];
-  // strncpy (dir_path, file, k_match +1 );
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "7.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 7);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "9.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 9);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "11.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 11);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "13.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 13);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "15.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 15);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "17.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 17);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "19.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 19);
-  // dir_path[k_match + 1] = '\0';
-
-  // strcat(dir_path, "21.txt");
-  // dump_top_layer_temp_grid(model, dir_path, model->last_steady, 21);
-  // dir_path[k_match + 1] = '\0';
-
-}
-
 
 /* dump temperature vector alloced using 'hotspot_vector' to 'file' */ 
 void dump_temp_grid(grid_model_t *model, double *temp, char *file)
@@ -1375,7 +1222,7 @@ void dump_temp_grid(grid_model_t *model, double *temp, char *file)
       }
 
       for(i=0; i < model->layers[n].flp->n_units; i++)
-        fprintf(fp, "%s%s\t%.4f\n", str, 
+        fprintf(fp, "%s%s\t%.2f\n", str, 
                 model->layers[n].flp->units[i].name, temp[base+i]);
       base += model->layers[n].flp->n_units;	
   }
@@ -1386,7 +1233,7 @@ void dump_temp_grid(grid_model_t *model, double *temp, char *file)
   /* internal node temperatures	*/
   for (i=0; i < extra_nodes; i++) {
       sprintf(str, "inode_%d", i);
-      fprintf(fp, "%s\t%.4f\n", str, temp[base+i]);
+      fprintf(fp, "%s\t%.2f\n", str, temp[base+i]);
   }
   if(fp != stdout && fp != stderr)
     fclose(fp);	
@@ -3311,8 +3158,6 @@ void compute_temp_grid(grid_model_t *model, double *power, double *temp, double 
 
   /* map the temperature numbers back	*/
   xlate_temp_g2b(model, model->last_temp, model->last_trans);
-  // printf("Assigning temp = model->last_temp =  %u\n",model->last_temp);
-  // temp = model->last_temp;
 
   free_grid_model_vector(p);
 }
@@ -4751,10 +4596,6 @@ SuperMatrix build_steady_rhs_vector(grid_model_t *model, grid_model_vector_t *po
   return B;
 }
 
-//#include <time.h>
-//clock_t start, end;
-//double cpu_time_used;
-
 void direct_SLU(grid_model_t *model, grid_model_vector_t *power, grid_model_vector_t *temp)
 {
   SuperMatrix A, L, U, B;
@@ -4792,8 +4633,6 @@ void direct_SLU(grid_model_t *model, grid_model_vector_t *power, grid_model_vect
   options.SymmetricMode = YES;
   options.Equil = YES;
 
-//start = clock();
-
   /* Initialize the statistics variables. */
   StatInit(&stat);
 
@@ -4806,11 +4645,6 @@ void direct_SLU(grid_model_t *model, grid_model_vector_t *power, grid_model_vect
   for(i=0; i<dim; ++i){
       model->last_steady->cuboid[0][0][i] = dp[i];
   }
-
-//end = clock();
-//cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-
-//printf("dgssv() took %f seconds to execute \n", cpu_time_used);
 
   SUPERLU_FREE (rhs);
   SUPERLU_FREE (perm_r);

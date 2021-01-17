@@ -550,24 +550,24 @@ void dump_temp_block(block_model_t *model, double *temp, char *file)
 	}
 	/* on chip temperatures	*/
 	for (i=0; i < flp->n_units; i++)
-		fprintf(fp, "%s\t%.4f\n", flp->units[i].name, temp[i]);
+		fprintf(fp, "%s\t%.2f\n", flp->units[i].name, temp[i]);
 
 	/* interface temperatures	*/
 	for (i=0; i < flp->n_units; i++)
-		fprintf(fp, "iface_%s\t%.4f\n", flp->units[i].name, temp[IFACE*flp->n_units+i]);
+		fprintf(fp, "iface_%s\t%.2f\n", flp->units[i].name, temp[IFACE*flp->n_units+i]);
 
 	/* spreader temperatures	*/
 	for (i=0; i < flp->n_units; i++)
-		fprintf(fp, "hsp_%s\t%.4f\n", flp->units[i].name, temp[HSP*flp->n_units+i]);
+		fprintf(fp, "hsp_%s\t%.2f\n", flp->units[i].name, temp[HSP*flp->n_units+i]);
 
 	/* heatsink temperatures	*/
 	for (i=0; i < flp->n_units; i++)
-		fprintf(fp, "hsink_%s\t%.4f\n", flp->units[i].name, temp[HSINK*flp->n_units+i]);
+		fprintf(fp, "hsink_%s\t%.2f\n", flp->units[i].name, temp[HSINK*flp->n_units+i]);
 
 	/* internal node temperatures	*/
 	for (i=0; i < EXTRA; i++) {
 		sprintf(str, "inode_%d", i);
-		fprintf(fp, "%s\t%.4f\n", str, temp[i+NL*flp->n_units]);
+		fprintf(fp, "%s\t%.2f\n", str, temp[i+NL*flp->n_units]);
 	}
 
 	if(fp != stdout && fp != stderr)

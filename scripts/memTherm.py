@@ -19,7 +19,8 @@ no_rows= bank_size/no_columns/no_bits_per_column    # in Kilo, number of rows pe
 energy_per_access = float(sim.config.get('mem3D/energy_per_access'))
 logic_core_power = float(sim.config.get('mem3D/logic_core_power'))
 energy_per_refresh_access = float(sim.config.get('mem3D/energy_per_refresh_access'))
-timestep = 1000                       # in uS. Should be in sync with hotspot.config (sampling_intvl)
+sampling_interval = int(sim.config.get('hotspot/sampling_interval'))    #time in ns
+timestep = sampling_interval/1000                       # in uS. Should be in sync with hotspot.config (sampling_intvl)
 t_refi = float(sim.config.get('mem3D/t_refi'))
 no_refesh_commands_in_t_refw = int(sim.config.get('mem3D/no_refesh_commands_in_t_refw'))
 rows_refreshed_in_refresh_interval = no_rows/no_refesh_commands_in_t_refw  # for 512Mb bank, 8 rows per refresh => for 64Mb bank, 1 rows per refresh
@@ -82,9 +83,10 @@ else:
 hotspot_path = sim.config.get('hotspot/tool_path')
 hotspot_config_path = sim.config.get('hotspot/config_path') 
 executable = hotspot_path + 'hotspot'
-sampling_interval = int(sim.config.get('hotspot/sampling_interval'))
 power_trace_file = sim.config.get('hotspot/power_trace_file')
+full_power_trace_file = sim.config.get('hotspot/full_power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/temperature_trace_file')
+full_temperature_trace_file = sim.config.get('hotspot/full_temperature_trace_file')
 init_file_external = hotspot_config_path + hotspot_test_dir + sim.config.get('hotspot/init_file_external')
 init_file = sim.config.get('hotspot/init_file')
 
@@ -124,8 +126,8 @@ os.system("ls -l " + init_file_external)
 os.system("cp " + init_file_external + " " + init_file)
 os.system('mkdir -p hotspot')
 os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
-os.system("rm -f full_temperature.trace")
-os.system("rm -f full_power.trace")
+os.system("rm -f " + full_temperature_trace_file)
+os.system("rm -f " + full_power_trace_file)
 
 #generates ptrace header as per the memory floorplan and architecture
 def gen_ptrace_header():
@@ -195,10 +197,10 @@ class memTherm:
     #print the initial header into different log/trace files
     gen_ptrace_header()
     ptrace_header = gen_ptrace_header()
-    with open("full_temperature.trace", "w") as f:
+    with open(full_temperature_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
-    with open("full_power.trace", "w") as f:
+    with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
     #setup to invoke the hotspot tool every interval_ns time and invoke calc_temperature_trace function
@@ -258,8 +260,8 @@ class memTherm:
     os.system(hotspot_command)
       #concatenate the per interval temperatuer trace into a single file
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
-    os.system("tail -1 " + "temperature.trace" + ">>" + "full_temperature.trace")
-    os.system("tail -1 " + power_trace_file + " >>" + "full_power.trace")
+    os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
+    os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
 
 
   def getStatsGetter(self, component, core, metric):

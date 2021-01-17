@@ -14,8 +14,14 @@ import sys, os, sim
 def build_dvfs_table(tech):
   # Build a table of (frequency, voltage) pairs.
   # Frequencies should be from high to low, and end with zero (or the lowest possible frequency)
-  if tech == 22:
-    return [ (2000, 1.0), (1800, 0.9), (1500, 0.8), (1000, 0.7), (0, 0.6) ]
+  if tech <= 22:
+    # Even technology nodes smaller than 22nm should use the DVFS levels of 22nm.
+    # This is the voltage reported to McPAT.
+    # McPAT does not support technology nodes smaller than 22nm and is operated at 22nm.
+    # The scaling is then done in tools/mcpat.py.
+    def v(f):
+      return 0.6 + f / 4000.0 * 0.8
+    return [ (f, v(f))  for f in reversed(range(0, 4000+1, 100))]
   elif tech == 45:
     return [ (2000, 1.2), (1800, 1.1), (1500, 1.0), (1000, 0.9), (0, 0.8) ]
   else:
