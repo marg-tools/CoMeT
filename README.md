@@ -16,7 +16,8 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 - Compile
 	- In the main folder, make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
-	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool
+	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool for DRAM estimation
+	- Go to the hotspot\_c\_tool folder and run 'make' to compile the hotspot tool for core temperature estimation
 	- Configure the path of the hotspot tool and config directory in the config/gainstown\_my3D.cfg file (search for tool\_path and config\_path variables)
 
 - Running an application 
@@ -60,10 +61,10 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- The output of `make run` displays the time interval in which a DRAM access was made, #reads and #writes and also reports the number of DRAM accesses directed to a particular bank.
 
 
-- An example testcase which calls the thermal simulation periodically using hotspot is also created in the thermal\_example folder
+- An example testcase which calls the thermal simulation periodically using hotspot is also created in the thermal\_example folder. The simulation is for a  8x8 core configuration and 4x4x8 3D memory configuration
 	- cd test/thermal\_example
 	- `make run > logfile`
 	
-    - Multiple files would be generated, but the useful ones are described below:
+    - Multiple files would be generated, but the useful ones are described below (these files would have \_mem and\_core suffix to indicate if they are for memory or core temperature simulation):
 	- full\_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory
 	- logfile - the simulation output from the terminal. bank\_access\_counter lists the access counts for different banks
