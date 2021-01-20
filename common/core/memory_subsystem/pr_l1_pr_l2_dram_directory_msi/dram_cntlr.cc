@@ -88,6 +88,9 @@ unsigned long count_putdata;
 
     UInt32 stats_initialized=0;
     UInt64 bank_access_counts_overall[NUM_OF_BANKS];
+
+    int on_entry_to_roi=0;
+    UInt64 roi_start_time=0;
 #endif
  
 //#define CALL_TRACE 0
@@ -119,7 +122,7 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
   if (stats_initialized == 0) {
      for (int i=0; i<NUM_OF_BANKS;i++)
           registerStatsMetric("dram", i, "bank_access_counter", &bank_access_counts_overall[i]);
-          stats_initialized = 1;
+     stats_initialized = 1;
   }
 
 }
@@ -168,7 +171,13 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
 
    if(Sim()->getMagicServer()->inROI())
    {
-    count_getdata++;
+     if(on_entry_to_roi==0)
+     {
+        on_entry_to_roi=1;
+        roi_start_time = now.getUS();
+	last_printed_timestamp = roi_start_time;
+     }
+     count_getdata++;
 
      #ifdef DEBUG
      static int access_count = 1;
@@ -201,6 +210,7 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
            printf("\n   \tTime\t#READs\t#WRITEs\t#Access\tAddress\t\t#BANK\tBank Counters\n");
 
         UInt64 current_time = now.getUS();
+	//current_time = current_time - roi_start_time;
         //printf("Current time is %u\n", current_time);
         UInt64 phase_time = current_time%(2 * ACCUMALATION_TIME);
         //UInt64 interval_start_time;
@@ -239,6 +249,7 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
 	         bank_access_counts_overall[i]= bank_access_counts_phase1[i];
                  bank_access_counts_phase1[i]=0;
               }
+	      
  	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase1=0;
@@ -272,7 +283,8 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
 	         bank_access_counts_overall[i]= bank_access_counts_phase2[i];
                  bank_access_counts_phase2[i]=0;
               }
- 	      printf("Current:%ld\n", current_time);
+ 	
+	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase2=0;
               write_access_count_phase2=0;
@@ -326,7 +338,13 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
 
    if(Sim()->getMagicServer()->inROI())
    {
-    count_putdata++;
+     if(on_entry_to_roi==0)
+     {
+        on_entry_to_roi=1;
+        roi_start_time = now.getUS();
+	last_printed_timestamp = roi_start_time;
+     }
+     count_putdata++;
 
      #ifdef DEBUG
      static int access_count = 1;
@@ -357,6 +375,7 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
            printf("\n   \tTime\t#READs\t#WRITEs\t#Access\tAddress\t\t#BANK\tBank Counters\n");
 
         UInt64 current_time = now.getUS();
+	//current_time = current_time - roi_start_time;
         //printf("Current time is %u\n", current_time);
         UInt64 phase_time = current_time%(2 * ACCUMALATION_TIME);
         //UInt64 interval_start_time;
@@ -388,13 +407,14 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
               }
 
               total_access_count_phase1 = read_access_count_phase1 + write_access_count_phase1;
-              printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
+	      printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time,read_access_count_phase1,write_access_count_phase1,total_access_count_phase1,address,bank_accessed);
               for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                  //printf("%u,",bank_access_counts_phase1[i]);
 	         bank_access_counts_overall[i]= bank_access_counts_phase1[i];
                  bank_access_counts_phase1[i]=0;
               }
- 	      printf("Current:%ld\n", current_time);
+ 	      
+	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase1=0;
               write_access_count_phase1=0;
@@ -427,6 +447,7 @@ DramCntlr::putDataToDram(IntPtr address, core_id_t requester, Byte* data_buf, Su
 	         bank_access_counts_overall[i]= bank_access_counts_phase2[i];
                  bank_access_counts_phase2[i]=0;
               }
+	      	  
  	      printf("Current:%ld\n", current_time);
 
               read_access_count_phase2=0;
