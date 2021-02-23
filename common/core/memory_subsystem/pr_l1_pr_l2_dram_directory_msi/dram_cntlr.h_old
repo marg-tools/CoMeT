@@ -12,7 +12,6 @@
 #include "memory_manager_base.h"
 #include "dram_cntlr_interface.h"
 #include "subsecond_time.h"
-#include "dram_trace_collect.h"
 
 class FaultInjector;
 
