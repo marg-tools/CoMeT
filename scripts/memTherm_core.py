@@ -12,7 +12,8 @@ bank_size=int(sim.config.get('mem3D/bank_size'))
 no_columns = 1                                      # in Kilo
 no_bits_per_column = 8                              # 8 bits per column. Hence 8Kb row buffer.
 no_rows= bank_size/no_columns/no_bits_per_column    # in Kilo, number of rows per bank
-energy_per_access = float(sim.config.get('mem3D/energy_per_access'))
+energy_per_read_access = float(sim.config.get('mem3D/energy_per_read_access'))
+energy_per_write_access = float(sim.config.get('mem3D/energy_per_write_access'))
 logic_core_power = float(sim.config.get('mem3D/logic_core_power'))
 energy_per_refresh_access = float(sim.config.get('mem3D/energy_per_refresh_access'))
 sampling_interval = int(sim.config.get('hotspot/sampling_interval'))    #time in ns
@@ -238,23 +239,29 @@ class memTherm:
   def get_access_rates(self, time, time_delta):
     if self.isTerminal:
       self.fd.write('[STAT:%s] ' % self.stat_name_read)
-      self.fd.write('[STAT:%s] ' % self.stat_name_write)
 #    self.fd.write('%u' % (time / 1e6)) # Time in ns
-    access_rates = [0 for number in xrange(NUM_BANKS)]
+    access_rates_read = [0 for number in xrange(NUM_BANKS)]
+    #print self.stats['stat'][0].__dict__	#prints the fields of the object
+    for bank in range(NUM_BANKS):
+      statdiff_rd = self.stats['stat_rd'][bank].last
+      access_rates_read[bank] = statdiff_rd
+      self.fd.write(' %u' % statdiff_rd)
+    self.fd.write('\n')
+#    print access_rates
+    if self.isTerminal:
+      self.fd.write('[STAT:%s] ' % self.stat_name_write)
+    access_rates_write = [0 for number in xrange(NUM_BANKS)]
     #print self.stats['stat'][0].__dict__	#prints the fields of the object
     for bank in range(NUM_BANKS):
       statdiff_wr = self.stats['stat_wr'][bank].last
-      statdiff_rd = self.stats['stat_rd'][bank].last
-      access_rates[bank] = statdiff_rd + statdiff_wr
-      value = statdiff_wr + statdiff_rd
-      self.fd.write(' %u' % value)
+      access_rates_write[bank] = statdiff_wr
+      self.fd.write(' %u' % statdiff_wr)
     self.fd.write('\n')
-#    print access_rates
-    return access_rates
+    return access_rates_read, access_rates_write
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
-    accesses = self.get_access_rates(time, time_delta)
+    accesses_read, accesses_write = self.get_access_rates(time, time_delta)
 #    print accesses
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
     avg_no_refresh_rows_in_timestep = avg_no_refresh_intervals_in_timestep * rows_refreshed_in_refresh_interval # 2.56*8 rows refreshed = 20.48 refreshes 
@@ -264,7 +271,8 @@ class memTherm:
      #total power = access_count*energy per access + leakage power + refresh power
     #calculate bank power for each bank using access traces
     for bank in range(NUM_BANKS):
-      bank_power_trace[bank] = (accesses[bank] * energy_per_access)/(timestep*1000) + bank_static_power + avg_refresh_power
+      bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
+                             + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = ''
     #create logic_core power array. applicable only for HMC and 2.5D memory
