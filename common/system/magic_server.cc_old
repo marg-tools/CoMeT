@@ -11,7 +11,29 @@
 #include "stats.h"
 #include "timer.h"
 #include "thread.h"
-#include "print_trace.h"
+#include "subsecond_time.h"
+
+#define NUM_OF_BANKS		(128)
+
+// Global variables are initialized to 0 by default
+
+extern UInt32 read_access_count_phase1;
+extern UInt32 write_access_count_phase1;
+extern UInt32 total_access_count_phase1;
+extern UInt32 read_access_count_phase2;
+extern UInt32 write_access_count_phase2;
+extern UInt32 total_access_count_phase2;
+extern UInt32 read_access_count;
+extern UInt32 write_access_count;
+extern UInt32 total_access_count;
+extern UInt64 interval_start_time;
+extern UInt32 bank_accessed;
+extern uintptr_t address_ptr;
+extern UInt32 bank_access_counts_phase1[NUM_OF_BANKS];
+extern UInt32 bank_access_counts_phase2[NUM_OF_BANKS];
+extern UInt32 in_phase1;
+extern UInt32 in_phase2;
+
 
 MagicServer::MagicServer()
       : m_performance_enabled(false)
@@ -185,10 +207,24 @@ UInt64 MagicServer::setPerformance(bool enabled)
    }
    else
    {
-      print_dram_trace();
-      printf("\n");
-
       Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+      //UInt64 current_time = now.getUS();
+      //interval_start_time = current_time - current_time%1000;
+      if (in_phase1 == 1){
+          Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time+1000,read_access_count_phase1,write_access_count_phase1,(read_access_count_phase1+write_access_count_phase1),address_ptr,bank_accessed);
+          for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase1[i]);
+          }
+      }
+      else {
+          Sim()->getHooksManager()->callHooks(HookType::HOOK_ROI_END, 0);
+          printf("\n@& \t%ld\t%u\t%u\t%u\t%012lx\t%u\t",interval_start_time+1000,read_access_count_phase2,write_access_count_phase2,(read_access_count_phase2+write_access_count_phase2),address_ptr,bank_accessed);
+          for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                 printf("%u,",bank_access_counts_phase2[i]);
+          }
+      }
+      printf("\n");
       printf("[SNIPER] Disabling performance models\n");
       float seconds = t_start.getTime() / 1e9;
       printf("[SNIPER] Leaving ROI after %.2f seconds\n", seconds);

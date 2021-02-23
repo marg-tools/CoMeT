@@ -1,0 +1,16 @@
+#include "magic_server.h"
+#include "sim_api.h"
+#include "simulator.h"
+#include "thread_manager.h"
+#include "logmem.h"
+#include "performance_model.h"
+#include "fastforward_performance_model.h"
+#include "core_manager.h"
+#include "dvfs_manager.h"
+#include "hooks_manager.h"
+#include "stats.h"
+#include "timer.h"
+#include "thread.h"
+#include "dram_cntlr.h"
+
+void print_dram_trace();
