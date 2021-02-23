@@ -446,28 +446,27 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   executable = hotspot_path + 'hotspot'
   init_file_external = hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/init_file_external')
   init_file = cfg.get('hotspot_c/init_file')
+  type_of_stack = cfg.get('mem3D/type_of_stack')
   
   hotspot_config_file      =   hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/hotspot_config_file')
   hotspot_floorplan_file   =   cfg.get('hotspot_c/hotspot_floorplan_file')
   hotspot_floorplan_folder   = hotspot_config_path + cfg.get('hotspot_c/hotspot_floorplan_folder')
- #hotspot_steady_temp_file = config.get('hotspot_c/hotspot_steady_temp_file')
- #hotspot_grid_steady_file = config.get('hotspot_c/hotspot_grid_steady_file')
- #hotspot_all_transient_file = config.get('hotspot_c/all_transient_file')
 
   sampling_interval = int(cfg.get('hotspot_c/sampling_interval'))    #time in ns
 
   data['core-other'] = getpower(power_dat['Processor']) - (sum(data.values()) - data['dram'])
   powerLogFileName = file(full_power_trace_file, 'a');
   powerInstantaneousFileName = file(power_trace_file, 'w');
-  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-   thermalLogFileName = file(full_temperature_trace_file, 'a');
+  if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+    if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+      thermalLogFileName = file(full_temperature_trace_file, 'a');
 
   
-#Need to find means of deleting the older full trace files before starting a new simulation
-  #os.system("rm -f " + full_temperature_trace_file)
-  #os.system("rm -f " + full_power_trace_file)
-  os.system('mkdir -p hotspot')
-  os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
+##Need to find means of deleting the older full trace files before starting a new simulation
+#  #os.system("rm -f " + full_temperature_trace_file)
+#  #os.system("rm -f " + full_power_trace_file)
+#  os.system('mkdir -p hotspot')
+#  os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
 
   id = 0
   Headings = ""
@@ -546,8 +545,10 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   needInitializing = os.stat(full_power_trace_file).st_size == 0
   if needInitializing:
     powerLogFileName.write (Headings+"\n")
-    if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-     thermalLogFileName.write (Headings+"\n")
+    if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+      if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+       thermalLogFileName.write (Headings+"\n")
+       thermalLogFileName.close()
 
   powerInstantaneousFileName.write (Headings+"\n")
    
@@ -608,41 +609,44 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     if sniper_config.get_config_bool(cfg, "core_power/tp"):
       Readings += str(totalPower) +"\t" # Total Power
 
-  powerInstantaneousFileName.write (Readings+"\n")
+  if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+    powerInstantaneousFileName.write (Readings+"\r\n")
+  else:
+    powerInstantaneousFileName.write (Readings)
   powerInstantaneousFileName.close ()
 
   powerLogFileName.write (Readings+"\n")
   powerLogFileName.close()
 
 
-  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-
-   #HotSpot Integration Code
-#   floorplan = os.path.abspath(os.path.join('.', sniper_config.get_config(cfg, "core_thermal/floorplan")))
-
-   #with open("Interval.dat", 'r') as f:
-   #  interval_ns = float(f.read())
-   interval_s = sampling_interval * 1e-9
-
-   hotspot_binary = executable
-   hotspot_args = ['-c', hotspot_config_file,
-                  '-f', hotspot_floorplan_file,
-                  '-sampling_intvl', str(interval_s),
-                  '-p', power_trace_file,
-                  '-o', temperature_trace_file]
-   if not needInitializing:
-     hotspot_args += ['-init_file', init_file_external]
-
-   #print hotspot_binary, hotspot_args
-   temperatures = subprocess.check_output([hotspot_binary] + hotspot_args)
-   with open(init_file, 'w') as f:
-     f.write(temperatures)
-
-   with open(temperature_trace_file, 'r') as instTemperatureFile:
-     instTemperatureFile.readline()  # ignore first line that contains the header
-     thermalLogFileName.write(instTemperatureFile.readline())
-
-   thermalLogFileName.close()
+#  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+#
+#   #HotSpot Integration Code
+##   floorplan = os.path.abspath(os.path.join('.', sniper_config.get_config(cfg, "core_thermal/floorplan")))
+#
+#   #with open("Interval.dat", 'r') as f:
+#   #  interval_ns = float(f.read())
+#   interval_s = sampling_interval * 1e-9
+#
+#   hotspot_binary = executable
+#   hotspot_args = ['-c', hotspot_config_file,
+#                  '-f', hotspot_floorplan_file,
+#                  '-sampling_intvl', str(interval_s),
+#                  '-p', power_trace_file,
+#                  '-o', temperature_trace_file]
+#   if not needInitializing:
+#     hotspot_args += ['-init_file', init_file_external]
+#
+#   #print hotspot_binary, hotspot_args
+#   temperatures = subprocess.check_output([hotspot_binary] + hotspot_args)
+#   with open(init_file, 'w') as f:
+#     f.write(temperatures)
+#
+#   with open(temperature_trace_file, 'r') as instTemperatureFile:
+#     instTemperatureFile.readline()  # ignore first line that contains the header
+#     thermalLogFileName.write(instTemperatureFile.readline())
+#
+#   thermalLogFileName.close()
 
   
   return buildstack.merge_items({ 0: data }, all_items, nocollapse = nocollapse)
