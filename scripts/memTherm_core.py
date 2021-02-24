@@ -39,7 +39,7 @@ cores_in_y = int(sim.config.get('mem3D/cores_in_y'))
 #core_printing_pattern = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
 # core_printing_pattern = [0]
 
-# Logic Floorplan info (only for HMC)
+# Logic Floorplan info (only for 3Dmem)
 logic_cores_in_x = int(sim.config.get('mem3D/logic_cores_in_x'))
 logic_cores_in_y = int(sim.config.get('mem3D/logic_cores_in_y'))
 #logic_printing_pattern = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
@@ -56,21 +56,21 @@ banks_in_z = int(sim.config.get('mem3D/banks_in_z'))
 #bank_printing_pattern = [] 
 
 # generate some variables according to the 3D memory architecture used
-if type_of_stack== "_WIO":
-    mem_name = "WIO/"
-if type_of_stack== "_HMC" or type_of_stack=="_2_5D":
-    mem_name = "HMC/"
-if type_of_stack== "_2D":
-    mem_name = "2D/"
+if type_of_stack== "3D":
+    mem_name = "3D/"
+if type_of_stack== "3Dmem" or type_of_stack=="2.5D":
+    mem_name = "3Dmem/"
+if type_of_stack== "DDR":
+    mem_name = "DDR/"
 
 #for bnk in range(number_of_banks):
 #    bank_printing_pattern.append(bnk)
 
 if (sim.config.get('hotspot/hotspot_test_dir') == 'default'):
-    if type_of_stack== "_2D":
+    if type_of_stack== "DDR":
         hotspot_test_dir    =   "hotspot/test" + "0" + "/" + mem_name 
     else:
-        if type_of_stack== "_2_5D":
+        if type_of_stack== "2.5D":
             hotspot_test_dir    =   "hotspot/test_2_5_D" + str(banks_in_z) + "/" + mem_name 
         else:
             hotspot_test_dir    =   "hotspot/test" + str(banks_in_z) + "/" + mem_name 
@@ -102,7 +102,7 @@ hotspot_all_transient_file = sim.config.get('hotspot/all_transient_file')
 #Basic idea of the flow is:
 #Generate power trace using access trace from sniper in a periodic manner (for memories).
 #The power trace of core is generated through the mcpat script.
-#The power trace of core is combined with memory power trace for WIO and 2.5D architectures, else used separately in another hotspot run
+#The power trace of core is combined with memory power trace for 3D and 2.5D architectures, else used separately in another hotspot run
 #Invoke hotspot to generate temperature trace for the corresponding power trace. 
 #The generated transient temperature trace (all_transient_file) is used as an init file for the next iteration
 
@@ -121,7 +121,7 @@ hotspot_command = executable  \
                   + ' -memory_type ' + type_of_stack \
                   #+ ' -sampling_intvl ' + sampling_interval 
 
-#if type_of_stack!="_2D":
+#if type_of_stack!="DDR":
 hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
                         +' -detailed_3D on'
 print hotspot_command                  
@@ -142,27 +142,27 @@ os.system("rm -f " + full_temperature_trace_file)
 os.system("rm -f " + full_power_trace_file)
 
 #generates ptrace header as per the memory floorplan and architecture
-#2D:    B0_0 B0_1 ... B3_3
-#HMC:   LC0_0 LC0_1 ... LC3_3 (logic core), B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ...
-#WIO:   B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ..., C0_0 C0_1 ... C3_3 (top layer core)
+#DDR:    B0_0 B0_1 ... B3_3
+#3Dmem:   LC0_0 LC0_1 ... LC3_3 (logic core), B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ...
+#3D:   B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ..., C0_0 C0_1 ... C3_3 (top layer core)
 #2.5D   C0_0 C0_1 ... C3_3 (core part), LC0_0 LC0_1 ... LC3_3 (logic core base), X1, X2, X3, B0_0 B0_1 ... B3_3, X0, X1, X2, X3 (layer0),  B0_0 B0_1 ... B3_3, X0, X1, X2, X3 (layer1), ...
 def gen_ptrace_header():
     # For a 2by1 ptrace with four layers header should be B0_0    B0_1    B0_0    B0_1    B0_0    B0_1    B0_0    B0_1
-    # For WIO: core is at the top, whereas for HMC, 2.5D config. the HMC is at the bottom.
+    # For 3D: core is at the top, whereas for 3Dmem, 2.5D config. the 3Dmem is at the bottom.
     # Creating Header
     ptrace_header = ''
-    if type_of_stack=="_2_5D":
+    if type_of_stack=="2.5D":
         # ptrace_header=ptrace_header + "I0" + "\t" 
         for x in range(0,cores_in_x):
             for y in range(0,cores_in_y):
                 ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
     
-    if type_of_stack== "_HMC" or type_of_stack== "_2_5D":
+    if type_of_stack== "3Dmem" or type_of_stack== "2.5D":
         for x in range(0,logic_cores_in_x):
             for y in range(0,logic_cores_in_y):
                 ptrace_header=ptrace_header + "LC" + str(x) + "_" + str(y) + "\t" 
     
-    if type_of_stack=="_2_5D":
+    if type_of_stack=="2.5D":
         for x in range(1,4):
             ptrace_header=ptrace_header + "X" + str(x) + "\t" 
                 
@@ -170,13 +170,13 @@ def gen_ptrace_header():
         for x in range(0,banks_in_x):
             for y in range(0,banks_in_y):
                     #                atrace_header=atrace_header + "B" + str(x) + "_" + str(y) + "\t" 
-                #if type_of_stack== "_WIO" or type_of_stack== "_HMC" or type_of_stack=="_2D":
+                #if type_of_stack== "3D" or type_of_stack== "3Dmem" or type_of_stack=="DDR":
                 ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
-        if type_of_stack=="_2_5D":
+        if type_of_stack=="2.5D":
             for x in range(0,4):
                 ptrace_header=ptrace_header + "X" + str(x) + "\t" 
     
-    if type_of_stack=="_WIO":
+    if type_of_stack=="3D":
         for x in range(0,cores_in_x):
             for y in range(0,cores_in_y):
                 ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
@@ -275,13 +275,13 @@ class memTherm:
                              + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = ''
-    #create logic_core power array. applicable only for HMC and 2.5D memory
-    if (type_of_stack=="_2_5D" or type_of_stack=="_HMC"):
+    #create logic_core power array. applicable only for 3Dmem and 2.5D memory
+    if (type_of_stack=="2.5D" or type_of_stack=="3Dmem"):
         logic_power_trace = [logic_core_power for number in xrange(NUM_LC)]
     power_trace = ''
     # convert power trace into a concatenated string for formated output
     #for 2.5D, read the core power from the core power trace file and include in the total power trace
-    if (type_of_stack == "_2_5D"):
+    if (type_of_stack == "2.5D"):
         c_power_trace_file = sim.config.get('hotspot_c/power_trace_file')
         with open(c_power_trace_file, 'r') as power_file:
             power_file.readline()  # ignore first line that contains the header
@@ -292,13 +292,13 @@ class memTherm:
     for p in logic_power_trace:
         power_trace = power_trace + str(p) + '\t'
     #add X1, X2, X3 to the power trace for 2.5D
-    if (type_of_stack == "_2_5D"):
+    if (type_of_stack == "2.5D"):
         for x in range(1,4):
             power_trace = power_trace + str(0.00) + '\t'
      #add bank power into the main power trace
     for bank in range(len(bank_power_trace)):
             #add 0 power for X0, X1, X2, X3 for 2.5D
-        if (type_of_stack == "_2_5D" and bank%(banks_in_x*banks_in_y)==0 and bank>0):
+        if (type_of_stack == "2.5D" and bank%(banks_in_x*banks_in_y)==0 and bank>0):
             power_trace = power_trace + str(0.00) + '\t'
             power_trace = power_trace + str(0.00) + '\t'
             power_trace = power_trace + str(0.00) + '\t'
@@ -306,12 +306,12 @@ class memTherm:
         #add bank power trace for all type of memories
         power_trace = power_trace + str(bank_power_trace[bank]) + '\t'
     #add 0 power for X0, X1, X2, X3 for 2.5D at last
-    if (type_of_stack == "_2_5D"):
+    if (type_of_stack == "2.5D"):
         for x in range(0,4):
             power_trace = power_trace + str(0.00) + '\t'
     c_power_data = ""
-      #read core power and add to main power trace at last for WIO
-    if (type_of_stack == "_WIO"):
+      #read core power and add to main power trace at last for 3D
+    if (type_of_stack == "3D"):
         c_power_trace_file = sim.config.get('hotspot_c/power_trace_file')
         with open(c_power_trace_file, 'r') as power_file:
             power_file.readline()  # ignore first line that contains the header
@@ -329,7 +329,7 @@ class memTherm:
     return power_trace
 
   def execute_core_hotspot(self):
-     #the function to execute core hotspot separately. It is called only for HMC and 2D arch.
+     #the function to execute core hotspot separately. It is called only for 3Dmem and 2D arch.
     c_full_power_trace_file = sim.config.get('hotspot_c/full_power_trace_file')
     c_power_trace_file = sim.config.get('hotspot_c/power_trace_file')
     c_full_temperature_trace_file = sim.config.get('hotspot_c/full_temperature_trace_file')
@@ -388,12 +388,12 @@ class memTherm:
 #   print power_trace
     #invoke energystats function to compute core power trace
     self.ES.periodic(time, time_delta)
-    #execute hotspot separately for core in case of HMC and 2D memories
-    if (sim.config.get("core_thermal/enabled") == 'true' and (type_of_stack=="_HMC" or type_of_stack=="_2D")):
+    #execute hotspot separately for core in case of 3Dmem and 2D memories
+    if (sim.config.get("core_thermal/enabled") == 'true' and (type_of_stack=="3Dmem" or type_of_stack=="DDR")):
         self.execute_core_hotspot()
-     #calculate memory power trace (combines with core trace in case of WIO and 2.5D within function)
+     #calculate memory power trace (combines with core trace in case of 3D and 2.5D within function)
     self.calc_power_trace(time, time_delta)
-     #invoke the memory hotspot. It will include core parts automatically for WIO and 2.5D
+     #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
     os.system(hotspot_command)
       #concatenate the per interval temperatuer trace into a single file
     os.system("cp " + hotspot_all_transient_file + " " + init_file)

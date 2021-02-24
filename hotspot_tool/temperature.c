@@ -102,7 +102,7 @@ thermal_config_t default_thermal_config(void)
 	 * grid cell as that of the entire block
 	 */
 	strcpy(config.grid_map_mode, GRID_CENTER_STR);
-	strcpy(config.memory_type, "_HMC");
+	strcpy(config.memory_type, "3Dmem");
 
         config.steady_state_print_disable = 0;
 	config.detailed_3D_used = 0;	//BU_3D: by default detailed 3D modeling is disabled.	
@@ -744,8 +744,8 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 			power_new = hotspot_vector(model);
                         printf("Memory type : %s\n", model->config->memory_type);
 			for (leak_iter=0;(!leak_convg_true)&&(leak_iter<=LEAKAGE_MAX_ITER);leak_iter++){
-                            if(strcmp(model->config->memory_type,"_HMC")==0 || strcmp(model->config->memory_type,"_2D")==0){
-                                printf("Memory type HMC/2D: %s\n", model->config->memory_type);
+                            if(strcmp(model->config->memory_type,"3Dmem")==0 || strcmp(model->config->memory_type,"DDR")==0){
+                                printf("Memory type 3Dmem/DDR: %s\n", model->config->memory_type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -753,14 +753,14 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
-							if (k==3){ 	// Layer0 : In HMC is an SRAM layer its leakage model is different.
+							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else
 										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
 										//printf("%f ", power[base+j]);
 							}
-							else{		// Layer above the base layer in HMC, have a DRAM leakage model.
+							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
@@ -777,8 +777,8 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 
 
 //for 3D (WIO)
-                    else if(strcmp(model->config->memory_type,"_WIO")==0){
-                                printf("Memory type WIO: %s\n", model->config->memory_type);
+                    else if(strcmp(model->config->memory_type,"3D")==0){
+                                printf("Memory type 3D: %s\n", model->config->memory_type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -786,10 +786,10 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
-							if (k==19){ 	// Layer0 : In HMC is an SRAM layer its leakage model is different.
+							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
 									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);										//printf("%f ", power[base+j]);
 							}
-							else{		// Layer above the base layer in HMC, have a DRAM leakage model.
+							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
@@ -805,7 +805,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
                         }
 //For 2.5D
                         
-                    else if(strcmp(model->config->memory_type,"_2_5D")==0){
+                    else if(strcmp(model->config->memory_type,"2.5D")==0){
                                 printf("Memory type 2.5D: %s\n", model->config->memory_type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
@@ -814,14 +814,14 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
-							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in HMC is an SRAM layer its leakage model is different.
+							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in 3Dmem is an SRAM layer its leakage model is different.
 								if ( (j==34) || (j==33) || (j==32) )	// No leakeage in air
 									power_new[base+j] = power[base+j];
 								else{
 									if ( (j>=0) && (j<=15) )	// Leakage for Host core
 										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 				 					// printf("YES");
-									else				// Leakage for HMC logic core
+									else				// Leakage for 3Dmem logic core
 									{
 										if (leakage[j] == 0)
 											power_new[base+j] = 0;
@@ -830,7 +830,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 									}
 								}						
 							}
-							else{	// layer above the base layer in HMC, have a DRAM leakage model.
+							else{	// layer above the base layer in 3Dmem, have a DRAM leakage model.
 								if ( (j==19) || (j==18) || (j==17) || (j==16))	// No leakeage in air
 									power_new[base+j] = power[base+j];
 								else{
@@ -907,31 +907,135 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 					temp_first_time = temp;
 				}
 
+//				for(k=0, base=0; k < model->grid->n_layers; k++) {
+//				  	//printf("\nk=%d",k);					
+//					if(model->grid->layers[k].has_power){
+//						// printf("Hi\n");
+//						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
+//
+//							blk_height = model->grid->layers[k].flp->units[j].height;
+//							blk_width = model->grid->layers[k].flp->units[j].width;
+//
+//					 		//printf("j=%d,",j);					
+//
+//							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
+//									power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
+//							}
+//							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
+//									power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+//				 					// printf("YES");
+//							}
+//							// temp_old[base+j] = temp[base+j]; //copy temp before update
+//						}
+//				// printf("\n");					
+//				// printf("k=%d",k);					
+//				}
+//					base += model->grid->layers[k].flp->n_units;	
+//			}
+                            if(strcmp(model->config->memory_type,"3Dmem")==0 || strcmp(model->config->memory_type,"DDR")==0){
+                                printf("Memory type 3Dmem/DDR: %s\n", model->config->memory_type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
-				  	//printf("\nk=%d",k);					
-					if(model->grid->layers[k].has_power){
-						// printf("Hi\n");
+				 // printf("k=%d\n",k);					
+					if(model->grid->layers[k].has_power)
 						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
-
+				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
-
-					 		//printf("j=%d,",j);					
-
-							if (k==3){ 	// Layer0 : In HMC is an SRAM layer its leakage model is different.
-									power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
+							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
+									if (leakage[j] == 0)
+										power_new[base+j] = 0;
+									else
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+										//printf("%f ", power[base+j]);
 							}
-							else{		// Layer above the base layer in HMC, have a DRAM leakage model.
-									power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
+									if (leakage[j] == 0)
+										power_new[base+j] = 0;
+									else	
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 				 					// printf("YES");
 							}
-							// temp_old[base+j] = temp[base+j]; //copy temp before update
+							//temp_old[base+j] = temp[base+j]; //copy temp before update
 						}
+					base += model->grid->layers[k].flp->n_units;	
 				// printf("\n");					
 				// printf("k=%d",k);					
 				}
+                        }
+
+
+//for 3D (WIO)
+                    else if(strcmp(model->config->memory_type,"3D")==0){
+                                printf("Memory type 3D: %s\n", model->config->memory_type);
+				for(k=0, base=0; k < model->grid->n_layers; k++) {
+				 // printf("k=%d\n",k);					
+					if(model->grid->layers[k].has_power)
+						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
+				 			// printf("j=%d,",j);					
+							blk_height = model->grid->layers[k].flp->units[j].height;
+							blk_width = model->grid->layers[k].flp->units[j].width;
+							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
+									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);										//printf("%f ", power[base+j]);
+							}
+							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
+									if (leakage[j] == 0)
+										power_new[base+j] = 0;
+									else	
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+				 					// printf("YES");
+							}
+							//temp_old[base+j] = temp[base+j]; //copy temp before update
+						}
 					base += model->grid->layers[k].flp->n_units;	
-			}
+				// printf("\n");					
+				// printf("k=%d",k);					
+				}
+                        }
+//For 2.5D
+                        
+                    else if(strcmp(model->config->memory_type,"2.5D")==0){
+                                printf("Memory type 2.5D: %s\n", model->config->memory_type);
+				for(k=0, base=0; k < model->grid->n_layers; k++) {
+				 // printf("k=%d\n",k);					
+					if(model->grid->layers[k].has_power)
+						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
+				 			// printf("j=%d,",j);					
+							blk_height = model->grid->layers[k].flp->units[j].height;
+							blk_width = model->grid->layers[k].flp->units[j].width;
+							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in 3Dmem is an SRAM layer its leakage model is different.
+								if ( (j==34) || (j==33) || (j==32) )	// No leakeage in air
+									power_new[base+j] = power[base+j];
+								else{
+									if ( (j>=0) && (j<=15) )	// Leakage for Host core
+										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+				 					// printf("YES");
+									else				// Leakage for 3Dmem logic core
+									{
+										if (leakage[j] == 0)
+											power_new[base+j] = 0;
+										else
+											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+									}
+								}						
+							}
+							else{	// layer above the base layer in 3Dmem, have a DRAM leakage model.
+								if ( (j==19) || (j==18) || (j==17) || (j==16))	// No leakeage in air
+									power_new[base+j] = power[base+j];
+								else{
+										if (leakage[j] == 0)
+											power_new[base+j] = 0;
+										else	
+											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+				 					// printf("YES");
+								}						
+							}
+							//temp_old[base+j] = temp[base+j]; //copy temp before update
+						}
+					base += model->grid->layers[k].flp->n_units;	
+				// printf("\n");					
+				// printf("k=%d",k);					
+				}
+                        }//end of if memory type
 
 			// printf("Calling compute_temp_grid\n");					
 			compute_temp_grid(model->grid, power_new, temp, time_elapsed);
