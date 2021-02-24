@@ -457,7 +457,7 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   data['core-other'] = getpower(power_dat['Processor']) - (sum(data.values()) - data['dram'])
   powerLogFileName = file(full_power_trace_file, 'a');
   powerInstantaneousFileName = file(power_trace_file, 'w');
-  if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+  if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
     if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
       thermalLogFileName = file(full_temperature_trace_file, 'a');
 
@@ -545,7 +545,7 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   needInitializing = os.stat(full_power_trace_file).st_size == 0
   if needInitializing:
     powerLogFileName.write (Headings+"\n")
-    if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+    if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
       if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
        thermalLogFileName.write (Headings+"\n")
        thermalLogFileName.close()
@@ -609,7 +609,7 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     if sniper_config.get_config_bool(cfg, "core_power/tp"):
       Readings += str(totalPower) +"\t" # Total Power
 
-  if (type_of_stack == "_2D" or type_of_stack == "_HMC"):
+  if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
     powerInstantaneousFileName.write (Readings+"\r\n")
   else:
     powerInstantaneousFileName.write (Readings)
