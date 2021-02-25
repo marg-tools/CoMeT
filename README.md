@@ -68,7 +68,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 - An example testcase which calls the thermal simulation periodically using hotspot is also created in the thermal\_example folder. The simulation can be configured for various memory and core configurations
 	- cd test/thermal\_example
-	- open Makefile and use appropriate config file (pre-designed) as per the following descriptions. The parameter type\_of\_stack in the config file controls the architecture type.
+	- open Makefile and use appropriate config file (pre-designed) as per the following descriptions. The parameter `type\_of\_stack` in the config file controls the architecture type.
 		- gainestown_DDR - 4x4 core and an external 4x4 bank DDR main memory (2D memory). It invokes two different hotspot runs to estimate temperatures for core and memory separately.
 		- gainestown_3Dmem - 4x4 core and an external 4x4x8 banks 3D main memory. It invokes two different hotspot runs to estimate temperatures for core and memory separately.
 		- gainestown_2_5D - 4x4 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture). It invokes a single hotspot run and simulates core and memory together.
