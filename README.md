@@ -20,7 +20,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- In the main folder, make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
 	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool for memory temperature estimation
 	- Go to the hotspot\_c\_tool folder and run 'make' to compile the hotspot tool for core temperature estimation
-	- Configure the path of the hotspot tool and config directory in the config/gainstown\_my3D.cfg file (search for tool\_path and config\_path variables)
+	- Configure the path of the hotspot tool and config directory in the config file (search for tool\_path and config\_path variables)
 
 - Running an application 
 	- cd test/app\_name
