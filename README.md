@@ -20,7 +20,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- In the main folder, make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
 	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool for memory temperature estimation
 	- Go to the hotspot\_c\_tool folder and run 'make' to compile the hotspot tool for core temperature estimation
-	- Configure the path of the hotspot tool and config directory in the config/gainstown\_my3D.cfg file (search for tool\_path and config\_path variables)
+	- Configure the path of the hotspot tool and config directory in the config file (search for tool\_path and config\_path variables)
 
 - Running an application 
 	- cd test/app\_name
@@ -74,6 +74,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 		- gainestown_2_5D - 4x4 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture). It invokes a single hotspot run and simulates core and memory together.
 		- gainestown_3D - 4x4 core on top of a 4x4x8 banks 3D main memory. It invokes a single hotspot run and simulates core and memory together.
 	- `make run > logfile`
+	- To generate the thermal trace video, please run `../../scripts/heatView.sh full_temperature_mem.trace maps` . The video will be an avi file generated in the maps folder. Currently the script works only for 3Dmem architecture.
 	
     - Multiple files would be generated, but the useful ones are described below (these files would have \_mem and\_core suffix to indicate if they are for memory or core temperature simulation):
 	- full\_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory. core trace is not generated in case of a 2.5D and 3D architecture.
