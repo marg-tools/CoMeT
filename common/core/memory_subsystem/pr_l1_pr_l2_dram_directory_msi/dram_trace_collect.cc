@@ -54,12 +54,14 @@ unsigned long count_putdata;
     // Global variables are initialized to 0 by default
 
     UInt64 read_access_count_per_bank[NUM_OF_BANKS];
+    UInt64 read_access_count_export[NUM_OF_BANKS];
     UInt32 read_access_count = 0;
     UInt64 read_interval_start_time;
     UInt32 read_bank_accessed;
     UInt32 read_last_printed_timestamp= 0;
 
     UInt64 write_access_count_per_bank[NUM_OF_BANKS];
+    UInt64 write_access_count_export[NUM_OF_BANKS];
     UInt32 write_access_count = 0;
     UInt64 write_interval_start_time;
     UInt32 write_bank_accessed;
@@ -151,8 +153,11 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
 
             rdt[read_adv_count].rd_interval_start_time = read_interval_start_time;
             rdt[read_adv_count].read_access_count_per_epoch = read_access_count;
+            //printf("\nRead:");
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                //printf("%d,", read_access_count_per_bank[i]);
                 rdt[read_adv_count].bank_read_access_count[i] = read_access_count_per_bank[i];
+                read_access_count_export[i] = read_access_count_per_bank[i];
                 read_access_count_per_bank[i]=0;
               }
             ++read_adv_count;
@@ -235,8 +240,11 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
 
             wrt[write_adv_count].wr_interval_start_time = write_interval_start_time;
             wrt[write_adv_count].write_access_count_per_epoch = write_access_count;
+            //printf("\nWrite:");
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                //printf("%d,", write_access_count_per_bank[i]);
                 wrt[write_adv_count].bank_write_access_count[i] = write_access_count_per_bank[i];
+                write_access_count_export[i] = write_access_count_per_bank[i];
                 write_access_count_per_bank[i]=0;
               }
             ++write_adv_count;
