@@ -441,8 +441,10 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   power_trace_file = cfg.get('hotspot_c/power_trace_file')
   full_temperature_trace_file = cfg.get('hotspot_c/full_temperature_trace_file')
   temperature_trace_file = cfg.get('hotspot_c/temperature_trace_file')
-  hotspot_path = cfg.get('hotspot_c/tool_path')
-  hotspot_config_path = cfg.get('hotspot_c/config_path') 
+  #hotspot_path = cfg.get('hotspot_c/tool_path')
+  #hotspot_config_path = cfg.get('hotspot_c/config_path') 
+  hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), cfg.get('hotspot_c/tool_path'))  
+  hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), cfg.get('hotspot_c/config_path'))  
   executable = hotspot_path + 'hotspot'
   init_file_external = hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/init_file_external')
   init_file = cfg.get('hotspot_c/init_file')

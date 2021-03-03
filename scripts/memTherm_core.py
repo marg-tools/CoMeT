@@ -79,8 +79,10 @@ else:
 
 #hotspot integration starts
 #parse various settings from the config file and assign to local variables
-hotspot_path = sim.config.get('hotspot/tool_path')
-hotspot_config_path = sim.config.get('hotspot/config_path') 
+#hotspot_path = sim.config.get('hotspot/tool_path')
+#hotspot_config_path = sim.config.get('hotspot/config_path') 
+hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot/tool_path'))
+hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot/config_path')) 
 executable = hotspot_path + 'hotspot'
 power_trace_file = sim.config.get('hotspot/power_trace_file')
 full_power_trace_file = sim.config.get('hotspot/full_power_trace_file')
@@ -126,7 +128,7 @@ hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
                         +' -detailed_3D on'
 print hotspot_command                  
 
-c_hotspot_config_path = sim.config.get('hotspot_c/config_path') 
+c_hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot_c/config_path'))
 c_init_file_external = c_hotspot_config_path + "/hotspot/" + sim.config.get('hotspot_c/init_file_external')
 c_init_file = sim.config.get('hotspot_c/init_file')
 
