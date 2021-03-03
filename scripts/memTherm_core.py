@@ -336,8 +336,10 @@ class memTherm:
     c_power_trace_file = sim.config.get('hotspot_c/power_trace_file')
     c_full_temperature_trace_file = sim.config.get('hotspot_c/full_temperature_trace_file')
     c_temperature_trace_file = sim.config.get('hotspot_c/temperature_trace_file')
-    c_hotspot_path = sim.config.get('hotspot_c/tool_path')
-    c_hotspot_config_path = sim.config.get('hotspot_c/config_path') 
+    c_hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot_c/tool_path'))
+    c_hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot_c/config_path')) 
+    #c_hotspot_path = sim.config.get('hotspot_c/tool_path')
+    #c_hotspot_config_path = sim.config.get('hotspot_c/config_path') 
     c_executable = c_hotspot_path + 'hotspot'
     c_init_file_external = c_hotspot_config_path + "/hotspot/" + sim.config.get('hotspot_c/init_file_external')
     c_init_file = sim.config.get('hotspot_c/init_file')
