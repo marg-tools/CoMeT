@@ -65,15 +65,23 @@ if __name__ == "__main__":
     color=cm.RdYlBu(linspace(1.0, 0.0, color_lvl+1))
     tfilename = str(sys.argv[1])
     pngFolder = str(sys.argv[2])
+    try:
+        samplingRate = int(sys.argv[3])
+    except:
+        samplingRate = 1
     fp = open(tfilename, 'r')
     lines = fp.readlines()
     index = parse_tfile_header(tfilename, lines[0])
     count = 0
     for line in lines[1:]:
+        if (count%samplingRate != 0):
+            count+=1
+            continue
+
         fig = plt.figure()
         gs = gridspec.GridSpec(1, 2, width_ratios=[4, 1]) 
         ax = fig.add_subplot(gs[0], projection='3d')
-        parse_tfile(tfilename, index, lines[1+count])
+        parse_tfile(tfilename, index, line)
         tmin = 65.0
         tmax = 81.0
         #tmin = min(temperatures)
@@ -158,7 +166,11 @@ if __name__ == "__main__":
 
     
 
-        plt.savefig(pngFolder + '/heatmap_'+str(count)+'.png', bbox_inches='tight')
+        if samplingRate == 1:
+            fileNum = count
+        else:
+            fileNum = int(count/samplingRate)+1
+        plt.savefig(pngFolder + '/heatmap_'+str(fileNum)+'.png', bbox_inches='tight')
         #plt.show()
         #exit()
         plt.close(fig)

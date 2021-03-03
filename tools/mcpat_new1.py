@@ -79,6 +79,234 @@ def dram_power(results, config):
   )
 
 
+
+class memory_temperature:  
+    # calculate power trace using access rate and other parameters
+    def calc_power_trace(self):
+        accesses = self.get_access_rates()
+  #      print accesses
+        avg_no_refresh_intervals_in_timestep =  self.timestep/self.t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
+        avg_no_refresh_rows_in_timestep = avg_no_refresh_intervals_in_timestep * self.rows_refreshed_in_refresh_interval # 2.56*8 rows refreshed = 20.48 refreshes 
+        refresh_energy_in_timestep =  avg_no_refresh_rows_in_timestep * self.energy_per_refresh_access                   # 20.48 * 100 nJ = 2048 nJ, 100 nJ (say) is the energy per refresh access
+        avg_refresh_power = refresh_energy_in_timestep/(self.timestep*1000)
+        bank_power_trace = [0 for number in xrange(self.NUM_BANKS)]
+         #total power = access_count*energy per access + leakage power + refresh power
+        for bank in range(self.NUM_BANKS):
+          bank_power_trace[bank] = (accesses[bank] * self.energy_per_access)/(self.timestep*1000) + self.bank_static_power + avg_refresh_power
+          bank_power_trace[bank] = round(bank_power_trace[bank], 3)
+        logic_power_trace = ''
+        if self.type_of_stack!=self._2D:
+            logic_power_trace = [self.logic_core_power for number in xrange(self.NUM_LC)]
+        power_trace = ''
+        # convert power trace into a concatenated string for formated output
+        for p in logic_power_trace:
+            power_trace = power_trace + str(p) + '\t'
+        for p in bank_power_trace:
+            power_trace = power_trace + str(p) + '\t'
+        power_trace = power_trace + "\r\n"
+        ptrace_header = self.gen_ptrace_header()
+  ###N  eeds fixing. currently adding new lines to the older power trace. However, init of previous runs should be done and used for the next iteration
+     #  write power information into the trace file for use by hotspot
+        with open("%s" %(power_trace_file), "w") as f:
+            f.write("%s\n" %(ptrace_header))
+  #      with open("%s" %(power_trace_file), "a") as f:
+            f.write("%s" %(power_trace))
+        f.close()
+        #return ptrace_header, power_trace
+  
+    # invokes hotspot to generate the temperature trace
+    def calc_temperature_trace(self):
+  #   print power_trace
+      self.calc_power_trace()
+      os.system(self.hotspot_command)
+        #concatenate the per interval temperatuer trace into a single file
+      os.system("cp " + self.hotspot_all_transient_file + " " + self.init_file)
+      os.system("tail -1 " + self.temperature_trace_file + ">>" + self.full_temperature_trace_file)
+      os.system("tail -1 " + self.power_trace_file + " >>" + self.full_power_trace_file)
+
+    def get_access_rates(self):
+        stat = 'dram.bank_access_counter'
+        stat_component, stat_name = stat.rsplit('.', 1)
+        stats = self.stats[stat]
+        
+        access_rates = [0 for number in xrange(self.NUM_BANKS)]
+        #print self.stats['stat'][0].__dict__	#prints the fields of the object
+        print self.NUM_BANKS
+        print len(stats)
+        for bank in range(self.NUM_BANKS):
+          print bank
+          statdiff = self.stats[stat][bank]
+          access_rates[bank] = statdiff
+        return access_rates
+
+    #generates ptrace header as per the memory floorplan and architecture
+    def gen_ptrace_header(self):
+        # For a 2by1 ptrace with four layers header should be B0_0    B0_1    B0_0    B0_1    B0_0    B0_1    B0_0    B0_1
+        # For WIO: core is at the top, whereas for HMC, 2.5D config. the HMC is at the bottom.
+        # Creating Header
+        ptrace_header = ''
+        if self.is_2_5d==self._enable:
+            # ptrace_header=ptrace_header + "I0" + "\t" 
+            for x in range(0,self.cores_in_x):
+                for y in range(0,self.cores_in_y):
+                    ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
+        
+        if self.type_of_stack== self._HMC:
+            for x in range(0,self.logic_cores_in_x):
+                for y in range(0,self.logic_cores_in_y):
+                    ptrace_header=ptrace_header + "LC" + str(x) + "_" + str(y) + "\t" 
+        
+        if self.is_2_5d==self._enable:
+            for x in range(1,4):
+                ptrace_header=ptrace_header + "X" + str(x) + "\t" 
+                    
+        for z in range(0,self.banks_in_z):
+            for x in range(0,self.banks_in_x):
+                for y in range(0,self.banks_in_y):
+                        #                atrace_header=atrace_header + "B" + str(x) + "_" + str(y) + "\t" 
+                    if self.type_of_stack== self._WIO or self.type_of_stack== self._HMC or self.type_of_stack==self._2D:
+                        ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
+            if self.is_2_5d==self._enable:
+                for x in range(0,4):
+                    ptrace_header=ptrace_header + "X" + str(x) + "\t" 
+        
+        if self.type_of_stack==self._WIO:
+            for x in range(0,self.cores_in_x):
+                for y in range(0,self.cores_in_y):
+                    ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
+    
+        #with open("%s" %(self.power_trace_file), "w") as f:
+        #    f.write("%s\n" %(ptrace_header))
+        #f.close()
+        return ptrace_header
+    
+    def __init__(self, cfg, stats):
+        self.stats = stats
+        self.NUM_BANKS=int(cfg.get('mem3D/num_banks'))
+        self.NUM_LC=int(cfg.get('mem3D/num_lc'))
+        
+        self.bank_size=int(cfg.get('mem3D/bank_size'))
+        self.no_columns = 1                                      # in Kilo
+        self.no_bits_per_column = 8                              # 8 bits per column. Hence 8Kb row buffer.
+        self.no_rows= self.bank_size/self.no_columns/self.no_bits_per_column    # in Kilo, number of rows per bank
+        self.energy_per_access = float(cfg.get('mem3D/energy_per_access'))
+        self.logic_core_power = float(cfg.get('mem3D/logic_core_power'))
+        self.energy_per_refresh_access = float(cfg.get('mem3D/energy_per_refresh_access'))
+        self.sampling_interval = int(cfg.get('hotspot/sampling_interval'))    #time in ns
+        self.timestep = self.sampling_interval/1000                       # in uS. Should be in sync with hotspot.config (sampling_intvl)
+        self.t_refi = float(cfg.get('mem3D/t_refi'))
+        self.no_refesh_commands_in_t_refw = int(cfg.get('mem3D/no_refesh_commands_in_t_refw'))
+        self.rows_refreshed_in_refresh_interval = self.no_rows/self.no_refesh_commands_in_t_refw  # for 512Mb bank, 8 rows per refresh => for 64Mb bank, 1 rows per refresh
+        self.bank_static_power = 0
+        
+        #define constants
+        self._enable = 1
+        self._disable = 0
+        self._WIO = 1
+        self._HMC = 0
+        self._2D = 2
+        self.is_2_5d = 0
+        self.type_of_stack = self._HMC
+        
+        # Core Floorplan info
+        self.cores_in_x = 4 
+        self.cores_in_y = 4 
+        #core_printing_pattern = [6,3,5,1,4,0,7,2]
+        self.core_printing_pattern = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+        # core_printing_pattern = [0]
+        self.error_peak_power = 50
+        self.error_default_power = 7.12345 
+        
+        # Logic Floorplan info (only for HMC)
+        self.logic_cores_in_x = 4 
+        self.logic_cores_in_y = 4 
+        self.logic_printing_pattern = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+        #logic_avg_power = float(sys.argv[7]) # 0.448 * 0.8 * percentBW
+        
+        # Bank Floorplan info
+        self.number_of_banks = self.NUM_BANKS
+        self.banks_in_x = int(cfg.get('mem3D/banks_in_x'))
+        self.banks_in_y = int(cfg.get('mem3D/banks_in_y'))
+        self.banks_in_z = self.number_of_banks/self.banks_in_x/self.banks_in_y  
+        #banks_in_z = 2
+        #bank_printing_pattern = [6,3,5,1,4,0,7,2]
+        bank_printing_pattern = [] 
+        
+        # generate some variables according to the 3D memory architecture used
+        if self.type_of_stack== self._WIO:
+            mem_name = "WIO/"
+        if self.type_of_stack== self._HMC:
+            mem_name = "HMC/"
+        if self.type_of_stack== self._2D:
+            mem_name = "2D/"
+        
+        for bnk in range(self.number_of_banks):
+            bank_printing_pattern.append(bnk)
+        
+        if self.type_of_stack== self._2D:
+            hotspot_test_dir    =   "hotspot/test" + "0" + "/" + mem_name 
+        else:
+            if self.is_2_5d== self._disable:
+                hotspot_test_dir    =   "hotspot/test" + str(self.banks_in_z) + "/" + mem_name 
+            else:
+                hotspot_test_dir    =   "hotspot/test_2_5_D" + str(self.banks_in_z) + "/" + mem_name 
+        
+        #hotspot integration starts
+        #parse various settings from the config file and assign to local variables
+        hotspot_path = cfg.get('hotspot/tool_path')
+        hotspot_config_path = cfg.get('hotspot/config_path') 
+        executable = hotspot_path + 'hotspot'
+        self.power_trace_file = cfg.get('hotspot/power_trace_file')
+        self.full_power_trace_file = cfg.get('hotspot/full_power_trace_file')
+        self.temperature_trace_file = cfg.get('hotspot/temperature_trace_file')
+        self.full_temperature_trace_file = cfg.get('hotspot/full_temperature_trace_file')
+        self.init_file_external = hotspot_config_path + hotspot_test_dir + cfg.get('hotspot/init_file_external')
+        self.init_file = cfg.get('hotspot/init_file')
+        
+        hotspot_config_file      =   hotspot_config_path + hotspot_test_dir  + cfg.get('hotspot/hotspot_config_file')
+        hotspot_floorplan_file   =   cfg.get('hotspot/hotspot_floorplan_file')
+        hotspot_floorplan_folder   = hotspot_config_path + cfg.get('hotspot/hotspot_floorplan_folder')
+        hotspot_layer_file  =   hotspot_config_path + hotspot_test_dir  + cfg.get('hotspot/hotspot_layer_file')
+        
+        # Output Parameters for hotspot simulation
+        self.hotspot_steady_temp_file = cfg.get('hotspot/hotspot_steady_temp_file')
+        self.hotspot_grid_steady_file = cfg.get('hotspot/hotspot_grid_steady_file')
+        self.hotspot_all_transient_file = cfg.get('hotspot/all_transient_file')
+        
+        #Basic idea of the flow is:
+        #Generate power trace using access trace from sniper in a periodic manner.
+        #Invoke hotspot to generate temperature trace for the corresponding power trace. 
+        #The generated transient temperature trace (all_transient_file) is used as an init file for the next iteration
+        
+        self.hotspot_command = executable  \
+                          + ' -f ' + hotspot_floorplan_file \
+                          + ' -c ' + hotspot_config_file \
+                          + ' -init_file ' + self.init_file \
+                          + ' -p ' + self.power_trace_file \
+                          + ' -o ' + self.temperature_trace_file \
+                          + ' -model_secondary 1 -model_type grid ' \
+                          + ' -steady_file ' + self.hotspot_steady_temp_file \
+                          + ' -all_transient_file ' + self.hotspot_all_transient_file \
+                          + ' -grid_steady_file ' + self.hotspot_grid_steady_file \
+                          + ' -steady_state_print_disable 1 ' \
+                          + ' -l 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, ' \
+                          #+ ' -sampling_intvl ' + sampling_interval 
+        
+        #if type_of_stack!=_2D:
+        self.hotspot_command = self.hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
+                            +' -detailed_3D on'
+
+
+        print self.hotspot_command                  
+        os.system("echo copying files for first run")
+        os.system("ls -l " + self.init_file_external)
+        os.system("cp " + self.init_file_external + " " + self.init_file)
+        os.system('mkdir -p hotspot')
+        os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
+        os.system("rm -f " + self.full_temperature_trace_file)
+        os.system("rm -f " + self.full_power_trace_file)
+    
+
 def mcpat_path():
   return os.path.join(os.path.dirname(__file__), '../mcpat/')
 
@@ -215,6 +443,7 @@ def main(jobid, resultsdir, outputfile, powertype = 'dynamic', config = None, no
   tempfile = outputfile + '.xml'
 
   results = sniper_lib.get_results(jobid, resultsdir, partial = partial)
+  print results
   if config:
     # update using energystats-temp.cfg
     results['config'] = sniper_config.parse_config(file(config).read(), results['config'])
@@ -310,7 +539,7 @@ def main(jobid, resultsdir, outputfile, powertype = 'dynamic', config = None, no
   time0_begin = results['results']['global.time_begin']
   time0_end = results['results']['global.time_end']
   seconds = (time0_end - time0_begin)/1e15
-  results = power_stack(power_dat,results['config'], powertype)  
+  results = power_stack(power_dat,results['config'], results['results'], powertype)  
   # Plot stack
   plot_labels = []
   plot_data = {}
@@ -387,7 +616,7 @@ def scale_power(suffix, power, size_nm):
   else:
     raise Exception('do not know how to scale power: {}'.format(suffix))
 
-def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
+def power_stack(power_dat, cfg, stats, powertype = 'total', nocollapse = False):
   size_nm = int(sniper_config.get_config(cfg, "power/technology_node"))
   def getpower(powers, key = None):
     def getcomponent(suffix):
@@ -441,34 +670,34 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   power_trace_file = cfg.get('hotspot_c/power_trace_file')
   full_temperature_trace_file = cfg.get('hotspot_c/full_temperature_trace_file')
   temperature_trace_file = cfg.get('hotspot_c/temperature_trace_file')
-  #hotspot_path = cfg.get('hotspot_c/tool_path')
-  #hotspot_config_path = cfg.get('hotspot_c/config_path') 
-  hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), cfg.get('hotspot_c/tool_path'))  
-  hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), cfg.get('hotspot_c/config_path'))  
+  hotspot_path = cfg.get('hotspot_c/tool_path')
+  hotspot_config_path = cfg.get('hotspot_c/config_path') 
   executable = hotspot_path + 'hotspot'
   init_file_external = hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/init_file_external')
   init_file = cfg.get('hotspot_c/init_file')
-  type_of_stack = cfg.get('mem3D/type_of_stack')
   
   hotspot_config_file      =   hotspot_config_path + "/hotspot/" + cfg.get('hotspot_c/hotspot_config_file')
   hotspot_floorplan_file   =   cfg.get('hotspot_c/hotspot_floorplan_file')
   hotspot_floorplan_folder   = hotspot_config_path + cfg.get('hotspot_c/hotspot_floorplan_folder')
+ #hotspot_steady_temp_file = config.get('hotspot_c/hotspot_steady_temp_file')
+ #hotspot_grid_steady_file = config.get('hotspot_c/hotspot_grid_steady_file')
+ #hotspot_all_transient_file = config.get('hotspot_c/all_transient_file')
 
   sampling_interval = int(cfg.get('hotspot_c/sampling_interval'))    #time in ns
 
   data['core-other'] = getpower(power_dat['Processor']) - (sum(data.values()) - data['dram'])
   powerLogFileName = file(full_power_trace_file, 'a');
   powerInstantaneousFileName = file(power_trace_file, 'w');
-  if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
-    if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-      thermalLogFileName = file(full_temperature_trace_file, 'a');
+  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+   thermalLogFileName = file(full_temperature_trace_file, 'a');
 
   
-##Need to find means of deleting the older full trace files before starting a new simulation
-#  #os.system("rm -f " + full_temperature_trace_file)
-#  #os.system("rm -f " + full_power_trace_file)
-#  os.system('mkdir -p hotspot')
-#  os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
+#Need to find means of deleting the older full trace files before starting a new simulation
+  #os.system("rm -f " + full_temperature_trace_file)
+  #os.system("rm -f " + full_power_trace_file)
+  os.system('mkdir -p hotspot')
+  os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
+  memT = memory_temperature(cfg, stats)
 
   id = 0
   Headings = ""
@@ -547,10 +776,8 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   needInitializing = os.stat(full_power_trace_file).st_size == 0
   if needInitializing:
     powerLogFileName.write (Headings+"\n")
-    if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
-      if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-       thermalLogFileName.write (Headings+"\n")
-       thermalLogFileName.close()
+    if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+     thermalLogFileName.write (Headings+"\n")
 
   powerInstantaneousFileName.write (Headings+"\n")
    
@@ -611,44 +838,45 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     if sniper_config.get_config_bool(cfg, "core_power/tp"):
       Readings += str(totalPower) +"\t" # Total Power
 
-  if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
-    powerInstantaneousFileName.write (Readings+"\r\n")
-  else:
-    powerInstantaneousFileName.write (Readings)
+  powerInstantaneousFileName.write (Readings+"\n")
   powerInstantaneousFileName.close ()
 
   powerLogFileName.write (Readings+"\n")
   powerLogFileName.close()
 
 
-#  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
-#
-#   #HotSpot Integration Code
-##   floorplan = os.path.abspath(os.path.join('.', sniper_config.get_config(cfg, "core_thermal/floorplan")))
-#
-#   #with open("Interval.dat", 'r') as f:
-#   #  interval_ns = float(f.read())
-#   interval_s = sampling_interval * 1e-9
-#
-#   hotspot_binary = executable
-#   hotspot_args = ['-c', hotspot_config_file,
-#                  '-f', hotspot_floorplan_file,
-#                  '-sampling_intvl', str(interval_s),
-#                  '-p', power_trace_file,
-#                  '-o', temperature_trace_file]
-#   if not needInitializing:
-#     hotspot_args += ['-init_file', init_file_external]
-#
-#   #print hotspot_binary, hotspot_args
-#   temperatures = subprocess.check_output([hotspot_binary] + hotspot_args)
-#   with open(init_file, 'w') as f:
-#     f.write(temperatures)
-#
-#   with open(temperature_trace_file, 'r') as instTemperatureFile:
-#     instTemperatureFile.readline()  # ignore first line that contains the header
-#     thermalLogFileName.write(instTemperatureFile.readline())
-#
-#   thermalLogFileName.close()
+  if (sniper_config.get_config(cfg, "core_thermal/enabled") == 'true'):
+
+   #HotSpot Integration Code
+#   floorplan = os.path.abspath(os.path.join('.', sniper_config.get_config(cfg, "core_thermal/floorplan")))
+
+   #with open("Interval.dat", 'r') as f:
+   #  interval_ns = float(f.read())
+   interval_s = sampling_interval * 1e-9
+
+   hotspot_binary = executable
+   hotspot_args = ['-c', hotspot_config_file,
+                  '-f', hotspot_floorplan_file,
+                  '-sampling_intvl', str(interval_s),
+                  '-p', power_trace_file,
+                  '-o', temperature_trace_file]
+   if not needInitializing:
+     hotspot_args += ['-init_file', init_file_external]
+
+   #print hotspot_binary, hotspot_args
+   temperatures = subprocess.check_output([hotspot_binary] + hotspot_args)
+   with open(init_file, 'w') as f:
+     f.write(temperatures)
+
+   with open(temperature_trace_file, 'r') as instTemperatureFile:
+     instTemperatureFile.readline()  # ignore first line that contains the header
+     thermalLogFileName.write(instTemperatureFile.readline())
+
+   thermalLogFileName.close()
+
+   memT.calc_temperature_trace()
+
+
 
   
   return buildstack.merge_items({ 0: data }, all_items, nocollapse = nocollapse)
