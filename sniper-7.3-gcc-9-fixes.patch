@@ -1,0 +1,263 @@
+diff --git a/common/misc/barrier.cc b/common/misc/barrier.cc
+index ba2570b..10f29ca 100644
+--- a/common/misc/barrier.cc
++++ b/common/misc/barrier.cc
+@@ -16,7 +16,7 @@ Barrier::~Barrier()
+ 
+ void Barrier::wait()
+ {
+-   while((volatile int)m_leaving > 0)
++   while((*const_cast<volatile int*>(&m_leaving)) > 0)
+       sched_yield(); // Not everyone has left, wait a bit
+ 
+    m_lock.acquire();
+diff --git a/common/misc/subsecond_time.h b/common/misc/subsecond_time.h
+index e6d317d..f62e611 100644
+--- a/common/misc/subsecond_time.h
++++ b/common/misc/subsecond_time.h
+@@ -85,6 +85,12 @@ public:
+ 
+    // Public operators
+ 
++   SubsecondTime& operator=(const SubsecondTime &rhs)
++   {
++      m_time = rhs.m_time;
++      return *this;
++   }
++
+    // From http://www.stackoverflow.com/questions/4421706
+    SubsecondTime& operator+=(const SubsecondTime &rhs)
+    {
+@@ -313,6 +319,12 @@ public:
+       return SubsecondTime::US_1 / m_period.m_time;
+    }
+ 
++   ComponentPeriod& operator=(const ComponentPeriod &rhs)
++   {
++      m_period = rhs.m_period;
++      return *this;
++   }
++
+    // From http://www.stackoverflow.com/questions/1751869
+    ComponentPeriod& operator*=(uint64_t rhs)
+    {
+diff --git a/common/sampling/sampling_manager.h b/common/sampling/sampling_manager.h
+index c96bfd6..a2d7547 100644
+--- a/common/sampling/sampling_manager.h
++++ b/common/sampling/sampling_manager.h
+@@ -33,8 +33,8 @@ class SamplingManager
+       void periodic(SubsecondTime time);
+       void instr_count(core_id_t core_id);
+ 
+-      static void hook_instr_count(SamplingManager *self, core_id_t core_id) { self->instr_count(core_id); }
+-      static void hook_periodic(SamplingManager *self, subsecond_time_t time) { self->periodic(time); }
++      static int64_t hook_instr_count(uint64_t self, uint64_t core_id) { reinterpret_cast<SamplingManager *>(self)->instr_count(static_cast<core_id_t>(core_id)); return 0; }
++      static int64_t hook_periodic(uint64_t self, uint64_t time) { subsecond_time_t t; t.m_time = time; reinterpret_cast<SamplingManager *>(self)->periodic(t); return 0; }
+ 
+    protected:
+       friend class FastforwardPerformanceModel;
+diff --git a/decoder_lib/x86_decoder.cc b/decoder_lib/x86_decoder.cc
+index 4b0f5fa..258d222 100644
+--- a/decoder_lib/x86_decoder.cc
++++ b/decoder_lib/x86_decoder.cc
+@@ -73,12 +73,12 @@ void X86Decoder::change_isa_mode(dl_isa new_isa)
+  
+ const char* X86Decoder::inst_name(unsigned int inst_id)
+ {
+-  return xed_iclass_enum_t2str(static_cast<const xed_iclass_enum_t>(inst_id));
++  return xed_iclass_enum_t2str(static_cast<xed_iclass_enum_t>(inst_id));
+ }
+  
+ const char* X86Decoder::reg_name(unsigned int reg_id)
+ {
+-  return xed_reg_enum_t2str(static_cast<const xed_reg_enum_t>(reg_id));
++  return xed_reg_enum_t2str(static_cast<xed_reg_enum_t>(reg_id));
+ }
+ 
+ Decoder::decoder_reg X86Decoder::largest_enclosing_register(Decoder::decoder_reg r)
+diff --git a/docker/Dockerfile-ubuntu-16.04 b/docker/Dockerfile-ubuntu-16.04
+index 40b50cd..c847414 100644
+--- a/docker/Dockerfile-ubuntu-16.04
++++ b/docker/Dockerfile-ubuntu-16.04
+@@ -49,5 +49,7 @@ RUN apt-get update && apt-get install -y \
+ # Helper utilities
+ RUN apt-get update && apt-get install -y \
+     gdb \
++    gfortran \
+     git \
++    vim \
+  && rm -rf /var/lib/apt/lists/*
+diff --git a/docker/Dockerfile-ubuntu-18.04 b/docker/Dockerfile-ubuntu-18.04
+index e6cdbb0..a67e507 100644
+--- a/docker/Dockerfile-ubuntu-18.04
++++ b/docker/Dockerfile-ubuntu-18.04
+@@ -48,5 +48,8 @@ RUN apt-get update && apt-get install -y \
+ # Helper utilities
+ RUN apt-get update && apt-get install -y \
+     gdb \
++    gfortran \
+     git \
++    g++-9 \
++    vim \
+  && rm -rf /var/lib/apt/lists/*
+diff --git a/docker/Dockerfile-ubuntu-20.04 b/docker/Dockerfile-ubuntu-20.04
+new file mode 100644
+index 0000000..c8fdab4
+--- /dev/null
++++ b/docker/Dockerfile-ubuntu-20.04
+@@ -0,0 +1,58 @@
++FROM ubuntu:20.04
++# Necessary for tzdata
++ENV DEBIAN_FRONTEND=noninteractive
++ARG TZ_ARG=UTC
++ENV TZ=${TZ_ARG}
++# Add i386 support for support for Pin
++RUN dpkg --add-architecture i386
++RUN apt-get update && apt-get install -y \
++    python \
++    screen \
++    tmux \
++    binutils \
++    libc6:i386 \
++    libncurses5:i386 \
++    libstdc++6:i386 \
++ && rm -rf /var/lib/apt/lists/*
++# For building Sniper
++RUN apt-get update && apt-get install -y \
++    automake \
++    build-essential \
++    curl \
++    wget \
++    libboost-dev \
++    libsqlite3-dev \
++    zlib1g-dev \
++    libbz2-dev \
++ && rm -rf /var/lib/apt/lists/*
++# For building RISC-V Tools
++RUN apt-get update && apt-get install -y \
++    autoconf \
++    automake \
++    autotools-dev \
++    bc \
++    bison \
++    curl \
++    device-tree-compiler \
++    flex \
++    gawk \
++    gperf \
++    libexpat-dev \
++    libgmp-dev \
++    libmpc-dev \
++    libmpfr-dev \
++    libtool \
++    libusb-1.0-0-dev \
++    patchutils \
++    pkg-config \
++    texinfo \
++    zlib1g-dev \
++ && rm -rf /var/lib/apt/lists/*
++# Helper utilities
++RUN apt-get update && apt-get install -y \
++    gdb \
++    gfortran \
++    git \
++    g++-9 \
++    vim \
++ && rm -rf /var/lib/apt/lists/*
+diff --git a/docker/Makefile b/docker/Makefile
+index 162678c..48b41e1 100644
+--- a/docker/Makefile
++++ b/docker/Makefile
+@@ -1,9 +1,22 @@
+-UBUNTU_VERSION=16.04
+-DOCKER_IMAGE=ubuntu:$(UBUNTU_VERSION)-sniper-$(USER)
+-DOCKER_FILE=Dockerfile-ubuntu-$(UBUNTU_VERSION)
++UBUNTU_VERSION?=20.04
++DOCKER_IMAGE?=ubuntu:$(UBUNTU_VERSION)-sniper-$(USER)
++DOCKER_FILE?=Dockerfile-ubuntu-$(UBUNTU_VERSION)
++DOCKER_FILES=$(wildcard Dockerfile*)
++# For use with --no-cache, etc.
++DOCKER_BUILD_OPT?=
++# Reconstruct the timezone for tzdata
++TZFULL=$(subst /, ,$(shell readlink /etc/localtime))
++TZ=$(word $(shell expr $(words $(TZFULL)) - 1 ),$(TZFULL))/$(word $(words $(TZFULL)),$(TZFULL))
+ 
+-all: $(DOCKER_FILE)
+-	docker build -f $(DOCKER_FILE) -t $(DOCKER_IMAGE) .
++
++all: $(DOCKER_FILE).build
++
++# Use a .PHONY target to build all of the docker images if requested
++Dockerfile%.build: Dockerfile%
++	docker build --build-arg TZ_ARG=$(TZ) $(DOCKER_BUILD_OPT) -f $(<) -t ubuntu:$(subst Dockerfile-ubuntu-,,$(<))-sniper-$(USER) .
++
++BUILD_ALL_TARGETS=$(foreach f,$(DOCKER_FILES),$(f).build)
++build-all: $(BUILD_ALL_TARGETS)
+ 
+ run-root:
+ 	docker run --privileged --rm -it -v "${HOME}:${HOME}" $(DOCKER_IMAGE)
+@@ -11,4 +24,4 @@ run-root:
+ run:
+ 	docker run --privileged --rm -it -v "${HOME}:${HOME}" --user $(shell id -u):$(shell id -g) -w "${PWD}" $(DOCKER_IMAGE)
+ 
+-.PHONY: all
++.PHONY: all build-all run-root run
+diff --git a/sift/recorder/pinboost_debug.cc b/sift/recorder/pinboost_debug.cc
+index 02b2043..1217f4d 100644
+--- a/sift/recorder/pinboost_debug.cc
++++ b/sift/recorder/pinboost_debug.cc
+@@ -71,8 +71,8 @@ bool pinboost_backtrace(EXCEPTION_INFO *pExceptInfo, PHYSICAL_CONTEXT *pPhysCtxt
+    //                                               (void*)PIN_GetPhysicalContextReg(pPhysCtxt, LEVEL_BASE::REG_GBP)
+    //);
+ 
+-   char backtrace_filename[1024];
+-   sprintf(backtrace_filename, "/tmp/debug_backtrace_%ld.out", syscall(__NR_gettid));
++   char backtrace_filename[512];
++   snprintf(backtrace_filename, 511, "/tmp/debug_backtrace_%ld.out", syscall(__NR_gettid));
+ 
+    FILE* fp = fopen(backtrace_filename, "w");
+    // so addr2line can calculate the offset where we're really mapped
+@@ -95,7 +95,7 @@ bool pinboost_backtrace(EXCEPTION_INFO *pExceptInfo, PHYSICAL_CONTEXT *pPhysCtxt
+    }
+ 
+    char cmd[1024];
+-   sprintf(cmd, "%s/tools/gen_backtrace.py \"%s\" >&2", getenv("SNIPER_ROOT"), backtrace_filename);
++   snprintf(cmd, 1023, "%s/tools/gen_backtrace.py \"%s\" >&2", getenv("SNIPER_ROOT"), backtrace_filename);
+ 
+    int rc = system(cmd);
+    if (rc)
+diff --git a/sift/recorder/recorder_base.cc b/sift/recorder/recorder_base.cc
+index 46280ac..b8620e8 100644
+--- a/sift/recorder/recorder_base.cc
++++ b/sift/recorder/recorder_base.cc
+@@ -245,7 +245,7 @@ static VOID traceCallback(TRACE trace, void *v)
+ 
+             bool is_branch = INS_IsBranch(ins) && INS_HasFallThrough(ins);
+ 
+-            if (is_branch)
++            if (is_branch && INS_IsValidForIpointTakenBranch(ins) && INS_IsValidForIpointAfter(ins))
+             {
+                insertCall(ins, IPOINT_AFTER,        num_addresses, true  /* is_branch */, false /* taken */);
+                insertCall(ins, IPOINT_TAKEN_BRANCH, num_addresses, true  /* is_branch */, true  /* taken */);
+@@ -254,7 +254,7 @@ static VOID traceCallback(TRACE trace, void *v)
+             {
+                // Whenever possible, use IPOINT_AFTER as this allows us to process addresses after the application has used them.
+                // This ensures that their logical to physical mapping has been set up.
+-               insertCall(ins, INS_HasFallThrough(ins) ? IPOINT_AFTER : IPOINT_BEFORE, num_addresses, false /* is_branch */, false /* taken */);
++               insertCall(ins, INS_IsValidForIpointAfter(ins) ? IPOINT_AFTER : IPOINT_BEFORE, num_addresses, false /* is_branch */, false /* taken */);
+             }
+ 
+             if (ins == BBL_InsTail(bbl))
+diff --git a/sift/sift_writer.cc b/sift/sift_writer.cc
+index 02795bf..8d666e1 100644
+--- a/sift/sift_writer.cc
++++ b/sift/sift_writer.cc
+@@ -87,7 +87,7 @@ Sift::Writer::Writer(const char *filename, GetCodeFunc getCodeFunc, bool useComp
+    std::cerr << "[DEBUG:" << m_id << "] Write Header" << std::endl;
+    #endif
+ 
+-   Sift::Header hdr = { Sift::MagicNumber, 0 /* header size */, options, {}};
++   Sift::Header hdr = { Sift::MagicNumber, 0 /* header size */, options };
+    output->write(reinterpret_cast<char*>(&hdr), sizeof(hdr));
+    output->flush();
+ 
