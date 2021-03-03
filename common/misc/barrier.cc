@@ -16,7 +16,8 @@ Barrier::~Barrier()
 
 void Barrier::wait()
 {
-   while((volatile int)m_leaving > 0)
+//   while((volatile int)m_leaving > 0)
+     while((*const_cast<volatile int*>(&m_leaving)) > 0)
       sched_yield(); // Not everyone has left, wait a bit
 
    m_lock.acquire();

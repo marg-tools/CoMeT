@@ -71,12 +71,13 @@ bool pinboost_backtrace(EXCEPTION_INFO *pExceptInfo, PHYSICAL_CONTEXT *pPhysCtxt
    //                                               (void*)PIN_GetPhysicalContextReg(pPhysCtxt, LEVEL_BASE::REG_GBP)
    //);
 
-   char backtrace_filename[1024];
-   sprintf(backtrace_filename, "/tmp/debug_backtrace_%ld.out", syscall(__NR_gettid));
+   //char backtrace_filename[1024];
+   //sprintf(backtrace_filename, "/tmp/debug_backtrace_%ld.out", syscall(__NR_gettid));
+   char backtrace_filename[512];
+   snprintf(backtrace_filename, 511, "/tmp/debug_backtrace_%ld.out", syscall(__NR_gettid));
 
    FILE* fp = fopen(backtrace_filename, "w");
-   // so addr2line can calculate the offset where we're really mapped
-   fprintf(fp, "sift_recorder\n");
+   // so addr2line can calculate the offset where we're really mapped	fprintf(fp, "sift_recorder\n");
    fprintf(fp, "%" PRIdPTR "\n", (intptr_t)rdtsc);
    // actual function function where the exception occured (won't be in the backtrace)
    fprintf(fp, "%" PRIdPTR "", (intptr_t)PIN_GetPhysicalContextReg(pPhysCtxt, LEVEL_BASE::REG_INST_PTR));
@@ -95,7 +96,8 @@ bool pinboost_backtrace(EXCEPTION_INFO *pExceptInfo, PHYSICAL_CONTEXT *pPhysCtxt
    }
 
    char cmd[1024];
-   sprintf(cmd, "%s/tools/gen_backtrace.py \"%s\" >&2", getenv("SNIPER_ROOT"), backtrace_filename);
+   //sprintf(cmd, "%s/tools/gen_backtrace.py \"%s\" >&2", getenv("SNIPER_ROOT"), backtrace_filename);
+   snprintf(cmd, 1023, "%s/tools/gen_backtrace.py \"%s\" >&2", getenv("SNIPER_ROOT"), backtrace_filename);
 
    int rc = system(cmd);
    if (rc)
