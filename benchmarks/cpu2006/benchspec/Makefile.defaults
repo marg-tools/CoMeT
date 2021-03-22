@@ -1,0 +1,838 @@
+###############################################################################
+#
+# Copyright (C) 1996-2006 Standard Performance Evaluation Corporation
+# All Rights Reserved
+#
+# This makefile should NOT be changed.
+# $Id: Makefile.defaults 5965 2008-03-25 22:51:02Z cloyce $
+#
+###############################################################################
+#	BENCHMARK	-- standard definitions for this benchmark
+
+include $(BENCHMARKS_ROOT)/tools/hooks/buildconf.makefile
+
+# Set some "safe" defaults
+LIBS=
+TUNE=peak
+EXT=.none
+
+###############################################################################
+#
+# Clear variables to avoid "accidentally" inheriting them from the environment.
+#
+# This is done because there's no way to make make ignore the environment; this
+# is reasonable, and what we do for the SPEC benchmarks is in many cases
+# counter to common practice of letting environment variables control
+# compilation.
+#
+# And if this list looks big and stupid to you, that's because it is.  I can
+# find NO WAY that make will let me iterate over values.  Any use of $(call)
+# or even $(foreach x,x,var assignment) results in a "commands commence before
+# first target.  Stop." error message.  Thanks a lot, GNU make.
+BENCH_FLAGS=
+CPUFLAGS=
+EXTRA_LDFLAGS=
+EXTRA_LIBS=
+LD=
+LDOPT=
+LDPORTABILITY=
+LIBS=
+OPTIMIZE=
+EXTRA_OPTIMIZE=
+OS_LIBS=
+PORTABILITY=
+EXTRA_PORTABILITY=
+PORTABILITY_LIBS=
+MATH_LIBS=
+# C
+EXTRA_CFLAGS=
+EXTRA_CLIBS=
+PORTABILITY_CLIBS=
+LDCFLAGS=
+COPTIMIZE=
+EXTRA_COPTIMIZE=
+CPORTABILITY=
+EXTRA_CPORTABILITY=
+BENCH_CFLAGS=
+# C++
+EXTRA_CXXFLAGS=
+EXTRA_CXXLIBS=
+PORTABILITY_CXXLIBS=
+LDCXXFLAGS=
+CXXOPTIMIZE=
+EXTRA_CXXOPTIMIZE=
+CXXPORTABILITY=
+EXTRA_CXXPORTABILITY=
+BENCH_CXXFLAGS=
+# Fortran 90/95
+EXTRA_FFLAGS=
+EXTRA_FLIBS=
+PORTABILITY_FLIBS=
+LDFFLAGS=
+FOPTIMIZE=
+EXTRA_FOPTIMIZE=
+FPORTABILITY=
+EXTRA_FPORTABILITY=
+BENCH_FFLAGS=
+# Fortran preprocessor
+EXTRA_FPPFLAGS=
+FPPPORTABILITY=
+FPPFLAGS=
+BENCH_FPPFLAGS=
+
+LIBS=$(HOOKS_LDFLAGS_NOROI)
+
+ifeq (PASS,$(findstring PASS,$(FDO)))
+  # General
+  $(FDO)_FLAGS=
+  $(FDO)_LDFLAGS=
+  $(FDO)_OPTIMIZE=
+  # C
+  $(FDO)_CFLAGS=
+  $(FDO)_COPTIMIZE=
+  $(FDO)_LDCFLAGS=
+  # C++
+  $(FDO)_CXXFLAGS=
+  $(FDO)_CXXOPTIMIZE=
+  $(FDO)_LDCXXFLAGS=
+  # Fortran 90/95
+  $(FDO)_FFLAGS=
+  $(FDO)_FOPTIMIZE=
+  $(FDO)_LDFFLAGS=
+endif
+
+###############################################################################
+#	DEFINES		-- standard definitions for SPEC
+#                          some of these may be overriden in Makefile.spec
+BENCHMARK     = $(NUMBER).$(NAME)
+TMP_SOURCES   = $(filter-out $(RM_SOURCES),$(SOURCES)) $(EXTRA_SOURCES)
+TMP1_SOURCES  = $(TMP_SOURCES:.F95=.fppized.f95)
+TMP2_SOURCES  = $(TMP1_SOURCES:.F90=.fppized.f90)
+TMP3_SOURCES  = $(TMP2_SOURCES:.F77=.fppized.f77)
+FINAL_SOURCES = $(TMP3_SOURCES:.F=.fppized.f)
+OBJS          = $(addsuffix $(OBJ),$(basename $(FINAL_SOURCES)))
+FPP_USED      = $(findstring fppized,$(OBJS))
+
+###############################################################################
+#	VENDOR		   -- where we include any vendor specific information
+ifneq ($(TARGET),)
+include Makefile.$(TARGET).spec
+else
+include Makefile.spec
+endif
+PRIMARY_BENCHLANG := $(firstword $(BENCHLANG))
+
+CPUFLAGS       = -DSPEC_CPU -DNDEBUG
+ifeq ($(OS),windows_nt)
+    OBJ           ?= .obj
+    OBJOPT        ?= -c -Fo$@
+    LDOUT         ?= -Fe$@
+    MATHLIBOPT    ?=
+    # specsh gets upset when it can't glob things, so for RMRF (used in
+    # clean targets), call cmd.exe directly instead
+    RMRF          ?= specsh -o NOGLOB -c "cmd /C del /q /f /s #"
+    CPUFLAGS      += -DSPEC_CPU_WINDOWS
+else
+    OBJ           ?= .o
+    OBJOPT        ?= -c -o $@
+    LDOUT         ?= -o $@
+    MATHLIBOPT    ?= -lm
+    RMRF          ?= rm -rf
+endif
+
+ifneq ($(origin CC), file)
+CC         = cc
+endif
+COBJOPT   ?= $(OBJOPT)
+
+ifneq ($(origin CXX), file)
+CXX	   = CC
+endif
+CXXOBJOPT ?= $(OBJOPT)
+
+ifneq ($(origin FC), file)
+FC         = f90
+endif
+FOBJOPT   ?= $(OBJOPT)
+
+ECHO      ?= echo
+
+# Whether or not to do ONESTEP this time
+DOONESTEP  = $(strip $(ONESTEP)$($(PRIMARY_BENCHLANG)ONESTEP))
+
+# Here's the part that adds -lm (for non-Windows systems) to the link command,
+# but it only does it if the primary language of the benchmark is _NOT_ C++.
+ifneq ($(strip $(NEED_MATH)),)
+  ifneq (CXX,$(PRIMARY_BENCHLANG))
+    MATH_LIBS       = $(MATHLIBOPT)
+  endif
+endif
+
+###############################################################################
+#	LANGUAGE and FLAGS SELECTION -- choose flags for specific language
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# If you update any variables below, be SURE to update the output and the
+# comments in the options sections!  Otherwise the flag reporting will not
+# get the contents of all variables to examine.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Also do not fail to update var_order in bin/scripts.misc, run it, and update
+# formatter/flagutils.pl.  If you don't, the flag ordering in the reports will
+# be wrong!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+
+# FC is used for all Fortran builds, so substitute F for F77 in BENCHLANG
+tmpBENCHLANG := $(subst F77,F,$(BENCHLANG))
+BENCHLANG=$(tmpBENCHLANG)
+PRIMARY_BENCHLANG := $(firstword $(BENCHLANG))
+CXXC = $(CXX)
+
+LD   = $($(PRIMARY_BENCHLANG)C)
+ifneq (,$($(PRIMARY_BENCHLANG)LD))
+    LD = $($(PRIMARY_BENCHLANG)LD)
+endif
+
+# Set up FDO-related flags
+ifeq (PASS,$(findstring PASS,$(FDO)))
+  FDO_OPTIMIZE    =$($(FDO)_OPTIMIZE)
+  FDO_COPTIMIZE   =$($(FDO)_COPTIMIZE)
+  FDO_CXXOPTIMIZE =$($(FDO)_CXXOPTIMIZE)
+  FDO_FOPTIMIZE   =$($(FDO)_FOPTIMIZE)
+
+  FDO_LDFLAGS     =$($(FDO)_LDFLAGS)
+  FDO_LDCFLAGS    =$($(FDO)_LDCFLAGS)
+  FDO_LDCXXFLAGS  =$($(FDO)_LDCXXFLAGS)
+  FDO_LDFFLAGS    =$($(FDO)_LDFFLAGS)
+else
+  # If FDO isn't being used, then these variables should not be usable:
+  FDO_OPTIMIZE    =
+  FDO_COPTIMIZE   =
+  FDO_CXXOPTIMIZE =
+  FDO_FOPTIMIZE   =
+
+  FDO_LDFLAGS     =
+  FDO_LDCFLAGS    =
+  FDO_LDCXXFLAGS  =
+  FDO_LDFFLAGS    =
+endif
+
+# This section may not be compressed into one BENCHLANG-specific assignment
+# because there may be files not in PRIMARY_BENCHLANG that also need to
+# be built.  These sections are split so that linker flags for ONESTEP builds
+# can be inserted at the proper points.
+# This all looks less chaotic in a wide window.
+
+# First, the "flags"
+FINAL_CFLAGS   =$(CPUFLAGS) $(BENCH_FLAGS) $(BENCH_CFLAGS)
+FINAL_CXXFLAGS =$(CPUFLAGS) $(BENCH_FLAGS) $(BENCH_CXXFLAGS)
+RAW_FFLAGS     =            $(BENCH_FLAGS) $(BENCH_FFLAGS)
+
+# Add LD<lang>FLAGS in the right place if ONESTEP is being used
+ifneq (,$(DOONESTEP))
+  FINAL_CFLAGS   += $(LDCFLAGS)
+  FINAL_CXXFLAGS += $(LDCXXFLAGS)
+  RAW_FFLAGS     += $(LDFFLAGS)
+endif
+
+# Add PASSn_<lang>FLAGS if FDO is going on
+# Also add PASSn_LD<lang>FLAGS is ONESTEP is also happening
+ifeq (PASS,$(findstring PASS,$(FDO)))
+  FINAL_CFLAGS   +=$($(FDO)_FLAGS) $($(FDO)_CFLAGS)   
+  FINAL_CXXFLAGS +=$($(FDO)_FLAGS) $($(FDO)_CXXFLAGS) 
+  RAW_FFLAGS     +=$($(FDO)_FLAGS) $($(FDO)_FFLAGS)   
+ifneq (,$(DOONESTEP))
+  FINAL_CFLAGS   += $($(FDO)_LDFLAGS) $($(FDO)_LDCFLAGS)
+  FINAL_CXXFLAGS += $($(FDO)_LDFLAGS) $($(FDO)_LDCXXFLAGS)
+  RAW_FFLAGS     += $($(FDO)_LDFLAGS) $($(FDO)_LDFFLAGS)
+endif
+endif
+
+# Next, optimization and portability flags
+FINAL_CFLAGS   += $(OPTIMIZE) $(COPTIMIZE)   $(FDO_OPTIMIZE) $(FDO_COPTIMIZE)   $(PORTABILITY) $(CPORTABILITY) $(HOOKS_CFLAGS)
+FINAL_CXXFLAGS += $(OPTIMIZE) $(CXXOPTIMIZE) $(FDO_OPTIMIZE) $(FDO_CXXOPTIMIZE) $(PORTABILITY) $(CXXPORTABILITY) $(HOOKS_CXXFLAGS)
+RAW_FFLAGS     += $(OPTIMIZE) $(FOPTIMIZE)   $(FDO_OPTIMIZE) $(FDO_FOPTIMIZE)   $(PORTABILITY) $(FPORTABILITY)
+
+# Add LDPORTABILITY in the right place if ONESTEP is being used
+ifneq (,$(DOONESTEP))
+  FINAL_CFLAGS   += $(LDPORTABILITY)
+  FINAL_CXXFLAGS += $(LDPORTABILITY)
+  RAW_FFLAGS     += $(LDPORTABILITY)
+endif
+
+# Now add all of the "extra" flags on the end.
+FINAL_CFLAGS   += $(EXTRA_CFLAGS)
+FINAL_CXXFLAGS += $(EXTRA_CXXFLAGS)
+RAW_FFLAGS     += $(EXTRA_FFLAGS)
+
+# Add EXTRA_LDFLAGS in the right place if ONESTEP is being used
+ifneq (,$(DOONESTEP))
+  FINAL_CFLAGS   += $(EXTRA_LDFLAGS)
+  FINAL_CXXFLAGS += $(EXTRA_LDFLAGS)
+  RAW_FFLAGS     += $(EXTRA_LDFLAGS)
+endif
+
+# And then the "extra" optimization and portability flags
+FINAL_CFLAGS   += $(EXTRA_OPTIMIZE) $(EXTRA_COPTIMIZE)   $(EXTRA_PORTABILITY) $(EXTRA_CPORTABILITY)
+FINAL_CXXFLAGS += $(EXTRA_OPTIMIZE) $(EXTRA_CXXOPTIMIZE) $(EXTRA_PORTABILITY) $(EXTRA_CXXPORTABILITY)
+RAW_FFLAGS     += $(EXTRA_OPTIMIZE) $(EXTRA_FOPTIMIZE)   $(EXTRA_PORTABILITY) $(EXTRA_FPORTABILITY)
+
+# Filter out defines and undefines from Fortran flags
+FINAL_FFLAGS = $(filter-out -D% -U%, $(RAW_FFLAGS))
+
+# Libs, at least, don't change depending on ONESTEP
+FINAL_LIBS     =$(LIBS) $(OS_LIBS) $(MATH_LIBS) $(OPTIMIZATION_LIBS) $(OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS) $(PORTABILITY_LIBS) $(PORTABILITY_$(PRIMARY_BENCHLANG)LIBS) $(EXTRA_LIBS) $(EXTRA_$(PRIMARY_BENCHLANG)LIBS)
+
+###############
+# specpp flags
+###############
+FINAL_FPPFLAGS =$(FPPFLAGS) $(BENCH_FPPFLAGS) $(filter -D% -U%, $(CPUFLAGS) $(PORTABILITY) $(foreach lang,$(BENCHLANG),$($(lang)PORTABILITY)) $(EXTRA_PORTABILITY)) $(FPPPORTABILITY) $(EXTRA_FPPFLAGS)
+
+
+##############
+# Linker flags
+##############
+# User-supplied linker options
+# It could be bad to have two copies of some flags, which is why this isn't
+# just a simple assignment.
+ifeq (PASS,$(findstring PASS,$(FDO)))
+	FINAL_LDOPT     =$($(FDO)_LDOPT)
+else
+	FINAL_LDOPT     =$(LDOPT)
+endif
+
+# Used only for regular builds
+LDOPTFLAGS  = $(OPTIMIZE) $($(PRIMARY_BENCHLANG)OPTIMIZE) $(FDO_OPTIMIZE) $(PORTABILITY) $($(PRIMARY_BENCHLANG)PORTABILITY) $(LDPORTABILITY) $(EXTRA_OPTIMIZE) $(EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE)
+
+###############################################################################
+#	TARGETS		-- Rules to build benchmark executables
+
+all: build
+
+ifneq (,$(DOONESTEP))
+# ONESTEP build
+$(EXEBASE): $(FINAL_SOURCES)
+	$(LD) $(FINAL_$(PRIMARY_BENCHLANG)FLAGS) $^ $(FINAL_LIBS) $(FINAL_LDOPT) $(LDOUT)
+else
+$(EXEBASE): $(OBJS)
+# Normal, non-ONESTEP build
+ifndef NEEDATFILE
+	$(LD) $(LD$(PRIMARY_BENCHLANG)FLAGS) $(LDOPTFLAGS) $(EXTRA_LDFLAGS) $(FDO_LDFLAGS) $(FDO_LD$(PRIMARY_BENCHLANG)FLAGS) $^           $(FINAL_LIBS) $(FINAL_LDOPT) $(LDOUT)
+else
+	$(LD) $(LD$(PRIMARY_BENCHLANG)FLAGS) $(LDOPTFLAGS) $(EXTRA_LDFLAGS) $(FDO_LDFLAGS) $(FDO_LD$(PRIMARY_BENCHLANG)FLAGS) @objectnames $(FINAL_LIBS) $(FINAL_LDOPT) $(LDOUT)
+endif
+endif
+
+
+.SUFFIXES: $(OBJ)
+# C
+%$(OBJ): %.c
+	$(CC) $(COBJOPT) $(FINAL_CFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+# C++
+%$(OBJ): %.cc
+	$(CXXC) $(CXXOBJOPT) $(FINAL_CXXFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+%$(OBJ): %.C
+	$(CXXC) $(CXXOBJOPT) $(FINAL_CXXFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+%$(OBJ): %.cpp
+	$(CXXC) $(CXXOBJOPT) $(FINAL_CXXFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+%$(OBJ): %.cxx
+	$(CXXC) $(CXXOBJOPT) $(FINAL_CXXFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+# Regular FORTRAN
+%$(OBJ): %.f90
+	$(FC) $(FOBJOPT) $(FINAL_FFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+%$(OBJ): %.f
+	$(FC) $(FOBJOPT) $(FINAL_FFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+.PRECIOUS: %.fppized.f95 %.fppized.f90 %.fppized.f
+
+# Pre-processed FORTRAN95
+%.fppized.f95: %.F95
+	$(SPEC)/bin/specperl $(SPEC)/bin/specpp $(FINAL_FPPFLAGS) $< -o $(addsuffix .fppized.f95,$(basename $<))
+
+%$(OBJ): %.fppized.f95
+	$(FC) $(FOBJOPT) $(FINAL_FFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+# Pre-processed FORTRAN90
+%.fppized.f90: %.F90
+	$(SPEC)/bin/specperl $(SPEC)/bin/specpp $(FINAL_FPPFLAGS) $< -o $(addsuffix .fppized.f90,$(basename $<))
+
+%$(OBJ): %.fppized.f90
+	$(FC) $(FOBJOPT) $(FINAL_FFLAGS) $<
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+# Pre-processed FORTRAN
+%.fppized.f: %.F
+	$(SPEC)/bin/specperl $(SPEC)/bin/specpp $(FINAL_FPPFLAGS) $< -o $(addsuffix .fppized.f,$(basename $<))
+
+%$(OBJ): %.fppized.f
+	$(FC) $(FOBJOPT) $(FINAL_FFLAGS) $(addsuffix .fppized.f,$(basename $<))
+ifdef NEEDATFILE
+	$(ECHO) $@ >> objectnames
+endif
+
+# to clean things up
+.PHONY: fdoclean clean install
+
+# On Windows, del /s removes specified patterns in subdirectories; UNIX doesn't,
+# and thus the find | xargs
+fdoclean:
+ifeq ($(OS),windows_nt)
+# The trailing quotes are intentional; they match the opening quote in the
+# definition of RMRF
+	-$(RMRF) $(EXEBASE)"
+	-$(RMRF) $(EXEBASE).exe"
+	-$(RMRF) *$(OBJ) $(EXTRA_RMFILES) $(OUTPUT_RMFILES)"
+	-$(RMRF) *.fppized.f*"
+ifdef NEEDATFILE
+	-$(RMRF) objectnames"
+# "
+endif
+else
+	-$(RMRF) $(EXEBASE)
+	-$(RMRF) $(EXEBASE).exe
+	-$(RMRF) *$(OBJ) $(EXTRA_RMFILES) $(OUTPUT_RMFILES)
+	-find . \( -name \*$(OBJ) -o -name '*.fppized.f*' \) -print | xargs $(RMRF)
+ifdef NEEDATFILE
+	-$(RMRF) objectnames
+endif
+endif
+clean: fdoclean
+ifeq ($(OS),windows_nt)
+# The trailing quotes are intentional; they match the opening quote in the
+# definition of RMRF
+	-$(RMRF) core"
+	-$(RMRF) $(filter-out make.clean.err make.clean.out build_pre_bench.err build_pre_bench.out,$(wildcard *.err) $(wildcard *.out))"
+else
+	-$(RMRF) core
+	-$(RMRF) $(filter-out make.clean.err make.clean.out build_pre_bench.err build_pre_bench.out,$(wildcard *.err) $(wildcard *.out))
+endif
+
+build: $(EXTRA_TARGETS) $(EXEBASE)
+
+###############################################################################
+#
+# Print the options used.
+#
+# This is super-ugly, but it's the only portable, make-only way I could figure
+# out to mostly have only the non-empty variables output.
+#
+# The blank lines at the end of each definition are important; please don't
+# delete them.
+define benchlang-comp-line
+	@$(ECHO) "COMP: $($(1)C) $($(1)OBJOPT)$(OBJ) $(FINAL_$(1)FLAGS) <source>"
+	@$(ECHO) "C: $(1)C=\"$($(1)C)\""
+	@$(ECHO) "C: $(1)OBJOPT=\"$($(1)OBJOPT)\""
+	@$(ECHO) "P: CPUFLAGS=\"$(CPUFLAGS)\""
+	@$(ECHO) "P: BENCH_FLAGS=\"$(BENCH_FLAGS)\""
+	@$(ECHO) "P: BENCH_$(1)FLAGS=\"$(BENCH_$(1)FLAGS)\""
+	@$(ECHO) "O: OPTIMIZE=\"$(OPTIMIZE)\""
+	@$(ECHO) "O: $(1)OPTIMIZE=\"$($(1)OPTIMIZE)\""
+	@$(ECHO) "P: PORTABILITY=\"$(PORTABILITY)\""
+	@$(ECHO) "P: $(1)PORTABILITY=\"$($(1)PORTABILITY)\""
+	@$(ECHO) "O: EXTRA_$(1)FLAGS=\"$(EXTRA_$(1)FLAGS)\""
+	@$(ECHO) "O: EXTRA_OPTIMIZE=\"$(EXTRA_OPTIMIZE)\""
+	@$(ECHO) "O: EXTRA_$(1)OPTIMIZE=\"$(EXTRA_$(1)OPTIMIZE)\""
+	@$(ECHO) "P: EXTRA_PORTABILITY=\"$(EXTRA_PORTABILITY)\""
+	@$(ECHO) "P: EXTRA_$(1)PORTABILITY=\"$(EXTRA_$(1)PORTABILITY)\""
+
+endef
+define benchlang-fdo-comp-line
+	@$(ECHO) "COMP: $($(1)C) $($(1)OBJOPT)$(OBJ) $(FINAL_$(1)FLAGS) <source>"
+	@$(ECHO) "C: $(1)C=\"$($(1)C)\""
+	@$(ECHO) "C: $(1)OBJOPT=\"$($(1)OBJOPT)\""
+	@$(ECHO) "P: CPUFLAGS=\"$(CPUFLAGS)\""
+	@$(ECHO) "P: BENCH_FLAGS=\"$(BENCH_FLAGS)\""
+	@$(ECHO) "P: BENCH_$(1)FLAGS=\"$(BENCH_$(1)FLAGS)\""
+	@$(ECHO) "O: $(FDO)_FLAGS=\"$($(FDO)_FLAGS)\""
+	@$(ECHO) "O: $(FDO)_$(1)FLAGS=\"$($(FDO)_$(1)FLAGS)\""
+	@$(ECHO) "O: OPTIMIZE=\"$(OPTIMIZE)\""
+	@$(ECHO) "O: $(1)OPTIMIZE=\"$($(1)OPTIMIZE)\""
+	@$(ECHO) "O: $(FDO)_OPTIMIZE=\"$($(FDO)_OPTIMIZE)\""
+	@$(ECHO) "O: $(FDO)_$(1)OPTIMIZE=\"$($(FDO)_$(1)OPTIMIZE)\""
+	@$(ECHO) "P: PORTABILITY=\"$(PORTABILITY)\""
+	@$(ECHO) "P: $(1)PORTABILITY=\"$($(1)PORTABILITY)\""
+	@$(ECHO) "O: EXTRA_$(1)FLAGS=\"$(EXTRA_$(1)FLAGS)\""
+	@$(ECHO) "O: EXTRA_OPTIMIZE=\"$(EXTRA_OPTIMIZE)\""
+	@$(ECHO) "O: EXTRA_$(1)OPTIMIZE=\"$(EXTRA_$(1)OPTIMIZE)\""
+	@$(ECHO) "P: EXTRA_PORTABILITY=\"$(EXTRA_PORTABILITY)\""
+	@$(ECHO) "P: EXTRA_$(1)PORTABILITY=\"$(EXTRA_$(1)PORTABILITY)\""
+
+endef
+
+define portability-defines
+	@$(ECHO) "P: $(1)PORTABILITY=\"$(filter -D% -U%, $($(1)PORTABILITY))\""
+
+endef
+
+options:
+
+#
+# specpp options output (only if specpp was used)
+#
+ifeq (fppized,$(FPP_USED))
+	@$(ECHO) "FPP: specpp $(FINAL_FPPFLAGS) <source> -o <source>.fppized.f9x"
+ifneq (,$(filter -D% -U%, $(FPPFLAGS)))
+	@$(ECHO) "P: FPPFLAGS=\"$(filter -D% -U%, $(FPPFLAGS))\""
+endif
+ifneq (,$(BENCH_FPPFLAGS))
+	@$(ECHO) "P: BENCH_FPPFLAGS=\"$(BENCH_FPPFLAGS)\""
+endif
+ifneq (,$(filter -D% -U%, $(CPUFLAGS)))
+	@$(ECHO) "P: CPUFLAGS=\"$(filter -D% -U%, $(CPUFLAGS))\""
+endif
+ifneq (,$(filter -D% -U%, $(PORTABILITY)))
+	@$(ECHO) "P: PORTABILITY=\"$(filter -D% -U%, $(PORTABILITY))\""
+endif
+	$(foreach lang,$(BENCHLANG),$(call portability-defines,$(lang)))
+ifneq (,$(FPPPORTABILITY))
+	@$(ECHO) "P: FPPPORTABILITY=\"$(FPPPORTABILITY)\""
+endif
+ifneq (,$(EXTRA_FPPFLAGS))
+	@$(ECHO) "O: EXTRA_FPPFLAGS=\"$(EXTRA_FPPFLAGS)\""
+endif
+endif
+
+#
+# ONESTEP flags output (only if ONESTEP or <lang>ONESTEP was used)
+#
+ifneq (,$(DOONESTEP))
+	@$(ECHO) "ONESTEP: $(LD) $(FINAL_$(PRIMARY_BENCHLANG)FLAGS) <sources> $(FINAL_LIBS) $(FINAL_LDOPT) $(LDOUT)"
+# ONESTEP flags breakdown:
+#  LD
+#  FINAL_<lang>FLAGS
+#    CPUFLAGS (for C/C++ only)
+#    BENCH_FLAGS
+#    BENCH_<lang>FLAGS
+#    LD<lang>FLAGS
+#    PASS<n>_FLAGS (if FDO is used)
+#    PASS<n>_<lang>FLAGS (if FDO is used)
+#    PASS<n>_LDFLAGS (if FDO is used)
+#    PASS<n>_LD<lang>FLAGS (if FDO is used)
+#    OPTIMIZE
+#    <lang>OPTIMIZE
+#    PASS<n>_OPTIMIZE (if FDO is used)
+#    PASS<n>_<lang>OPTIMIZE (if FDO is used)
+#    PORTABILITY
+#    <lang>PORTABILITY
+#    LDPORTABILITY
+#    EXTRA_<lang>FLAGS
+#    EXTRA_LDFLAGS
+#    EXTRA_OPTIMIZE
+#    EXTRA_<lang>OPTIMIZE
+#    EXTRA_PORTABILITY
+#    EXTRA_<lang>PORTABILITY
+#  FINAL_LIBS
+#    LIBS
+#    OS_LIBS
+#    MATH_LIBS
+#    OPTIMIZATION_LIBS
+#    OPTIMIZATION_<lang>LIBS
+#    PORTABILITY_LIBS
+#    PORTABILITY_<lang>LIBS
+#    EXTRA_LIBS
+#    EXTRA_<lang>LIBS
+#  FINAL_LDOPT
+#    PASS<n>_LDOPT or LDOPT (depending on FDO or not)
+#  LDOUT
+
+# LD:
+ifneq (,$(strip $(LD)))
+	@$(ECHO) "C: LD=\"$(LD)\""
+endif
+# CPUFLAGS:
+ifeq (C,$(findstring C,$(BENCHLANG)))
+  ifneq (,$(strip $(CPUFLAGS)))
+	@$(ECHO) "P: CPUFLAGS=\"$(CPUFLAGS)\""
+  endif
+endif
+# FINAL_<lang>FLAGS:
+ifneq (,$(strip $(BENCH_FLAGS)))
+	@$(ECHO) "P: BENCH_FLAGS=\"$(BENCH_FLAGS)\""
+endif
+ifneq (,$(strip $(BENCH_$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "P: BENCH_$(PRIMARY_BENCHLANG)FLAGS=\"$(BENCH_$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+ifneq (,$(strip $(LD$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: LD$(PRIMARY_BENCHLANG)FLAGS=\"$(LD$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+ifeq (PASS,$(findstring PASS,$(FDO)))
+ifneq (,$(strip $($(FDO)_FLAGS)))
+	@$(ECHO) "O: $(FDO)_FLAGS=\"$($(FDO)_FLAGS)\""
+endif
+ifneq (,$(strip $($(FDO)_$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: $(FDO)_$(PRIMARY_BENCHLANG)FLAGS=\"$($(FDO)_$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+ifneq (,$(strip $($(FDO)_LDFLAGS)))
+	@$(ECHO) "O: $(FDO)_LDFLAGS=\"$($(FDO)_LDFLAGS)\""
+endif
+ifneq (,$(strip $($(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: $(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS=\"$($(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+endif
+ifneq (,$(strip $(OPTIMIZE)))
+	@$(ECHO) "O: OPTIMIZE=\"$(OPTIMIZE)\""
+endif
+ifneq (,$(strip $($(PRIMARY_BENCHLANG)OPTIMIZE)))
+	@$(ECHO) "O: $(PRIMARY_BENCHLANG)OPTIMIZE=\"$($(PRIMARY_BENCHLANG)OPTIMIZE)\""
+endif
+ifeq (PASS,$(findstring PASS,$(FDO)))
+ifneq (,$(strip $($(FDO)_OPTIMIZE)))
+	@$(ECHO) "O: $(FDO)_OPTIMIZE=\"$($(FDO)_OPTIMIZE)\""
+endif
+ifneq (,$(strip $($(FDO)_$(PRIMARY_BENCHLANG)OPTIMIZE)))
+	@$(ECHO) "O: $(FDO)_$(PRIMARY_BENCHLANG)OPTIMIZE=\"$($(FDO)_$(PRIMARY_BENCHLANG)OPTIMIZE)\""
+endif
+endif
+ifneq (,$(strip $(PORTABILITY)))
+	@$(ECHO) "P: PORTABILITY=\"$(PORTABILITY)\""
+endif
+ifneq (,$(strip $($(PRIMARY_BENCHLANG)PORTABILITY)))
+	@$(ECHO) "P: $(PRIMARY_BENCHLANG)PORTABILITY=\"$($(PRIMARY_BENCHLANG)PORTABILITY)\""
+endif
+ifneq (,$(strip $(LDPORTABILITY)))
+	@$(ECHO) "P: LDPORTABILITY=\"$(LDPORTABILITY)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: EXTRA_$(PRIMARY_BENCHLANG)FLAGS=\"$(EXTRA_$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+ifneq (,$(strip $(EXTRA_LDFLAGS)))
+	@$(ECHO) "O: EXTRA_LDFLAGS=\"$(EXTRA_LDFLAGS)\""
+endif
+ifneq (,$(strip $(EXTRA_OPTIMIZE)))
+	@$(ECHO) "O: EXTRA_OPTIMIZE=\"$(EXTRA_OPTIMIZE)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE)))
+	@$(ECHO) "O: EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE=\"$(EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE)\""
+endif
+ifneq (,$(strip $(EXTRA_PORTABILITY)))
+	@$(ECHO) "P: EXTRA_PORTABILITY=\"$(EXTRA_PORTABILITY)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)PORTABILITY)))
+	@$(ECHO) "P: EXTRA_$(PRIMARY_BENCHLANG)PORTABILITY=\"$(EXTRA_$(PRIMARY_BENCHLANG)PORTABILITY)\""
+endif
+# FINAL_LIBS:
+ifneq (,$(strip $(LIBS)))
+	@$(ECHO) "O: LIBS=\"$(LIBS)\""
+endif
+ifneq (,$(strip $(OS_LIBS)))
+	@$(ECHO) "O: OS_LIBS=\"$(OS_LIBS)\""
+endif
+ifneq (,$(strip $(MATH_LIBS)))
+	@$(ECHO) "C: MATH_LIBS=\"$(MATH_LIBS)\""
+endif
+ifneq (,$(strip $(OPTIMIZATION_LIBS)))
+	@$(ECHO) "O: OPTIMIZATION_LIBS=\"$(OPTIMIZATION_LIBS)\""
+endif
+ifneq (,$(strip $(OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "O: OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS=\"$(OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+ifneq (,$(strip $(PORTABILITY_LIBS)))
+	@$(ECHO) "P: PORTABILITY_LIBS=\"$(PORTABILITY_LIBS)\""
+endif
+ifneq (,$(strip $(PORTABILITY_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "P: PORTABILITY_$(PRIMARY_BENCHLANG)LIBS=\"$(PORTABILITY_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+ifneq (,$(strip $(EXTRA_LIBS)))
+	@$(ECHO) "O: EXTRA_LIBS=\"$(EXTRA_LIBS)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "O: EXTRA_$(PRIMARY_BENCHLANG)LIBS=\"$(EXTRA_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+# FINAL_LDOPT:
+ifeq (PASS,$(findstring PASS,$(FDO)))
+ifneq (,$(strip $($(FDO)_LDOPT)))
+	@$(ECHO) "C: $(FDO)_LDOPT=\"$($(FDO)_LDOPT)\""
+endif
+else
+ifneq (,$(strip $(LDOPT)))
+	@$(ECHO) "C: LDOPT=\"$(LDOPT)\""
+endif
+endif
+# LDOUT:
+ifneq (,$(strip $(LDOUT)))
+	@$(ECHO) "C: LDOUT=\"$(LDOUT)\""
+endif
+else
+# Normal (non-ONESTEP) compilation
+
+# COMP flags breakdown:
+#  <lang>C
+#  <lang>OBJOPT
+#  FINAL_<lang>FLAGS
+#    CPUFLAGS (for C/C++ only)
+#    BENCH_FLAGS
+#    BENCH_<lang>FLAGS
+#    PASS<n>_FLAGS (if FDO is used)
+#    PASS<n>_<lang>FLAGS (if FDO is used)
+#    OPTIMIZE
+#    <lang>OPTIMIZE
+#    PASS<n>_OPTIMIZE (if FDO is used)
+#    PASS<n>_<lang>OPTIMIZE (if FDO is used)
+#    PORTABILITY
+#    <lang>PORTABILITY
+#    EXTRA_<lang>FLAGS
+#    EXTRA_OPTIMIZE
+#    EXTRA_<lang>OPTIMIZE
+#    EXTRA_PORTABILITY
+#    EXTRA_<lang>PORTABILITY
+ifeq (PASS,$(findstring PASS,$(FDO)))
+	$(foreach lang,$(BENCHLANG),$(call benchlang-fdo-comp-line,$(lang)))
+else
+	$(foreach lang,$(BENCHLANG),$(call benchlang-comp-line,$(lang)))
+endif
+
+	@$(ECHO) "LINK: $(LD) $(LD$(PRIMARY_BENCHLANG)FLAGS) $(LDOPTFLAGS) $(EXTRA_LDFLAGS) $(FDO_LDFLAGS) $(FDO_LD$(PRIMARY_BENCHLANG)FLAGS) <objects> $(FINAL_LIBS) $(FINAL_LDOPT) $(LDOUT)"
+# LINK flags breakdown:
+#  LD
+#  LD<lang>FLAGS
+#  LDOPTFLAGS
+#    OPTIMIZE
+#    <lang>OPTIMIZE
+#    FDO_OPTIMIZE
+#      PASS<n>_OPTIMIZE (if FDO is used)
+#    PORTABILITY
+#    <lang>PORTABILITY
+#    LDPORTABILITY
+#    EXTRA_OPTIMIZE
+#    EXTRA_<lang>OPTIMIZE
+#  EXTRA_LDFLAGS
+#  FDO_LDFLAGS
+#    PASS<n>_LDFLAGS (if FDO is used)
+#  FDO_LD<lang>FLAGS
+#    PASS<n>_LD<lang>FLAGS (if FDO is used)
+#  FINAL_LIBS
+#    LIBS
+#    OS_LIBS
+#    MATH_LIBS
+#    OPTIMIZATION_LIBS
+#    OPTIMIZATION_<lang>LIBS
+#    PORTABILITY_LIBS
+#    PORTABILITY_<lang>LIBS
+#    EXTRA_LIBS
+#    EXTRA_<lang>LIBS
+#  FINAL_LDOPT
+#    PASS<n>_LDOPT or LDOPT (depending on FDO or not)
+#  LDOUT
+
+# LD:
+ifneq (,$(strip $(LD)))
+	@$(ECHO) "C: LD=\"$(LD)\""
+endif
+# LD<lang>FLAGS:
+ifneq (,$(strip $(LD$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: LD$(PRIMARY_BENCHLANG)FLAGS=\"$(LD$(PRIMARY_BENCHLANG)FLAGS)\""
+endif
+# LDOPTFLAGS:
+ifneq (,$(strip $(OPTIMIZE)))
+	@$(ECHO) "O: OPTIMIZE=\"$(OPTIMIZE)\""
+endif
+ifneq (,$(strip $($(PRIMARY_BENCHLANG)OPTIMIZE)))
+	@$(ECHO) "O: $(PRIMARY_BENCHLANG)OPTIMIZE=\"$($(PRIMARY_BENCHLANG)OPTIMIZE)\""
+endif
+ifeq (PASS,$(findstring PASS,$(FDO)))
+  ifneq (,$(strip $($(FDO)_OPTIMIZE)))
+	@$(ECHO) "O: $(FDO)_OPTIMIZE=\"$($(FDO)_OPTIMIZE)\""
+  endif
+endif
+ifneq (,$(strip $(PORTABILITY)))
+	@$(ECHO) "P: PORTABILITY=\"$(PORTABILITY)\""
+endif
+ifneq (,$(strip $($(PRIMARY_BENCHLANG)PORTABILITY)))
+	@$(ECHO) "P: $(PRIMARY_BENCHLANG)PORTABILITY=\"$($(PRIMARY_BENCHLANG)PORTABILITY)\""
+endif
+ifneq (,$(strip $(LDPORTABILITY)))
+	@$(ECHO) "P: LDPORTABILITY=\"$(LDPORTABILITY)\""
+endif
+ifneq (,$(strip $(EXTRA_OPTIMIZE)))
+	@$(ECHO) "O: EXTRA_OPTIMIZE=\"$(EXTRA_OPTIMIZE)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE)))
+	@$(ECHO) "O: EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE=\"$(EXTRA_$(PRIMARY_BENCHLANG)OPTIMIZE)\""
+endif
+# EXTRA_LDFLAGS:
+ifneq (,$(strip $(EXTRA_LDFLAGS)))
+	@$(ECHO) "O: EXTRA_LDFLAGS=\"$(EXTRA_LDFLAGS)\""
+endif
+ifeq (PASS,$(findstring PASS,$(FDO)))
+# FDO_LDFLAGS:
+  ifneq (,$(strip $($(FDO)_LDFLAGS)))
+	@$(ECHO) "O: $(FDO)_LDFLAGS=\"$($(FDO)_LDFLAGS)\""
+  endif
+# FDO_LD<lang>FLAGS:
+  ifneq (,$(strip $($(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS)))
+	@$(ECHO) "O: $(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS=\"$($(FDO)_LD$(PRIMARY_BENCHLANG)FLAGS)\""
+  endif
+endif
+# FINAL_LIBS:
+ifneq (,$(strip $(LIBS)))
+	@$(ECHO) "O: LIBS=\"$(LIBS)\""
+endif
+ifneq (,$(strip $(OS_LIBS)))
+	@$(ECHO) "O: OS_LIBS=\"$(OS_LIBS)\""
+endif
+ifneq (,$(strip $(MATH_LIBS)))
+	@$(ECHO) "C: MATH_LIBS=\"$(MATH_LIBS)\""
+endif
+ifneq (,$(strip $(OPTIMIZATION_LIBS)))
+	@$(ECHO) "O: OPTIMIZATION_LIBS=\"$(OPTIMIZATION_LIBS)\""
+endif
+ifneq (,$(strip $(OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "O: OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS=\"$(OPTIMIZATION_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+ifneq (,$(strip $(PORTABILITY_LIBS)))
+	@$(ECHO) "P: PORTABILITY_LIBS=\"$(PORTABILITY_LIBS)\""
+endif
+ifneq (,$(strip $(PORTABILITY_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "P: PORTABILITY_$(PRIMARY_BENCHLANG)LIBS=\"$(PORTABILITY_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+ifneq (,$(strip $(EXTRA_LIBS)))
+	@$(ECHO) "O: EXTRA_LIBS=\"$(EXTRA_LIBS)\""
+endif
+ifneq (,$(strip $(EXTRA_$(PRIMARY_BENCHLANG)LIBS)))
+	@$(ECHO) "O: EXTRA_$(PRIMARY_BENCHLANG)LIBS=\"$(EXTRA_$(PRIMARY_BENCHLANG)LIBS)\""
+endif
+# FINAL_LDOPT:
+ifeq (PASS,$(findstring PASS,$(FDO)))
+ifneq (,$(strip $($(FDO)_LDOPT)))
+	@$(ECHO) "C: $(FDO)_LDOPT=\"$($(FDO)_LDOPT)\""
+endif
+else
+ifneq (,$(strip $(LDOPT)))
+	@$(ECHO) "C: LDOPT=\"$(LDOPT)\""
+endif
+endif
+# LDOUT:
+ifneq (,$(strip $(LDOUT)))
+	@$(ECHO) "C: LDOUT=\"$(LDOUT)\""
+endif
+endif
+
+include Makefile.deps

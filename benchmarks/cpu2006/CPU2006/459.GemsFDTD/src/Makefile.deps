@@ -1,0 +1,18 @@
+
+# These are the build dependencies
+
+$(addsuffix $(OBJ), $(basename leapfrog.f90)): leapfrog.f90 $(addsuffix $(OBJ),$(basename errorcheck.f90 parameter.f90 PEC.f90 calcflops.f90 globalvar.f90 progress.f90) huygens.fppized update.fppized UPML.fppized NFT.fppized)
+$(addsuffix $(OBJ), $(basename readdata.f90)): readdata.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90 errorcheck.f90 excite.f90 PEC.f90 progress.f90) huygens.fppized UPML.fppized NFT.fppized)
+$(addsuffix $(OBJ), $(basename excite.f90)): excite.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90) )
+$(addsuffix $(OBJ), $(basename PEC.f90)): PEC.f90 $(addsuffix $(OBJ),$(basename parameter.f90 errorcheck.f90 readline.f90 globalvar.f90) )
+$(addsuffix $(OBJ), UPML.fppized): UPML.fppized.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90 errorcheck.f90 PEC.f90) )
+$(addsuffix $(OBJ), $(basename progress.f90)): progress.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90) )
+$(addsuffix $(OBJ), $(basename calcflops.f90)): calcflops.f90 $(addsuffix $(OBJ),$(basename globalvar.f90 parameter.f90) huygens.fppized UPML.fppized NFT.fppized)
+$(addsuffix $(OBJ), NFT.fppized): NFT.fppized.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90 posvector.f90 fourier_transf.f90 errorcheck.f90 excite.f90) huygens.fppized)
+$(addsuffix $(OBJ), $(basename fourier_transf.f90)): fourier_transf.f90 $(addsuffix $(OBJ),$(basename parameter.f90) )
+$(addsuffix $(OBJ), $(basename GemsFDTD.f90)): GemsFDTD.f90 $(addsuffix $(OBJ),$(basename parameter.f90 readdata.f90 leapfrog.f90) )
+$(addsuffix $(OBJ), $(basename globalvar.f90)): globalvar.f90 $(addsuffix $(OBJ),$(basename parameter.f90) )
+$(addsuffix $(OBJ), huygens.fppized): huygens.fppized.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90 excite.f90 errorcheck.f90) )
+$(addsuffix $(OBJ), $(basename posvector.f90)): posvector.f90 $(addsuffix $(OBJ),$(basename parameter.f90) )
+$(addsuffix $(OBJ), update.fppized): update.fppized.f90 $(addsuffix $(OBJ),$(basename parameter.f90 globalvar.f90) )
+# End dependencies
