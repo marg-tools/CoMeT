@@ -13,7 +13,10 @@ parsec-2.1/.parsec_source :
 	patch -p1 -dparsec-2.1 < patches/raytrace-unistd-gcc-fix.patch
 	patch -p3 -dparsec-2.1 < patches/raytrace-Xext-fix.patch
 	patch -p1 -dparsec-2.1 < patches/gnu11.patch
+	patch -p1 -dparsec-2.1 < patches/x264-fpie.patch
+	#patch -p0 -dparsec-2.1 < patches/huge_val.patch
 	patches/fixPODSyntax.sh
+	patches/huge_val.sh
 	# Once the download succeeded and we applied all patches, mark as done
 	touch parsec-2.1/.parsec_source
 
