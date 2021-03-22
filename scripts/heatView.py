@@ -39,18 +39,21 @@ def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan'):
     yy = np.linspace(y, y+dy, 2)
     zz = np.linspace(z, z+dz, 2)
 
-    xx, yy = np.meshgrid(xx, yy)
+    xxx, yyy = np.meshgrid(xx, yy)
+    zzz = z*np.ones(4).reshape(2, 2)
+    ax.plot_surface(xxx, yyy, zzz,    **kwargs)
+    ax.plot_surface(xxx, yyy, zzz+dz, **kwargs)
 
-    ax.plot_surface(xx, yy, z, **kwargs)
-    ax.plot_surface(xx, yy, z+dz, **kwargs)
+    yyy, zzz = np.meshgrid(yy, zz)
+    xxx = x*np.ones(4).reshape(2, 2)
+    ax.plot_surface(xxx,    yyy, zzz, **kwargs)
+    ax.plot_surface(xxx+dx, yyy, zzz, **kwargs)
 
-    yy, zz = np.meshgrid(yy, zz)
-    ax.plot_surface(x, yy, zz, **kwargs)
-    ax.plot_surface(x+dx, yy, zz, **kwargs)
+    xxx, zzz = np.meshgrid(xx, zz)
+    yyy = y*np.ones(4).reshape(2, 2)
+    ax.plot_surface(xxx, yyy,    zzz, **kwargs)
+    ax.plot_surface(xxx, yyy+dy, zzz, **kwargs)
 
-    xx, zz = np.meshgrid(xx, zz)
-    ax.plot_surface(xx, y, zz, **kwargs)
-    ax.plot_surface(xx, y+dy, zz, **kwargs)
     # ax.set_xlim3d(-dx, dx*2, 20)
     # ax.set_xlim3d(-dx, dx*2, 20)
     # ax.set_xlim3d(-dx, dx*2, 20)
@@ -131,18 +134,25 @@ if __name__ == "__main__":
                 index+=1
         cmap = mpl.cm.RdYlBu_r
         norm = mpl.colors.Normalize(vmin=tmin, vmax=tmax)
-        plt.imshow( b_temp , cmap = cmap , norm=norm, interpolation = 'nearest' ) 
-        yint = []
-        locs, labels = plt.yticks()
-        for each in locs:
-            yint.append(int(each))
-        plt.yticks(yint)
+        #print(b_temp)
+        plt.imshow( b_temp , cmap = cmap , norm=norm, interpolation = 'nearest', aspect='equal', origin='lower') 
+        #yint = []
+        #locs, labels = plt.yticks()
+        #print(locs)
+        #for each in locs:
+        #    yint.append(int(each))
+        #plt.yticks(yint)
+        #print(yint)
 
-        yint = []
-        locs, labels = plt.xticks()
-        for each in locs:
-            yint.append(int(each))
-        plt.xticks(yint)
+        #yint = []
+        #locs, labels = plt.xticks()
+        #print(locs)
+        #for each in locs:
+        #    yint.append(int(each))
+        #plt.xticks(yint)
+        #print(yint)
+        plt.yticks([0,1,2,3])
+        plt.xticks([0,1,2,3])
         plt.annotate("Bottom layer\ncross section", xy=(0.73, 0.65), xycoords='figure fraction')
 
 
