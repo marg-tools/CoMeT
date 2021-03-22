@@ -1,0 +1,12 @@
+--- parsec-2.1/config/gcc-sniper.bldconf
++++ parsec-2.1/config/gcc-sniper.bldconf
+@@ -6,7 +6,7 @@ source ${PARSECDIR}/config/gcc-hooks.bldconf
+ source ${PARSECDIR}/../../tools/hooks/buildconf.sh
+ 
+ CC="${HOOKS_CC}"
+-CXX="${HOOKS_CXX}"
++CXX="${HOOKS_CXX} -std=gnu++11"
+ CFLAGS="${CFLAGS} ${HOOKS_CFLAGS} -DENABLE_PARMACS"
+ CXXFLAGS="${CXXFLAGS} ${HOOKS_CXXFLAGS}"
+ LDFLAGS="${LDFLAGS} ${HOOKS_LDFLAGS}"
+
