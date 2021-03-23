@@ -117,11 +117,11 @@ for o, a in opts:
     rungraphiteoptions.append(o)
   if o.startswith('--') and o[2:]+'=' in opts_passthrough:
     rungraphiteoptions.append('%s="%s"' % (o, a))
-#  if o == '--benchmarks':
-#    benchmarkPassed = a
-#    benchmarkPassed = benchmarkPassed.replace (",","+")
-#    rungraphiteoptions.append('-g --traceinput/benchmarks=%s' % benchmarkPassed)
-#
+  if o == '--benchmarks':
+    benchmarkPassed = a
+    benchmarkPassed = benchmarkPassed.replace (",","+")
+    rungraphiteoptions.append('-g --traceinput/benchmarks=%s' % benchmarkPassed)
+
     for bm in a.split(','):
       benchmarks.append(bm.split('-'))
     if not ncores:
@@ -240,6 +240,7 @@ if not program and not benchmarks:
 
 if benchmarks:
   rungraphiteoptions.append('--trace-manual')
+  rungraphiteoptions.append('--nosift')
   rungraphiteoptions.append('-g --traceinput/enabled=true')
   rungraphiteoptions.append('-g --traceinput/emulate_syscalls=true')
   rungraphiteoptions.append('-g --traceinput/num_apps=%u' % len(benchmarks))

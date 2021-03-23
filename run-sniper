@@ -45,6 +45,7 @@ def usage():
         '  {--traces=<trace0>,<trace1>,... [--sim-end=<first|last|last-restart (default: first)>]' + \
         '  |  --pinballs=<pinball-basename>,*' + \
         '  |  --pid=<process-pid>' + \
+        '  |  [--nosift]' + \
         '  |  [--sift]' + \
         '  |  [--frontend=]' + \
         '  |  [--isa=ia32|x86_64]' + \
@@ -221,6 +222,7 @@ try:
       "mpi", "mpi-ranks=", "mpi-exec=",
       "pinballs=", "pinball-non-sift", "pinplay-addr-trans",
       "sift",
+      "nosift",
       "pid=",
       "isa=",
       "frontend=",
@@ -349,6 +351,8 @@ for o, a in opts:
     pinplay_addrtrans = True
   if o == '--sift':
     use_sift = True
+  if o == '--nosift':
+    use_sift = False
   if o == '--pid':
     use_pid = a
     use_sift = True
