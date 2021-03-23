@@ -61,3 +61,16 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y \
     systemd \
  && rm -rf /var/lib/apt/lists/*
+
+
+# PARSEC
+RUN apt-get update && apt-get install -y \
+    xsltproc \
+    gettext \
+    libx11-dev \
+    libxext-dev \
+    libxt-dev \
+    libxmu-dev \
+    libxi-dev \
+ && rm -rf /var/lib/apt/lists/*
+
