@@ -242,6 +242,8 @@ class memTherm:
     c_full_temperature_trace_file = sim.config.get('hotspot_c/full_temperature_trace_file')
     os.system("rm -f " + c_full_power_trace_file)
     os.system("rm -f " + c_full_temperature_trace_file)
+    for filename in ('PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.log',):
+      open(filename, 'w') # empties the file
 
    #return access rates of various memory banks
   def get_access_rates(self, time, time_delta):
