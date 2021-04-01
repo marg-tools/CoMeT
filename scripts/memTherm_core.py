@@ -90,6 +90,9 @@ full_power_trace_file = sim.config.get('hotspot/full_power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/temperature_trace_file')
 full_temperature_trace_file = sim.config.get('hotspot/full_temperature_trace_file')
 combined_temperature_trace_file = sim.config.get('hotspot/combined_temperature_trace_file')
+combined_insttemperature_trace_file = sim.config.get('hotspot/combined_insttemperature_trace_file')
+combined_power_trace_file = sim.config.get('hotspot/combined_power_trace_file')
+combined_instpower_trace_file = sim.config.get('hotspot/combined_instpower_trace_file')
 init_file_external = hotspot_config_path + hotspot_test_dir + sim.config.get('hotspot/init_file_external')
 init_file = sim.config.get('hotspot/init_file')
 
@@ -229,6 +232,9 @@ class memTherm:
     f.close()
     combined_header = self.gen_combined_trace_header()
     with open(combined_temperature_trace_file, "w") as f:
+        f.write("%s\n" %(combined_header))
+    f.close()
+    with open(combined_power_trace_file, "w") as f:
         f.write("%s\n" %(combined_header))
     f.close()
     with open(full_power_trace_file, "w") as f:
@@ -401,59 +407,65 @@ class memTherm:
     return trace_header
 
   # this function merges the separate core and mem trace files or reorders a single core+mem trace file, all to a uniform format
-  def format_trace_file(self, skip_header):
-    c_temperature_trace_file = sim.config.get('hotspot_c/temperature_trace_file')
+  def format_trace_file(self, skip_header, c_inst_trace_file, inst_trace_file, combined_trace_file, combined_instTrace_file):
     if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):        #separate mem and core traces are combined
-        with open(c_temperature_trace_file, 'r') as core_temp_file:
+        with open(c_inst_trace_file, 'r') as core_data_file:
             if (skip_header):
-                core_temp_file.readline()  # ignore first line that contains the header
-            core_temp_data=core_temp_file.readline()  # ignore first line that contains the header
-            core_temp_data = core_temp_data.rstrip()
-        core_temp_file.close()
-        with open(temperature_trace_file, 'r') as mem_temp_file:
+                core_data_file.readline()  # ignore first line that contains the header
+            core_data=core_data_file.readline()  
+            core_data = core_data.rstrip()
+        core_data_file.close()
+        with open(inst_trace_file, 'r') as mem_data_file:
             if (skip_header):
-                mem_temp_file.readline()  # ignore first line that contains the header
-            mem_temp_data=mem_temp_file.readline()  # ignore first line that contains the header
-            mem_temp_data=mem_temp_data.rstrip()  
-        mem_temp_file.close()
+                mem_data_file.readline()  # ignore first line that contains the header
+            mem_data=mem_data_file.readline()  
+            mem_data=mem_data.rstrip()  
+        mem_data_file.close()
         if (type_of_stack == "3Dmem"):      #skip the LC entries for a 3D external memory
-            mem_temp_data_split = mem_temp_data.split("\t")
-            mem_temp_data_split = mem_temp_data_split[NUM_LC:]
-            mem_temp_data = "\t".join(mem_temp_data_split)
+            mem_data_split = mem_data.split("\t")
+            mem_data_split = mem_data_split[NUM_LC:]
+            mem_data = "\t".join(mem_data_split)
     elif (type_of_stack == "3D"):        #reorder core and memory columns in a 3D layout
-        with open(temperature_trace_file, 'r') as temp_file:
+        with open(inst_trace_file, 'r') as data_file:
             if (skip_header):
-                temp_file.readline()  # ignore first line that contains the header
-            temp_data=temp_file.readline()  # ignore first line that contains the header
-            temp_data=temp_data.rstrip()  
-        temp_file.close()
-        temp_data_split = temp_data.split("\t")
-        core_temp_data_split = temp_data_split[NUM_BANKS:]        #extract core temperatures from the line (last few entries)
-        core_temp_data = "\t".join(core_temp_data_split)
-        mem_temp_data_split = temp_data_split[:NUM_BANKS]         #extract memory temperatures (first few entries)
-        mem_temp_data = "\t".join(mem_temp_data_split)
+                data_file.readline()  # ignore first line that contains the header
+            data=data_file.readline()  # ignore first line that contains the header
+            data=data.rstrip()  
+        data_file.close()
+        data_split = data.split("\t")
+        core_data_split = data_split[NUM_BANKS:]        #extract core temperatures from the line (last few entries)
+        core_data = "\t".join(core_data_split)
+        mem_data_split = data_split[:NUM_BANKS]         #extract memory temperatures (first few entries)
+        mem_data = "\t".join(mem_data_split)
     elif (type_of_stack == "2.5D"):
-        with open(temperature_trace_file, 'r') as temp_file:
+        with open(inst_trace_file, 'r') as data_file:
             if (skip_header):
-                temp_file.readline()  # ignore first line that contains the header
-            temp_data=temp_file.readline()  # ignore first line that contains the header
-            temp_data=temp_data.rstrip()  
-        temp_file.close()
-        temp_data_split = temp_data.split("\t")
-        core_temp_data_split = temp_data_split[:NUM_CORES]        #extract core temperatures from the line (first few entries)
-        core_temp_data = "\t".join(core_temp_data_split)
-        mem_temp_portion = temp_data_split[NUM_CORES+NUM_LC+3 : ] # skip the first few entries corresponding to cores, LC, and X1, X2, X3
+                data_file.readline()  # ignore first line that contains the header
+            data=data_file.readline()  # ignore first line that contains the header
+            data=data.rstrip()  
+        data_file.close()
+        data_split = data.split("\t")
+        core_data_split = data_split[:NUM_CORES]        #extract core temperatures from the line (first few entries)
+        core_data = "\t".join(core_data_split)
+        mem_portion = data_split[NUM_CORES+NUM_LC+3 : ] # skip the first few entries corresponding to cores, LC, and X1, X2, X3
         banks_per_layer = banks_in_x*banks_in_y
-        mem_temp_data_split = []
+        mem_data_split = []
         for layer in range(banks_in_z):
             start_index = layer*(banks_per_layer+4)         # +4 corresponds to X0,X1,X2,X3
-            mem_temp_data_split.extend(mem_temp_portion[start_index:start_index+banks_per_layer])
-        mem_temp_data = "\t".join(mem_temp_data_split)
+            mem_data_split.extend(mem_portion[start_index:start_index+banks_per_layer])
+        mem_data = "\t".join(mem_data_split)
 
     #finally combine core and memory traces and print to the file
-    temperature_data = core_temp_data + "\t" + mem_temp_data + "\r"
-    with open("%s" %(combined_temperature_trace_file), "a") as f:
-        f.write("%s\n" %(temperature_data))
+    final_data = core_data + "\t" + mem_data + "\r"
+    with open("%s" %(combined_trace_file), "a") as f:
+        f.write("%s\n" %(final_data))
+    f.close()
+
+    #combined, instantaneous power/temperature file generated
+    combined_header = self.gen_combined_trace_header()
+    with open("%s" %(combined_instTrace_file), "w") as f:
+        f.write("%s\n" %(combined_header))
+        f.write("%s\n" %(final_data))
     f.close()
 
 
@@ -470,7 +482,10 @@ class memTherm:
     self.calc_power_trace(time, time_delta)
      #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
     os.system(hotspot_command)
-    self.format_trace_file(True)
+    c_temperature_trace_file = sim.config.get('hotspot_c/temperature_trace_file')
+    c_power_trace_file = sim.config.get('hotspot_c/power_trace_file')
+    self.format_trace_file(True, c_temperature_trace_file, temperature_trace_file, combined_temperature_trace_file, combined_insttemperature_trace_file)
+    self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
       #concatenate the per interval temperature trace into a single file
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
