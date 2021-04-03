@@ -74,3 +74,10 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
  && rm -rf /var/lib/apt/lists/*
 
+
+# simulationcontrol
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir matplotlib seaborn diskcache tabulate

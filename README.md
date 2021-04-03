@@ -79,3 +79,24 @@ With the growing power density in both processors and memories (esp. 3D), therma
     - Multiple files would be generated, but the useful ones are described below (these files would have \_mem and\_core suffix to indicate if they are for memory or core temperature simulation):
 	- full\_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory. core trace is not generated in case of a 2.5D and 3D architecture.
 	- logfile - the simulation output from the terminal. bank\_access\_counter lists the access counts for different banks
+
+# Open Scheduler
+
+- features
+	- random arrival times of workloads (open system)
+	- API for application mapping and DVFS policies
+- enable with `type=open` in base.cfg
+
+# Simulation Control Package
+
+- features
+	- batch run many simulations with different configurations
+		- annotate configuration options in `base.cfg` with tags following the format `# cfg:<TAG>` (ONLY `base.cfg` supported at the moment)
+		- specify list of tags per run in `run.py`. Only the associated configuration options will be enabled
+		- for an example: see `example` function in `run.py` and `scheduler/open/dvfs/constFreq` in `base.cfg` to run an application at different frequencies
+	- create plots of temperature, power, etc. over time
+	- API to automatically parse finished runs (`resultlib`)
+- usage
+	- specify your runs in `simulationcontrol/run.py`
+	- `python3 run.py`
+	- print overview of finished simulations: `python3 parse_results.py`
