@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "scheduler_pinned_base.h"
+#include "performance_counters.h"
+#include "policies/dvfspolicy.h"
 #include "policies/mappingpolicy.h"
 
 
@@ -54,6 +56,8 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int coreRows;
 		int coreColumns;
 
+		PerformanceCounters *performanceCounters;
+
 		// scheduling
 		std::vector <openTask> openTasks;
 		std::vector <systemCore> systemCores;
@@ -80,6 +84,19 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int getCoreNb(int y, int x);
 		bool isAssignedToTask(int coreId);
 		bool isAssignedToThread(int coreId);
+
+		// DVFS
+		DVFSPolicy *dvfsPolicy = NULL;
+		long dvfsEpoch;
+		void initDVFSPolicy(String policyName);
+		void executeDVFSPolicy();
+		void setFrequency(int coreCounter, int frequency);
+		int minFrequency;
+		int maxFrequency;
+		int frequencyStepSize;
+
+		// migration
+		void migrateThread(thread_id_t thread_id, core_id_t core_id);
 
 		std::string formatTime(SubsecondTime time);
 

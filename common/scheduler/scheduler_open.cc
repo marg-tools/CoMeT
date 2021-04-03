@@ -13,6 +13,7 @@
 #include "performance_model.h"
 #include "magic_server.h"
 
+#include "policies/dvfsConstFreq.h"
 #include "policies/mapFirstUnused.h"
 
 #include <iomanip>
@@ -28,6 +29,12 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
    : SchedulerPinnedBase(thread_manager, SubsecondTime::NS(Sim()->getCfg()->getInt("scheduler/pinned/quantum")))
    , m_interleaving(Sim()->getCfg()->getInt("scheduler/pinned/interleaving"))
    , m_next_core(0) {
+
+	// Initialize config constants
+	minFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/min_frequency") + 0.5);
+	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/max_frequency") + 0.5);
+	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/frequency_step_size") + 0.5);
+	dvfsEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dvfs/dvfs_epoch").c_str());
 
 	m_core_mask.resize(Sim()->getConfig()->getApplicationCores());
 	for (core_id_t core_id = 0; core_id < (core_id_t)Sim()->getConfig()->getApplicationCores(); core_id++) {
@@ -51,6 +58,11 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 		cout<<"\n[Scheduler] [Error]: Invalid system size: " << numberOfCores << ", expected rectangular-shaped system." << endl;
 		exit (1);
 	}
+
+	performanceCounters = new PerformanceCounters(
+		Sim()->getCfg()->getString("hotspot/combined_instpower_trace_file").c_str(),
+		Sim()->getCfg()->getString("hotspot/combined_insttemperature_trace_file").c_str(),
+		"InstantaneousCPIStack.log");
 
 	//Initialize the cores in the system.
 	for (int coreIterator=0; coreIterator < numberOfCores; coreIterator++) {
@@ -109,6 +121,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	}
 
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
+	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
 }
 
 /** initMappingPolicy
@@ -130,6 +143,24 @@ void SchedulerOpen::initMappingPolicy(String policyName) {
 	} //else if (policyName ="XYZ") {... } //Place to instantiate a new mapping logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Mapping Algorithm" << endl;
+ 		exit (1);
+	}
+}
+
+/** initDVFSPolicy
+ * Initialize the DVFS policy to the policy with the given name
+ */
+void SchedulerOpen::initDVFSPolicy(String policyName) {
+	cout << "[Scheduler] [Info]: Initializing DVFS policy" << endl;
+	if (policyName == "off") {
+		dvfsPolicy = NULL;
+	} else if (policyName == "constFreq") {
+		int activeCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/active_core_freq") + 0.5);
+		int idleCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/idle_core_freq") + 0.5);
+		dvfsPolicy = new DVFSConstFreq(performanceCounters, coreRows, coreColumns, activeCoreFreq, idleCoreFreq);
+	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
+	else {
+		cout << "\n[Scheduler] [Error]: Unknown DVFS Algorithm" << endl;
  		exit (1);
 	}
 }
@@ -335,6 +366,45 @@ int SchedulerOpen::setAffinity (thread_id_t thread_id) {
 	}
 
 	return coreFound;
+}
+
+
+/** migrateThread
+ * Move the given thread to the given core.
+ */
+void SchedulerOpen::migrateThread(thread_id_t thread_id, core_id_t core_id)
+{
+	int from_core_id = -1;
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		if (systemCores[coreCounter].assignedThreadID == thread_id) {
+			from_core_id = coreCounter;
+			break;
+		}
+	}
+	if (from_core_id == -1) {
+		cout << "[Scheduler] [Error] could not find core of thread " << thread_id << endl;
+		exit(1);
+	}
+	if (from_core_id == core_id) {
+		cout << "[Scheduler] skipped moving thread " << thread_id << " to core " << core_id << " (already there)" << endl;
+	} else {
+		cout << "[Scheduler] moving thread " << thread_id << " from core " << from_core_id << " to core " << core_id << endl;
+		if (isAssignedToTask(core_id)) {
+			cout << "[Scheduler] [Error] core is already in use" << endl;
+			exit(1);
+		}
+		
+		cpu_set_t my_set; 
+		CPU_ZERO(&my_set); 
+		CPU_SET(core_id, &my_set);
+		threadSetAffinity(INVALID_THREAD_ID, thread_id, sizeof(cpu_set_t), &my_set); 
+
+		systemCores[core_id].assignedTaskID = systemCores[from_core_id].assignedTaskID;
+		systemCores[core_id].assignedThreadID = thread_id;
+
+		systemCores[from_core_id].assignedTaskID = -1;
+		systemCores[from_core_id].assignedThreadID = -1;
+	}
 }
 
 
@@ -758,6 +828,46 @@ int SchedulerOpen::coreRequirementTranslation (String compositionString) {
 	}
 }
 
+/**
+ * Set the frequency for a core.
+ */
+void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
+	int oldFrequency = Sim()->getMagicServer()->getFrequency(coreCounter);
+
+	if (frequency > oldFrequency + 1000) {
+		frequency = oldFrequency + 1000;
+	}
+	if (frequency < minFrequency) {
+		frequency = minFrequency;
+	}
+	if (frequency > maxFrequency) {
+		frequency = maxFrequency;
+	}
+
+	if (frequency != oldFrequency) {
+		Sim()->getMagicServer()->setFrequency(coreCounter, frequency);
+	}
+}
+
+
+/** executeDVFSPolicy
+ * Set DVFS levels according to the used policy.
+ */
+void SchedulerOpen::executeDVFSPolicy() {
+	std::vector<int> oldFrequencies;
+	std::vector<bool> activeCores;
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		oldFrequencies.push_back(Sim()->getMagicServer()->getFrequency(coreCounter));
+		activeCores.push_back(isAssignedToThread(coreCounter));
+	}
+	vector<int> frequencies = dvfsPolicy->getFrequencies(oldFrequencies, activeCores);
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		setFrequency(coreCounter, frequencies.at(coreCounter));
+	}
+	performanceCounters->notifyFreqsOfCores(frequencies);
+}
+
+
 /** periodic
     This function is called periodically by Sniper at Interval of 100ns.
 */
@@ -776,6 +886,12 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 			cout <<"\n[Scheduler] [Error]: Task State Does Not Match.\n";		
 			exit (1);
 		}
+	}
+
+	if ((dvfsPolicy != NULL) && (time.getNS() % dvfsEpoch == 0)) {
+		cout << "\n[Scheduler]: DVFS Control Loop invoked at " << formatTime(time) << endl;
+
+		executeDVFSPolicy();
 	}
 
 	if (time.getNS () % mappingEpoch == 0) {
