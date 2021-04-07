@@ -232,7 +232,7 @@ def example():
         [scheduler]
         type = open
     """
-    for freq in (1, 2, 3, 4):
+    for freq in (1, 2, 3, 4):  # when adding a new frequency level, make sure that it is also added in base.cfg
         run(['{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
 
 
