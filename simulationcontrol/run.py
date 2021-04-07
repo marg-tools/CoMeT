@@ -20,6 +20,7 @@ BATCH_START = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M')
 
 
 def change_base_configuration(base_configuration):
+    seen = set()
     base_cfg = os.path.join(SNIPER_BASE, 'config/base.cfg')
     with open(base_cfg, 'r') as f:
         content = f.read()
@@ -34,8 +35,14 @@ def change_base_configuration(base_configuration):
                     line = line[1:]
                 elif not include and included:
                     line = '#' + line
+                if m.group(2) in base_configuration:
+                    seen.add(m.group(2))
             f.write(line)
             f.write('\n')
+    not_seen = set(base_configuration) - seen
+    if not_seen:
+        print('WARNING: these configuration options have no match in base.cfg and have no effect: {}'.format(', '.join(not_seen)))
+        input('Please press enter to continue...')
 
 
 def save_output(base_configuration, benchmark, console_output, started, ended):

@@ -87,6 +87,12 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- API for application mapping and DVFS policies
 - enable with `type=open` in base.cfg
 
+## Configuration Help for Open Scheduler
+
+- task arrival times: use the config parameters in `scheduler/open` in `base.cfg`
+- mapping: select logic with `scheduler/open/logic` and configure with additional parameters (`core_mask`, `preferred_core`)
+- DVFS: select logic with `scheduler/open/dvfs/logic` and configure accordingly
+
 # Simulation Control Package
 
 - features
@@ -94,9 +100,11 @@ With the growing power density in both processors and memories (esp. 3D), therma
 		- annotate configuration options in `base.cfg` with tags following the format `# cfg:<TAG>` (ONLY `base.cfg` supported at the moment)
 		- specify list of tags per run in `run.py`. Only the associated configuration options will be enabled
 		- for an example: see `example` function in `run.py` and `scheduler/open/dvfs/constFreq` in `base.cfg` to run an application at different frequencies
+		- IMPORTANT: make sure that all your configuration options have a match in `base.cfg`
 	- create plots of temperature, power, etc. over time
 	- API to automatically parse finished runs (`resultlib`)
 - usage
+	- configure basic settings in `simulationcontrol/config.py`
 	- specify your runs in `simulationcontrol/run.py`
 	- `python3 run.py`
 	- print overview of finished simulations: `python3 parse_results.py`
