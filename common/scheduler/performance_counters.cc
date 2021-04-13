@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -47,6 +48,33 @@ double PerformanceCounters::getPowerOfCore(int coreId) const {
 }
 
 
+/** getPeakTemperature
+    Returns the latest peak temperature of any component
+*/
+double PerformanceCounters::getPeakTemperature () const {
+	ifstream temperatureLogFile(instTemperatureFileName);
+	string header;
+	string footer;
+
+	if (temperatureLogFile.good()) {
+		getline(temperatureLogFile, header);
+		getline(temperatureLogFile, footer);
+	}
+
+	std::istringstream issFooter(footer);
+
+	double maxTemp = -1;
+	std::string value;
+	while(getline(issFooter, value, '\t')) {
+		double t = stod (value);
+		if (t > maxTemp) {
+			maxTemp = t;
+		}
+	}
+
+	return maxTemp;
+}
+
 /** getTemperatureOfComponent
     Returns the latest temperature of a component being tracked using base.cfg. Return -1 if power value not found.
 */
@@ -84,6 +112,29 @@ double PerformanceCounters::getTemperatureOfCore(int coreId) const {
 	return getTemperatureOfComponent(component);
 }
 
+vector<string> PerformanceCounters::getCPIStackParts() const {
+	ifstream cpiStackLogFile(instCPIStackFileName);
+    string line;
+	std::istringstream issLine;
+
+	vector<string> parts;
+	if (cpiStackLogFile.good()) {
+		getline(cpiStackLogFile, line); // consume first line containing the CSV header
+		getline(cpiStackLogFile, line); // consume second line containing total values
+		while (cpiStackLogFile.good()) {
+			getline(cpiStackLogFile, line);
+			issLine.str(line);
+			issLine.clear();
+			std::string m;
+			getline(issLine, m, '\t');
+			if (m.length() > 0) {
+				parts.push_back(m);
+			}
+		}
+	}
+	return parts;
+}
+
 /**
  * Get a performance metric for the given core.
  * Available performance metrics can be checked in InstantaneousPerformanceCounters.log
@@ -104,7 +155,7 @@ double PerformanceCounters::getCPIStackPartOfCore(int coreId, std::string metric
 			getline(issLine, m, '\t');
 			metricFound = (m == metric);
 		} else {
-			return -1;
+			return 0;
 		}
 	}
 
@@ -124,7 +175,21 @@ double PerformanceCounters::getCPIStackPartOfCore(int coreId, std::string metric
  * Get the utilization of the given core.
  */
 double PerformanceCounters::getUtilizationOfCore(int coreId) const {
-	return getCPIStackPartOfCore(coreId, "base") / getCPIOfCore(coreId);
+	float cpi = 0;
+	for (const string & part : getCPIStackParts()) {
+		// exclude non-memory-related parts
+		if ((part.find("mem") == std::string::npos) &&
+		    (part.find("ifetch") == std::string::npos) &&
+		    (part.find("sync") == std::string::npos) &&
+		    (part.find("dvfs-transition") == std::string::npos) &&
+		    (part.find("imbalance") == std::string::npos) &&
+		    (part.find("other") == std::string::npos)) {
+
+			cpi += getCPIStackPartOfCore(coreId, part);
+		}
+	}
+	float total = getCPIOfCore(coreId);
+	return cpi / total;
 }
 
 /**

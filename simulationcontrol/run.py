@@ -98,10 +98,10 @@ def run(base_configuration, benchmark):
 
     ended = datetime.datetime.now()
 
-    save_output(base_configuration, benchmark, console_output, started, ended)
-
     if p.returncode != 0:
         raise Exception('return code != 0')
+
+    save_output(base_configuration, benchmark, console_output, started, ended)
 
 
 def try_run(base_configuration, benchmark):
