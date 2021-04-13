@@ -14,6 +14,7 @@ public:
     PerformanceCounters(std::string instPowerFileName, std::string instTemperatureFileName, std::string instCPIStackFileName);
     double getPowerOfComponent (std::string component) const;
     double getPowerOfCore(int coreId) const;
+    double getPeakTemperature () const;
     double getTemperatureOfComponent (std::string component) const;
     double getTemperatureOfCore (int coreId) const;
     double getCPIStackPartOfCore(int coreId, std::string metric) const;
@@ -29,6 +30,8 @@ private:
     std::string instPowerFileName;
     std::string instTemperatureFileName;
     std::string instCPIStackFileName;
+
+    std::vector<std::string> getCPIStackParts() const;
 };
 
 #endif
