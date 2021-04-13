@@ -14,7 +14,7 @@ import numpy as np
 
 
 def usage():
-    print "ERror"
+    print ("ERror")
 
 cores_in_x=4
 cores_in_y=4
@@ -53,11 +53,12 @@ if not sys.argv[1:]:
 opts_passthrough = [ 'cores_in_x=', 'cores_in_y=', 'cores_in_z=', 'banks_in_x=', 'banks_in_y=', 'banks_in_z=', 'arch_type=', 'plot_type=', 'layer_to_view=', 'type_to_view=', 'verbose', 'inverted_view', 'debug', 'tmin=', 'tmax=', 'samplingRate=', 'traceFile=', 'output=', 'clean' ]
 
 try:
-        #                     arguments,  shortopts,  longopts
+  #                     arguments,  shortopts,  longopts
   opts, args = getopt.getopt(sys.argv[1:], "hvidcs:t:o:", opts_passthrough)
-except getopt.GetoptError, e:
+
+except: #getopt.GetoptError, e:
   # print help information and exit:
-  print e
+  print (e)
   usage()
   sys.exit()
 for o, a in opts:
@@ -104,8 +105,8 @@ for o, a in opts:
     cleanDir = True
 
 if (debug):
-    print "Command line options:"
-    print opts
+    print ("Command line options:")
+    print (opts)
 
 
 
