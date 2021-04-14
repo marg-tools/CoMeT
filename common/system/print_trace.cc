@@ -66,4 +66,6 @@ void print_dram_trace()
             printf("%u, ", rdt[i].bank_read_access_count[j]+wrt[i].bank_write_access_count[j]);
         }
     }
+
+    printf("\n");
 }
