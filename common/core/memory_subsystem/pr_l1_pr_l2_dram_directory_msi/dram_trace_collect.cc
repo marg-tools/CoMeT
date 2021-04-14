@@ -1,3 +1,4 @@
+#include <vector>
 #include "dram_cntlr.h"
 #include "dram_trace_collect.h"
 #include "memory_manager.h"
@@ -13,6 +14,8 @@
 #include <inttypes.h>
 #include "config.hpp"
 #include "config.h"
+
+using namespace std;
 
 unsigned long num_of_dram_reads;
 unsigned long num_of_dram_writes;
@@ -75,8 +78,9 @@ unsigned long num_of_dram_writes;
     UInt64 roi_start_time_read=0;
     UInt64 roi_start_time_write=0;
 
-    struct read_trace_data rdt[2000];
-    struct write_trace_data wrt[2000];
+    
+    vector<read_trace_data> rdt;
+    vector<write_trace_data> wrt;
     UInt64 read_adv_count = 0;
     UInt64 write_adv_count = 0;
 
@@ -141,6 +145,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
         
         if (current_time > ACCUMULATION_TIME + read_interval_start_time){
             read_interval_start_time = current_time - (current_time % ACCUMULATION_TIME);
+            rdt.push_back(read_trace_data());
             while(read_last_printed_timestamp + ACCUMULATION_TIME < read_interval_start_time){
                 rdt[read_adv_count].rd_interval_start_time = read_last_printed_timestamp + ACCUMULATION_TIME;
                 rdt[read_adv_count].read_access_count_per_epoch = 0;
@@ -227,6 +232,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
         
         if (current_time > ACCUMULATION_TIME + write_interval_start_time){
             write_interval_start_time = current_time - (current_time % ACCUMULATION_TIME);
+            wrt.push_back(write_trace_data());
             while(write_last_printed_timestamp + ACCUMULATION_TIME < write_interval_start_time){
                 wrt[write_adv_count].wr_interval_start_time = write_last_printed_timestamp + ACCUMULATION_TIME;
                 wrt[write_adv_count].write_access_count_per_epoch = 0;
