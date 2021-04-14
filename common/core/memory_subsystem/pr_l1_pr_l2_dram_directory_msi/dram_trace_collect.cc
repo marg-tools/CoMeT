@@ -14,8 +14,8 @@
 #include "config.hpp"
 #include "config.h"
 
-unsigned long count_getdata;
-unsigned long count_putdata;
+unsigned long num_of_dram_reads;
+unsigned long num_of_dram_writes;
 
 // #define DEFAULT_BANK_COUNTERS 
 // #define COSKUN_DATE2012        //  Analysis and runtime management of 3D systems with stacked DRAM for boosting energy efficiency. 
@@ -109,7 +109,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
         roi_start_time_read = now.getUS();
         read_last_printed_timestamp = roi_start_time_read;
      }
-     count_getdata++;
+     num_of_dram_reads++;
   
      #ifdef BANK_COUNTERS
         UInt32 i = 0;
@@ -176,7 +176,6 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
 void
 dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m_writes)
 {
-   //count_putdata++;
    address_ptr = address;
    
    SInt32 memory_controllers_interleaving = 0;
@@ -191,7 +190,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
         roi_start_time_write = now.getUS();
         write_last_printed_timestamp = roi_start_time_write;
      }
-     count_putdata++;
+     num_of_dram_writes++;
   
      #ifdef DEBUG
      static int access_count = 1;

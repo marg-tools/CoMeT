@@ -7,6 +7,9 @@
 #include "exceptions.h"
 #include "sim_api.h"
 
+extern unsigned long num_of_dram_reads;
+extern unsigned long num_of_dram_writes;
+
 int main(int argc, char* argv[])
 {
    // Set thread name for Sniper-in-Sniper simulations
@@ -60,6 +63,10 @@ int main(int argc, char* argv[])
 
    Simulator::release();
    delete cfg;
+
+   printf("\nTotal number of DRAM read requests = %lu \n", num_of_dram_reads);
+   printf("\nTotal number of DRAM write requests = %lu \n\n", num_of_dram_writes);
+
              
    return 0;
 }
