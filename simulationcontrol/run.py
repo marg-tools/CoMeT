@@ -30,7 +30,7 @@ def example2():
         for freq in (1, 2, 3, 4):
             for parallelism in (min_parallelism, max_parallelism):
                 # you can also use try_run instead
-                runlib.run(['{:.1f}GHz'.format(freq), 'constFreq'], runlib.get_instance(benchmark, parallelism, input_set='simsmall'))
+                runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], runlib.get_instance(benchmark, parallelism, input_set='simsmall'))
 
 
 def example():
@@ -41,7 +41,7 @@ def example():
         type = open
     """
     for freq in (1, 2, 3, 4):  # when adding a new frequency level, make sure that it is also added in base.cfg
-        runlib.run(['{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
+        runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
 
 
 def main():
