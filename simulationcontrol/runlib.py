@@ -60,7 +60,7 @@ def create_video(run):
         '--type_to_view', config.VIDEO_BREAKOUT_TYPE,
         '--samplingRate', '1',
         '--traceFile', os.path.join(BENCHMARKS, 'combined_temperature.trace'),
-        '--output', os.path.join(run, 'video'),
+        '--output', os.path.join(config.RESULTS_FOLDER, run, 'video'),
         '--clean',
     ]
     if config.VIDEO_INVERTED_VIEW:
