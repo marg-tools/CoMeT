@@ -14,6 +14,7 @@
 #include "magic_server.h"
 
 #include "policies/dvfsConstFreq.h"
+#include "policies/dvfsOndemand.h"
 #include "policies/mapFirstUnused.h"
 
 #include <iomanip>
@@ -158,6 +159,23 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 		int activeCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/active_core_freq") + 0.5);
 		int idleCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/idle_core_freq") + 0.5);
 		dvfsPolicy = new DVFSConstFreq(performanceCounters, coreRows, coreColumns, activeCoreFreq, idleCoreFreq);
+	} else if (policyName == "ondemand") {
+		float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
+		float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/dtm_recovered_temperature");
+		dvfsPolicy = new DVFSOndemand(
+			performanceCounters,
+			coreRows,
+			coreColumns,
+			minFrequency,
+			maxFrequency,
+			frequencyStepSize,
+			upThreshold,
+			downThreshold,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
 	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown DVFS Algorithm" << endl;
@@ -834,9 +852,6 @@ int SchedulerOpen::coreRequirementTranslation (String compositionString) {
 void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
 	int oldFrequency = Sim()->getMagicServer()->getFrequency(coreCounter);
 
-	if (frequency > oldFrequency + 1000) {
-		frequency = oldFrequency + 1000;
-	}
 	if (frequency < minFrequency) {
 		frequency = minFrequency;
 	}
