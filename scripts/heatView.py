@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -94,17 +95,17 @@ for o, a in opts:
   if o == '-i' or o == '--inverted_view':
     inverted_view = True
   if o == '--cores_in_x':
-    cores_in_x = a
+    cores_in_x = int(a)
   if o == '--cores_in_y':
-    cores_in_y = a
+    cores_in_y = int(a)
   if o == '--cores_in_z':
-    cores_in_z = a
+    cores_in_z = int(a)
   if o == '--banks_in_x':
-    banks_in_x = a
+    banks_in_x = int(a)
   if o == '--banks_in_y':
-    banks_in_y = a
+    banks_in_y = int(a)
   if o == '--banks_in_z':
-    banks_in_z = a
+    banks_in_z = int(a)
   if o == '--arch_type':
     arch_type = a
   if o == '--plot_type':
