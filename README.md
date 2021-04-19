@@ -28,7 +28,7 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 - To see the DRAM accesses per memory bank, please use the application my\_test\_case inside test folder
 	- To use this feature the application should be long enough to run for atleast 1 ms.
-	- cd test/my\_test\_case
+	- cd test/dram-access-trace
 	- make run
 - Sample output: Apart from Sniper messages and commandline, we see a detailed bank level trace for DRAM accesses. Please note the output like shown below in the terminal output.
 
@@ -102,3 +102,22 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- specify your runs in `simulationcontrol/run.py`
 	- `python3 run.py`
 	- print overview of finished simulations: `python3 parse_results.py`
+
+# Automated Test Suite
+
+- Test suite location
+	- cd test/test-installation
+
+- Running automated test suite to ensure working of different features of CoMeT
+	- make run
+	- As each system configuration is successfully simulated, you will see messages as below
+		- Finished running test case with configuration gainestown_3D.cfg
+		- Result saved in path-to-3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D
+
+- After the test finishes successfully, a folder "comet\_results" will be created in the same folder
+	- It contains sub-folders, one for each system configurations (DDR, 3Dmem, 3D and 2\_5\_D)
+	- Each sub-folder contains architecture simulation files and thermal simulation files for the test case
+	- For per epoch DRAM access trace and Sniper log of test case, please refer simulation\_log file
+	- For thermal simulation results, please refer to full\_temperature.trace file and other related files
+
+- Please run 'make clean' before running automated suite again
