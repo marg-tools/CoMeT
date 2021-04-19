@@ -1,0 +1,5 @@
+/mnt/disk1/hotspot_sniper/HotSpot-6.0_SLU_esweek_predict/hotspot -f hotspot/floorplan/4by4.flp -c /mnt/disk1/hotspot_sniper/PC/hotspot/test8/HMC/hotspot.config -init_file /mnt/disk1/hotspot_sniper/PC/hotspot/test8/HMC/4by4.init -p full_power.trace -o h_temperature.trace -model_secondary 1 -model_type grid -detailed_3D on -grid_layer_file /mnt/disk1/hotspot_sniper/PC/hotspot/test8/HMC/4by4.lcf -steady_file ./h_4by4.steady -all_transient_file h_all_transient.init -grid_steady_file ./h_4by4.grid.steady
+
+rm -rf all_transient_mem.init energystats-temp.cfg energystats-temp.py energystats-temp.txt energystats-temp.xml full_power_core.trace full_power_mem.trace full_temperature_core.trace full_temperature_mem.trace hotspot power_core.trace power_mem.trace temperature_core.init temperature_core.trace temperature_mem.init temperature_mem.trace 
+
+
