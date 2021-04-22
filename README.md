@@ -111,8 +111,14 @@ With the growing power density in both processors and memories (esp. 3D), therma
 - Running automated test suite to ensure working of different features of CoMeT
 	- make run
 	- As each system configuration is successfully simulated, you will see messages as below
+		- Running test case with configuration gainestown_3D
 		- Finished running test case with configuration gainestown_3D.cfg
+		- Test case passed for configuration gainestown_3D.cfg
+			- OR Test case failed for configuration gainestown_3D.cfg. Please check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/error_log for details.
+		- Video for gainestown_3D saved in /3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/maps
+			- OR Video generation failed for configuration gainestown_3D.cfg. Check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/video_gen_error.log for details.
 		- Result saved in path-to-3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D
+	- make clean
 
 - After the test finishes successfully, a folder "comet\_results" will be created in the same folder
 	- It contains sub-folders, one for each system configurations (DDR, 3Dmem, 3D and 2\_5\_D)
@@ -120,4 +126,11 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- For per epoch DRAM access trace and Sniper log of test case, please refer simulation\_log file
 	- For thermal simulation results, please refer to full\_temperature.trace file and other related files
 
-- Please run 'make clean' before running automated suite again
+- Video generation
+	- If the simulation for a configuration finishes successfully and pre-requisites for generating videos are installed in your host machine, then the video is generated inside "maps" folder of that configuration.
+	- If the simulation for a configuration crashes, no video is generated. Further, an error\_log is generated for that configuration stating why simulation failed.
+	- If the simulation finishes successfully but pre-requisites for generating videos are not met, a file named video\_gen\_error.log is generated to report the error for that configuration.
+
+- Test summary
+	- The complete summary of the running the test suite is written to a file named test\_summary.
+	- Also, some logs are printed during the execution of test\_suite.
