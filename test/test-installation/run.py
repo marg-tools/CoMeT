@@ -22,6 +22,12 @@ CONFIG_3Dmem = 'gainestown_3Dmem'
 CONFIG_2_5D = 'gainestown_2_5D'
 CONFIG_3D = 'gainestown_3D'
 
+test_summary = ''
+pass_count = 0
+test_configs = [CONFIG_3Dmem, CONFIG_DDR, CONFIG_2_5D, CONFIG_3D]
+
+
+
 def save_result(cfg, result_dir, console_output):
     filenames = ['all_transient_mem.init', 'combined_instpower.trace', 'combined_insttemperature.trace', 'combined_power.trace', 'combined_temperature.trace', 'energystats-temp.cfg', 
             'energystats-temp.py', 'energystats-temp.txt', 'energystats-temp.xml', 'full_power_core.trace', 'full_power_mem.trace', 'full_temperature_mem.trace', 'grid_steady_mem.log'
@@ -29,15 +35,26 @@ def save_result(cfg, result_dir, console_output):
             'sim.out', 'sim.scripts.py', 'sim.stats.sqlite3', 'steady_temperature_mem.log', 'temperature_core.init', 'temperature_mem.init', 'temperature_mem.trace', 'temperature_core.trace', 'tmp']
     
     log_file = open(os.path.join(result_dir, 'simulation.log'), 'w+') 
-    log_file.write(console_output) 
+    log_file.write(console_output)
+    
     for filename in filenames:
         if os.path.exists(os.path.join(TEST_CASE_PATH, filename)):
-            shutil.move(os.path.join(TEST_CASE_PATH, filename), result_dir)
-    shutil.move(os.path.join(TEST_CASE_PATH, 'hotspot'), result_dir)
+            shutil.move(os.path.join(TEST_CASE_PATH, filename), os.path.join(result_dir, filename))
 
-def run(cfg):
+    if os.path.exists(os.path.join(result_dir, 'hotspot/')):
+        shutil.rmtree(os.path.join(result_dir, 'hotspot/'))
+    os.makedirs(os.path.join(result_dir, 'hotspot/'))
+
+    shutil.move(os.path.join(TEST_CASE_PATH, 'hotspot'), os.path.join(result_dir, 'hotspot'))
+
+def test_thermal_feature(cfg):
+    global test_summary
+    global pass_count
+
     print('Running test case with configuration {}'.format(cfg))
+    print('---------------------------------------------------')
 
+    test_case_result = ''
     command_line = os.path.join(SNIPER_ROOT, 'run-sniper')
 
     args = '-v -s memTherm_core -n {num_cores} -c {config} -- {test_case}'  \
@@ -46,36 +63,108 @@ def run(cfg):
                 test_case=TEST_CASE_EXEC)
 
     console_output = ''
-    print(args)
+    print(command_line, args)
     
     p = subprocess.Popen([command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
     with p.stdout:
         for line in iter(p.stdout.readline, b''):
             linestr = line.decode('utf-8')
             console_output += linestr
-            print(linestr, end='')
+    linestr.rsplit("\n",4)[0]
     p.wait()
 
-    if p.returncode != 0:
-        raise Exception('return code != 0')
-
+    print('\n')
+    print('Finished running test case with configuration {}.cfg'.format(cfg))
     result_dir = os.path.join(CoMeT_RESULTS, cfg)
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
-    print('\n')
-    print('Finished running test case with configuration {}.cfg'.format(cfg))
-
+ 
+    if not os.path.exists(os.path.join(TEST_CASE_PATH, 'sim.cfg')):
+        shutil.rmtree(result_dir)
+        os.mkdir(result_dir)
+        if not os.path.exists(os.path.join(result_dir, 'error_log')):
+            f = open(os.path.join(result_dir, 'error_log'), 'w+')
+            f.write(console_output)        
+        test_case_result += 'Test case failed for configuration {}.cfg. Check {} for details.'.format(cfg,os.path.join(result_dir, 'error_log'))
+        print(test_case_result)
+        print('\n')
+        test_summary += test_case_result
+        test_summary += '\n'
+        return 0
+        
+    test_case_result = 'Test case passed for configuration {}.cfg'.format(cfg)
+    print(test_case_result)
+    test_summary += test_case_result
+    test_summary += '\n'
+    pass_count += 1
     save_result(cfg, result_dir, console_output)
-    print('Result saved in {}'.format(result_dir))
+    print('Simulation result saved in {}'.format(result_dir))
     print('\n')
+
+def test_video_generation_feature(cfg):
+   
+    global pass_count 
+    global test_summary
+    console_output = ''
+    test_case_result = ''
+   
+    if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'full_temperature_mem.trace')):
+        command_line = os.path.join(SNIPER_ROOT, 'scripts/heatView.py')
+
+        video_dir = os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'maps')
+        if os.path.exists(video_dir):
+            shutil.rmtree(video_dir)
+        os.mkdir(video_dir)
+ 
+        args = '-t {trace_file} -o {video_dest}'  \
+            .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'full_temperature_mem.trace'),
+                    video_dest=video_dir)
+
+        p = subprocess.Popen([command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
+        with p.stdout:
+            for line in iter(p.stdout.readline, b''):
+                linestr = line.decode('utf-8')
+                console_output += linestr
+        p.wait()
+
+        dir = os.listdir(video_dir)
+        if len(dir) == 0:
+            error_log = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'), 'w+')
+            error_log.write(console_output)
+            test_case_result += 'Video generation failed for configuration {}.cfg. Please check {} for details.'.format(cfg,os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'))
+            print(test_case_result)
+            print('\n')
+            test_summary += test_case_result
+            test_summary += '\n'
+            return 0
+        else:
+            pass_count += 1
+            video_log_file = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_generation.log'), 'w+')
+            video_log_file.write(console_output)
+            test_summary += 'Video generated for {} and saved {}'.format(cfg, video_dir)
+            test_summary += '\n'
+            print('Video for {} saved in {}\n'.format(cfg, video_dir))
+    else:
+        test_summary += 'Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg)
+        test_summary += '\n'
+        print('Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg))
 
 def auto_test():
-    test_configs = [CONFIG_DDR, CONFIG_3Dmem, CONFIG_2_5D, CONFIG_3D]
+    global test_summary
+    global pass_count
 
     for config in test_configs:  
-        run(config)
+        test_thermal_feature(config)
+        test_video_generation_feature(config)
     
-    print('\nTEST FOR ALL FOUR CONFIGURATIONS COMPLETED. PLEASE CHECK "comet_results" FOLDER\n')
+    f = open("test_summary.txt", "w")
+    f.write("Summary of CoMet Features\n")
+    f.write("=========================\n")
+    f.write(test_summary)
+    f.write("\n{} of 8 cases passed".format(pass_count))
+
+    print('\nTest for all four configurations and video generation completed. Please check test_summary for details\n')
+    print('Simulation results and video stored in comet_results.\n')
 
 def main():
     auto_test()
