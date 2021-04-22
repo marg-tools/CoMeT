@@ -9,5 +9,5 @@ target:
 
 run_$(TARGET): target
 
-CLEAN_EXTRA=viz hotspot/ *.log *.init energystats-temp.* *.trace tmp comet_results
+CLEAN_EXTRA=viz hotspot/ *.log *.init energystats-temp.* *.trace tmp comet_results test_summary.txt
 
