@@ -1,0 +1,29 @@
+CLEAN=$(findstring clean,$(MAKECMDGOALS))
+ifneq ($(CLEAN),clean)
+
+include ../../config/buildconf.makefile
+
+ifeq ($(TARGET),)
+$(error The TARGET variable must be set to use the shared Makefile)
+endif
+
+CC=$(SNIPER_CC)
+LDFLAGS=$(SNIPER_LDFLAGS)
+CFLAGS=$(SNIPER_CFLAGS)
+
+# '--roi' allows for ROI timing with program hooks instead of full-program timing
+# See ${SNIPER_ROOT}/include/sim_api.h for more information
+run: $(TARGET) run_$(TARGET)
+	@echo
+
+../../config/buildconf.makefile:
+	@echo
+	@echo
+	@echo 'Error: A compiled version of Sniper is required to run the test applications'
+	@echo
+	@false
+
+endif
+
+clean:
+	rm -rf $(TARGET) sim.* *.log *.out *.png *.o topo.* power.* *.sift $(CLEAN_EXTRA)

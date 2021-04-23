@@ -166,7 +166,7 @@ def auto_test():
     f.write("\n{} of 8 cases passed".format(pass_count))
 
     print('\nTest for all four configurations and video generation completed. Please check test_summary for details\n')
-    print('Simulation results and video stored in comet_results.\n')
+    print('Simulation results and videos stored in comet_results.\n')
 
 def main():
     auto_test()
