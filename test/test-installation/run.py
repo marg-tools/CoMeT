@@ -107,8 +107,9 @@ def test_video_generation_feature(cfg):
     global test_summary
     console_output = ''
     test_case_result = ''
+    SAMPLING_INTERVAL = 1
    
-    if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'full_temperature_mem.trace')):
+    if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
         command_line = os.path.join(SNIPER_ROOT, 'scripts/heatView.py')
 
         video_dir = os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'maps')
@@ -116,11 +117,12 @@ def test_video_generation_feature(cfg):
             shutil.rmtree(video_dir)
         os.mkdir(video_dir)
  
-        args = '-t {trace_file} -o {video_dest}'  \
-            .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'full_temperature_mem.trace'),
-                    video_dest=video_dir)
+        args = '-t {trace_file} -o {video_dest} -s {sampling_interval}'  \
+            .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace'),
+                    video_dest=video_dir,
+                    sampling_interval=SAMPLING_INTERVAL)
 
-        p = subprocess.Popen([command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
+        p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
         with p.stdout:
             for line in iter(p.stdout.readline, b''):
                 linestr = line.decode('utf-8')
