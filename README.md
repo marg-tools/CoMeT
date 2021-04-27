@@ -103,6 +103,54 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- `python3 run.py`
 	- print overview of finished simulations: `python3 parse_results.py`
 
+# Floorplan Creation Helpers (floorplanlib)
+
+## General Usage
+
+The floorplan creation helpers are an optional tool, you can also use your custom floorplans instead.
+Usage:
+- create floorplans (and layer configuration files)
+- change configuration to reference to the created files (for an example see gainestown_*)
+
+## Examples
+
+### off-chip 2D
+```bash
+python3 floorplanlib/create.py \
+	--mode DDR \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8 --bankx 0.9mm --banky 0.9mm \
+	--out my_2d_floorplan
+```
+
+### off-chip 3D memory
+```bash
+python3 floorplanlib/create.py \
+	--mode 3Dmem \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+	--out my_3d_oc_floorplan
+```
+
+### 2.5D (3D memory and 2D core on the same interposer)
+```bash
+python3 floorplanlib/create.py \
+	--mode 2.5D \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+	--core_mem_distance 7mm \
+	--out my_2.5d_floorplan
+```
+
+### 3D (fully-integrated 3D stack of cores and memory)
+```bash
+python3 floorplanlib/create.py \
+	--mode 3D \
+	--cores 4x4 --corex 0.9mm --corey 0.9mm \
+	--banks 8x8x4 --bankx 0.45mm --banky 0.45mm \
+	--out my_3d_floorplan
+```
+
 # Automated Test Suite
 
 - Test suite location
