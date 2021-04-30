@@ -102,7 +102,7 @@ thermal_config_t default_thermal_config(void)
 	 * grid cell as that of the entire block
 	 */
 	strcpy(config.grid_map_mode, GRID_CENTER_STR);
-	strcpy(config.memory_type, "3Dmem");
+	strcpy(config.type, "3Dmem");
 
         config.steady_state_print_disable = 0;
 	config.detailed_3D_used = 0;	//BU_3D: by default detailed 3D modeling is disabled.	
@@ -269,9 +269,9 @@ void thermal_config_add_from_strs(thermal_config_t *config, str_pair *table, int
         if ((idx = get_str_index(table, size, "steady_state_print_disable")) >= 0)
                 if(sscanf(table[idx].value, "%d", &config->steady_state_print_disable) != 1)
                         fatal("invalid format for configuration  parameter steady_state_print_disable\n");
-        if ((idx = get_str_index(table, size, "memory_type")) >= 0)
-                if(sscanf(table[idx].value, "%s", config->memory_type) != 1)
-                        fatal("invalid format for configuration  parameter memory_type\n");
+        if ((idx = get_str_index(table, size, "type")) >= 0)
+                if(sscanf(table[idx].value, "%s", config->type) != 1)
+                        fatal("invalid format for configuration  parameter type\n");
 	
 	
 	if ((config->t_chip <= 0) || (config->s_sink <= 0) || (config->t_sink <= 0) || 
@@ -366,7 +366,7 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[48].name, "grid_map_mode");
         sprintf(table[49].name, "all_transient_file");
         sprintf(table[50].name, "steady_state_print_disable");
-        sprintf(table[51].name, "memory_type");
+        sprintf(table[51].name, "type");
 
 	sprintf(table[0].value, "%lg", config->t_chip);
 	sprintf(table[1].value, "%lg", config->k_chip);
@@ -419,7 +419,7 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[48].value, "%s", config->grid_map_mode);
 	sprintf(table[49].value, "%s", config->all_transient_file);
 	sprintf(table[50].value, "%d", config->steady_state_print_disable);
-	sprintf(table[51].value, "%s", config->memory_type);
+	sprintf(table[51].value, "%s", config->type);
 
 	return 52;
 }
@@ -667,7 +667,8 @@ double calc_core_leakage(int mode, double h, double w, double temp)
 	
 	if (mode)
 		fatal("HotLeakage currently is not implemented in this release of HotSpot, please check back later.\n");
-		
+	
+	//printf("Hello\n");	
 	//leakage_power = leak_alpha*h*w*exp(leak_beta*(temp-leak_Tbase)); // Default
 	//leakage_power = (4709.086 + (424.8759 - 4709.086)/(1 + pow((temp/368.8059),49.15633)))/1000; // 1Gb Bank. 
 	//leakage_power = (1005.412 + (67.78504 - 1005.412)/(1 + pow((temp/373.242), 43.36131)))/1000;  //64Mb bank. Check modelling in /home/siddhulokesh/lazy/c/leakage/test.c
@@ -742,11 +743,12 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 			d_temp = hotspot_vector(model);
 			temp_old = hotspot_vector(model);
 			power_new = hotspot_vector(model);
-                        printf("Memory type : %s\n", model->config->memory_type);
+                        printf("Arch type : %s\n", model->config->type);
 			for (leak_iter=0;(!leak_convg_true)&&(leak_iter<=LEAKAGE_MAX_ITER);leak_iter++){
-                            if(strcmp(model->config->memory_type,"3Dmem")==0 || strcmp(model->config->memory_type,"DDR")==0){
-                                printf("Memory type 3Dmem/DDR: %s\n", model->config->memory_type);
-				for(k=0, base=0; k < model->grid->n_layers; k++) {
+                
+                if(strcmp(model->config->type,"3Dmem")==0 || strcmp(model->config->type,"DDR")==0){
+                	printf("Memory type 3Dmem/DDR: %s\n", model->config->type);
+					for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
 						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
@@ -773,12 +775,38 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				// printf("\n");					
 				// printf("k=%d",k);					
 				}
-                        }
+			}
+
+
+//for Core
+            else if(strcmp(model->config->type,"Core")==0){
+            	printf("Arch type: %s\n", model->config->type);
+				for(k=0, base=0; k < model->grid->n_layers; k++) {
+				 // printf("k=%d\n",k);					
+					if(model->grid->layers[k].has_power)
+						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
+				 			// printf("j=%d,",j);					
+							blk_height = model->grid->layers[k].flp->units[j].height;
+							blk_width = model->grid->layers[k].flp->units[j].width;
+							
+							if (leakage[j] == 0)
+								power_new[base+j] = 0;
+							else	
+								power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+		 					// printf("YES");
+							
+							temp_old[base+j] = temp[base+j]; //copy temp before update
+						}
+					base += model->grid->layers[k].flp->n_units;	
+				// printf("\n");					
+				// printf("k=%d",k);					
+				}
+			}
 
 
 //for 3D (WIO)
-                    else if(strcmp(model->config->memory_type,"3D")==0){
-                                printf("Memory type 3D: %s\n", model->config->memory_type);
+                    else if(strcmp(model->config->type,"3D")==0){
+                                printf("Arch type 3D: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -805,8 +833,8 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
                         }
 //For 2.5D
                         
-                    else if(strcmp(model->config->memory_type,"2.5D")==0){
-                                printf("Memory type 2.5D: %s\n", model->config->memory_type);
+                    else if(strcmp(model->config->type,"2.5D")==0){
+                                printf("Arch type 2.5D: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -932,8 +960,8 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 //				}
 //					base += model->grid->layers[k].flp->n_units;	
 //			}
-                            if(strcmp(model->config->memory_type,"3Dmem")==0 || strcmp(model->config->memory_type,"DDR")==0){
-                                printf("Memory type 3Dmem/DDR: %s\n", model->config->memory_type);
+                            if(strcmp(model->config->type,"3Dmem")==0 || strcmp(model->config->type,"DDR")==0){
+                                printf("Memory type 3Dmem/DDR: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -964,9 +992,36 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
                         }
 
 
+// Core
+                    else if(strcmp(model->config->type,"Core")==0){
+                                printf("Arch type: %s\n", model->config->type);
+				for(k=0, base=0; k < model->grid->n_layers; k++) {
+				 // printf("k=%d\n",k);					
+					if(model->grid->layers[k].has_power)
+						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
+				 			// printf("j=%d,",j);					
+							blk_height = model->grid->layers[k].flp->units[j].height;
+							blk_width = model->grid->layers[k].flp->units[j].width;
+							if (leakage[j] == 0)
+								power_new[base+j] = 0;
+							else{	
+									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+		 					// printf("YES");
+							}
+							//temp_old[base+j] = temp[base+j]; //copy temp before update
+						}
+					base += model->grid->layers[k].flp->n_units;	
+				// printf("\n");					
+				// printf("k=%d",k);					
+				}
+                        }
+
+
+
+
 //for 3D (WIO)
-                    else if(strcmp(model->config->memory_type,"3D")==0){
-                                printf("Memory type 3D: %s\n", model->config->memory_type);
+                    else if(strcmp(model->config->type,"3D")==0){
+                                printf("Arch type 3D: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
@@ -993,8 +1048,8 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
                         }
 //For 2.5D
                         
-                    else if(strcmp(model->config->memory_type,"2.5D")==0){
-                                printf("Memory type 2.5D: %s\n", model->config->memory_type);
+                    else if(strcmp(model->config->type,"2.5D")==0){
+                                printf("Arch type 2.5D: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)

@@ -137,7 +137,8 @@ int coo2csc(int size, int nnz,
             int *cscRowInd, int *cscColPtr, double *cscV);
 int c2c_cmp( const void *a , const void *b);
 
-char leakage_vector[33];
-unsigned int leakage[16];
+// For 128 channels
+char leakage_vector[257];
+unsigned int leakage[128];
 
 #endif
