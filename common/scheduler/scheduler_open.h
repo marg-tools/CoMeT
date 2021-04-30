@@ -13,6 +13,7 @@
 #include "performance_counters.h"
 #include "policies/dvfspolicy.h"
 #include "policies/mappingpolicy.h"
+#include "policies/migrationpolicy.h"
 
 
 //This data structure maintains the state of the tasks.
@@ -96,6 +97,10 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int frequencyStepSize;
 
 		// migration
+		MigrationPolicy *migrationPolicy = NULL;
+		long migrationEpoch;
+		void initMigrationPolicy(String policyName);
+		void executeMigrationPolicy(SubsecondTime time);
 		void migrateThread(thread_id_t thread_id, core_id_t core_id);
 
 		std::string formatTime(SubsecondTime time);

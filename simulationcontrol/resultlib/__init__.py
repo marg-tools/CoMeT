@@ -229,7 +229,16 @@ def get_core_freq_traces(run):
 
 
 def get_core_utilization_traces(run):
-    return _divide_traces(get_cpi_stack_part_trace(run, 'base'), get_cpi_stack_part_trace(run, 'total'))
+    cpi = None
+    for part in get_cpi_stack_trace_parts(run):
+        blacklist = ['total', 'mem', 'ifetch', 'sync', 'dvfs-transition', 'imbalance', 'other']
+        if all(b not in part for b in blacklist):
+            part_trace = get_cpi_stack_part_trace(run, part)
+            if cpi is None:
+                cpi = part_trace
+            else:
+                cpi = _add_traces(cpi, part_trace)
+    return _divide_traces(cpi, get_cpi_stack_part_trace(run, 'total'))
 
 
 @cache.memoize()

@@ -28,28 +28,22 @@ With the growing power density in both processors and memories (esp. 3D), therma
 
 - To see the DRAM accesses per memory bank, please use the application my\_test\_case inside test folder
 	- To use this feature the application should be long enough to run for atleast 1 ms.
-	- cd test/my\_test\_case
+	- cd test/dram-access-trace
 	- make run
 - Sample output: Apart from Sniper messages and commandline, we see a detailed bank level trace for DRAM accesses. Please note the output like shown below in the terminal output.
 
 ```
-   	Time	#READs	#WRITEs	#Access	Address		#BANK	Bank Counters
+   	Time	#READs	#WRITEs	#Access		Bank Counters
 
-@& 	19000	0	0	0	7ffe33fd5140	80	Current:19021
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
-@& 	20000	7943	0	7943	7ffe34052440	16	Current:20021
-994,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,992,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,993,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,992,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,992,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,993,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,993,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,994,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+@& 	1000	8368	0	8368		1044, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1043, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1044, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1050, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1049, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
-@& 	21000	8019	0	8019	7ffe340cf700	64	Current:21021
-1002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1003,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1003,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1003,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-@& 	22000	433	0	433	000000400c40	16	54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+@& 	2000	8010	0	8010		1002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 
 ```
 	- Multiple files containing simulation outputs will be generated (sim.cfg, sim.out etc)
-	- If we sum the #Access in last three epochs (20000, 21000 and 22000 as all other epochs have no DRAM access), the number is same as "num dram accesses" under "DRAM summary" in sim.out file
+	- If we sum the #Access per epoch, the number is same as "num dram accesses" under "DRAM summary" in sim.out file
 	- If you are able to verify this, then you have successfully setup the system.
 
 
@@ -108,3 +102,83 @@ With the growing power density in both processors and memories (esp. 3D), therma
 	- specify your runs in `simulationcontrol/run.py`
 	- `python3 run.py`
 	- print overview of finished simulations: `python3 parse_results.py`
+
+# Floorplan Creation Helpers (floorplanlib)
+
+## General Usage
+
+The floorplan creation helpers are an optional tool, you can also use your custom floorplans instead.
+Usage:
+- create floorplans (and layer configuration files)
+- change configuration to reference to the created files (for an example see gainestown_*)
+
+## Examples
+
+### off-chip 2D
+```bash
+python3 floorplanlib/create.py \
+	--mode DDR \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8 --bankx 0.9mm --banky 0.9mm \
+	--out my_2d_floorplan
+```
+
+### off-chip 3D memory
+```bash
+python3 floorplanlib/create.py \
+	--mode 3Dmem \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+	--out my_3d_oc_floorplan
+```
+
+### 2.5D (3D memory and 2D core on the same interposer)
+```bash
+python3 floorplanlib/create.py \
+	--mode 2.5D \
+	--cores 4x4 --corex 1mm --corey 1mm \
+	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+	--core_mem_distance 7mm \
+	--out my_2.5d_floorplan
+```
+
+### 3D (fully-integrated 3D stack of cores and memory)
+```bash
+python3 floorplanlib/create.py \
+	--mode 3D \
+	--cores 4x4 --corex 0.9mm --corey 0.9mm \
+	--banks 8x8x4 --bankx 0.45mm --banky 0.45mm \
+	--out my_3d_floorplan
+```
+
+# Automated Test Suite
+
+- Test suite location
+	- cd test/test-installation
+
+- Running automated test suite to ensure working of different features of CoMeT
+	- make run
+	- As each system configuration is successfully simulated, you will see messages as below
+		- Running test case with configuration gainestown_3D
+		- Finished running test case with configuration gainestown_3D.cfg
+		- Test case passed for configuration gainestown_3D.cfg
+			- OR Test case failed for configuration gainestown_3D.cfg. Please check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/error_log for details.
+		- Video for gainestown_3D saved in /3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/maps
+			- OR Video generation failed for configuration gainestown_3D.cfg. Check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/video_gen_error.log for details.
+		- Result saved in path-to-3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D
+	- make clean
+
+- After the test finishes successfully, a folder "comet\_results" will be created in the same folder
+	- It contains sub-folders, one for each system configurations (DDR, 3Dmem, 3D and 2\_5\_D)
+	- Each sub-folder contains architecture simulation files and thermal simulation files for the test case
+	- For per epoch DRAM access trace and Sniper log of test case, please refer simulation\_log file
+	- For thermal simulation results, please refer to full\_temperature.trace file and other related files
+
+- Video generation
+	- If the simulation for a configuration finishes successfully and pre-requisites for generating videos are installed in your host machine, then the video is generated inside "maps" folder of that configuration.
+	- If the simulation for a configuration crashes, no video is generated. Further, an error\_log is generated for that configuration stating why simulation failed.
+	- If the simulation finishes successfully but pre-requisites for generating videos are not met, a file named video\_gen\_error.log is generated to report the error for that configuration.
+
+- Test summary
+	- The complete summary of the running the test suite is written to a file named test\_summary.
+	- Also, some logs are printed during the execution of test\_suite.

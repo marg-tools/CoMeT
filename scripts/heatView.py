@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -14,7 +15,32 @@ import numpy as np
 
 
 def usage():
-    print "ERror"
+  print ('Generate video from temperature trace')
+  print ('Usage:')
+  print ('  %s  -t <tracefile> -o <output directory> -s <sampling rate>  ' % sys.argv[0])
+  print ('''Detailed options: \n
+     --cores_in_x: Number of cores in x dimension (default 4)
+     --cores_in_y: Number of cores in y dimension (default 4)
+     --cores_in_z: Number of cores in z dimension (default 1)
+     --banks_in_x: Number of memory banks in x dimension (default 4)
+     --banks_in_y: Number of memory banks in y dimension (default 4)
+     --banks_in_z: Number of memory banks in z dimension (default 8)
+     --arch_type: Architecture type = 3D or no3D (default no3D)
+     --plot_type: Generated view = 3D or 2D (default 3D)
+     --layer_to_view: Layer number to view in 3D plot (starting from 0) (default 0)
+     --type_to_view: Layer type to view in 3D plot (CORE or MEMORY) (default MEMORY)
+     --verbose (or -v): Enable verbose output
+     --inverted_view (or -i): Enable inverted view (heat sink on bottom)
+     --debug: Enable debug priting
+     --tmin: Minimum temperature to use for scale (default 65 deg C)
+     --tmax: Maximum temperature to use for scale (default 81 deg C)
+     --samplingRate (or -s): Sampling rate, specify an integer (default 1)
+     --traceFile (or -t): Input trace file (no default value)
+     --output (or -o): output directory (default maps)
+     --clean (or -c): Clean if directory exists
+  ''')
+  sys.exit(2)
+        
 
 cores_in_x=4
 cores_in_y=4
@@ -48,22 +74,20 @@ cleanDir=False
 
 if not sys.argv[1:]:
   usage()
-  sys.exit()
 
 opts_passthrough = [ 'cores_in_x=', 'cores_in_y=', 'cores_in_z=', 'banks_in_x=', 'banks_in_y=', 'banks_in_z=', 'arch_type=', 'plot_type=', 'layer_to_view=', 'type_to_view=', 'verbose', 'inverted_view', 'debug', 'tmin=', 'tmax=', 'samplingRate=', 'traceFile=', 'output=', 'clean' ]
 
 try:
-        #                     arguments,  shortopts,  longopts
+  #                     arguments,  shortopts,  longopts
   opts, args = getopt.getopt(sys.argv[1:], "hvidcs:t:o:", opts_passthrough)
-except getopt.GetoptError, e:
+
+except: #getopt.GetoptError, e:
   # print help information and exit:
-  print e
+  print (e)
   usage()
-  sys.exit()
 for o, a in opts:
   if o == '-h':
     usage()
-    sys.exit()
   if o == '-v' or o == '--verbose':
     verbose = True
   if o == '-d' or o == '--debug':
@@ -71,17 +95,17 @@ for o, a in opts:
   if o == '-i' or o == '--inverted_view':
     inverted_view = True
   if o == '--cores_in_x':
-    cores_in_x = a
+    cores_in_x = int(a)
   if o == '--cores_in_y':
-    cores_in_y = a
+    cores_in_y = int(a)
   if o == '--cores_in_z':
-    cores_in_z = a
+    cores_in_z = int(a)
   if o == '--banks_in_x':
-    banks_in_x = a
+    banks_in_x = int(a)
   if o == '--banks_in_y':
-    banks_in_y = a
+    banks_in_y = int(a)
   if o == '--banks_in_z':
-    banks_in_z = a
+    banks_in_z = int(a)
   if o == '--arch_type':
     arch_type = a
   if o == '--plot_type':
@@ -104,8 +128,8 @@ for o, a in opts:
     cleanDir = True
 
 if (debug):
-    print "Command line options:"
-    print opts
+    print ("Command line options:")
+    print (opts)
 
 
 

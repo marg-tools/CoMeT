@@ -45,8 +45,43 @@ RUN apt-get update && apt-get install -y \
     texinfo \
     zlib1g-dev \
  && rm -rf /var/lib/apt/lists/*
+
 # Helper utilities
 RUN apt-get update && apt-get install -y \
     gdb \
+    gfortran \
     git \
+    g++-9 \
+    vim \
  && rm -rf /var/lib/apt/lists/*
+
+# Pin 3.15 requires the command "systemd-detect-virt" which is part of systemd
+RUN apt-get update && apt-get install -y \
+    systemd \
+ && rm -rf /var/lib/apt/lists/*
+
+
+# PARSEC
+RUN apt-get update && apt-get install -y \
+    xsltproc \
+    gettext \
+    libx11-dev \
+    libxext-dev \
+    libxt-dev \
+    libxmu-dev \
+    libxi-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+
+# simulationcontrol
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir matplotlib seaborn diskcache tabulate
+
+# video creation
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
+

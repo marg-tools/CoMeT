@@ -14,6 +14,7 @@
 #include "magic_server.h"
 
 #include "policies/dvfsConstFreq.h"
+#include "policies/dvfsOndemand.h"
 #include "policies/mapFirstUnused.h"
 
 #include <iomanip>
@@ -35,6 +36,8 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/max_frequency") + 0.5);
 	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/frequency_step_size") + 0.5);
 	dvfsEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dvfs/dvfs_epoch").c_str());
+
+	migrationEpoch = atol(Sim()->getCfg()->getString("scheduler/open/migration/epoch").c_str());
 
 	m_core_mask.resize(Sim()->getConfig()->getApplicationCores());
 	for (core_id_t core_id = 0; core_id < (core_id_t)Sim()->getConfig()->getApplicationCores(); core_id++) {
@@ -122,6 +125,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
 	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
+	initMigrationPolicy(Sim()->getCfg()->getString("scheduler/open/migration/logic").c_str());
 }
 
 /** initMappingPolicy
@@ -158,9 +162,40 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 		int activeCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/active_core_freq") + 0.5);
 		int idleCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/idle_core_freq") + 0.5);
 		dvfsPolicy = new DVFSConstFreq(performanceCounters, coreRows, coreColumns, activeCoreFreq, idleCoreFreq);
+	} else if (policyName == "ondemand") {
+		float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
+		float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/dtm_recovered_temperature");
+		dvfsPolicy = new DVFSOndemand(
+			performanceCounters,
+			coreRows,
+			coreColumns,
+			minFrequency,
+			maxFrequency,
+			frequencyStepSize,
+			upThreshold,
+			downThreshold,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
 	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown DVFS Algorithm" << endl;
+ 		exit (1);
+	}
+}
+
+/** initMigrationPolicy
+ * Initialize the DVFS policy to the policy with the given name
+ */
+void SchedulerOpen::initMigrationPolicy(String policyName) {
+	cout << "[Scheduler] [Info]: Initializing migration policy" << endl;
+	if (policyName == "off") {
+		migrationPolicy = NULL;
+	} //else if (policyName ="XYZ") {... } //Place to instantiate a new migration logic. Implementation is put in "policies" package.
+	else {
+		cout << "\n[Scheduler] [Error]: Unknown Migration Algorithm: " << policyName << endl;
  		exit (1);
 	}
 }
@@ -834,9 +869,6 @@ int SchedulerOpen::coreRequirementTranslation (String compositionString) {
 void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
 	int oldFrequency = Sim()->getMagicServer()->getFrequency(coreCounter);
 
-	if (frequency > oldFrequency + 1000) {
-		frequency = oldFrequency + 1000;
-	}
 	if (frequency < minFrequency) {
 		frequency = minFrequency;
 	}
@@ -867,6 +899,71 @@ void SchedulerOpen::executeDVFSPolicy() {
 	performanceCounters->notifyFreqsOfCores(frequencies);
 }
 
+/** executeMigrationPolicy
+ * Perform migration according to the used policy.
+ */
+void SchedulerOpen::executeMigrationPolicy(SubsecondTime time) {
+	std::vector<int> taskIds;
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		taskIds.push_back(systemCores.at(coreCounter).assignedTaskID);
+	}
+	std::vector<bool> activeCores;
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		static bool reserved_cores_are_active = Sim()->getCfg()->getBool("scheduler/open/dvfs/reserved_cores_are_active");
+		activeCores.push_back(reserved_cores_are_active ? isAssignedToTask(coreCounter) : isAssignedToThread(coreCounter));
+	}
+	std::vector<migration> migrations = migrationPolicy->migrate(time, taskIds, activeCores);
+
+	for (migration &migration : migrations) {
+		if (systemCores.at(migration.fromCore).assignedTaskID == -1) {
+			cout << "\n[Scheduler][Error]: Migration Policy ordered migration from unused core.\n";
+			exit (1);
+		}
+
+		if (migration.swap) {
+			if (systemCores.at(migration.toCore).assignedTaskID == -1) {
+				cout << "\n[Scheduler][Error]: Migration Policy ordered swap with unused core.\n";
+				exit (1);
+			}
+			int taskFrom = systemCores.at(migration.fromCore).assignedTaskID;
+			int threadFrom = systemCores.at(migration.fromCore).assignedThreadID;
+			int taskTo = systemCores.at(migration.toCore).assignedTaskID;
+			int threadTo = systemCores.at(migration.toCore).assignedThreadID;
+
+			if (threadFrom != -1) {
+				cout << "[Scheduler] moving thread " << threadFrom << " from core " << migration.fromCore << " to core " << migration.toCore << endl;
+				cpu_set_t my_set;
+				CPU_ZERO(&my_set);
+				CPU_SET(migration.toCore, &my_set);
+				threadSetAffinity(INVALID_THREAD_ID, threadFrom, sizeof(cpu_set_t), &my_set);
+			}
+			if (threadTo != -1) {
+				cout << "[Scheduler] moving thread " << threadTo << " from core " << migration.toCore << " to core " << migration.fromCore << endl;
+				cpu_set_t my_set;
+				CPU_ZERO(&my_set);
+				CPU_SET(migration.fromCore, &my_set);
+				threadSetAffinity(INVALID_THREAD_ID, threadTo, sizeof(cpu_set_t), &my_set);
+			}
+			systemCores.at(migration.toCore).assignedTaskID = taskFrom;
+			systemCores.at(migration.toCore).assignedThreadID = threadFrom;
+			systemCores.at(migration.fromCore).assignedTaskID = taskTo;
+			systemCores.at(migration.fromCore).assignedThreadID = threadTo;
+		} else {
+			if (systemCores.at(migration.toCore).assignedTaskID != -1) {
+				cout << "\n[Scheduler][Error]: Migration Policy ordered migration to already used core.\n";
+				exit (1);
+			}
+			int thread = systemCores.at(migration.fromCore).assignedThreadID;
+			if (thread != -1) {
+				migrateThread(thread, migration.toCore);
+			} else {
+				systemCores.at(migration.toCore).assignedTaskID = systemCores.at(migration.fromCore).assignedTaskID;
+				systemCores.at(migration.fromCore).assignedTaskID = -1;
+			}
+		}
+	}
+}
+
 
 /** periodic
     This function is called periodically by Sniper at Interval of 100ns.
@@ -886,6 +983,12 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 			cout <<"\n[Scheduler] [Error]: Task State Does Not Match.\n";		
 			exit (1);
 		}
+	}
+
+	if ((migrationPolicy != NULL) && (time.getNS() % migrationEpoch == 0)) {
+		cout << "\n[Scheduler]: Migration invoked at " << formatTime(time) << endl;
+
+		executeMigrationPolicy(time);
 	}
 
 	if ((dvfsPolicy != NULL) && (time.getNS() % dvfsEpoch == 0)) {

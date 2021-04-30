@@ -4,6 +4,7 @@
 //#define ENABLE_DRAM_ACCESS_COUNT
 
 #include <unordered_map>
+#include <vector>
 #include "dram_cntlr.h"
 #include "dram_perf_model.h"
 #include "shmem_msg.h"
@@ -18,6 +19,8 @@
 #include "stats.h"
 #include "fault_injection.h"
 #include "shmem_perf.h"
+
+using namespace std;
 
 #define NUM_OF_BANKS          (128)
 
