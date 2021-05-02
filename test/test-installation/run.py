@@ -12,6 +12,7 @@ TEST_CASE = os.path.join(TEST_CASE_PATH, 'test.c')
 TEST_CASE_EXEC = os.path.join(TEST_CASE_PATH, 'test')
 #print(TEST_CASE_EXEC)
 CoMeT_RESULTS = os.path.join(TEST_CASE_PATH, 'comet_results')
+ENABLE_VIDEO_GENERATION = 1
 
 if not os.path.exists(CoMeT_RESULTS):
     os.mkdir(CoMeT_RESULTS)
@@ -32,7 +33,8 @@ def save_result(cfg, result_dir, console_output):
     filenames = ['all_transient_mem.init', 'combined_instpower.trace', 'combined_insttemperature.trace', 'combined_power.trace', 'combined_temperature.trace', 'energystats-temp.cfg', 
             'energystats-temp.py', 'energystats-temp.txt', 'energystats-temp.xml', 'full_power_core.trace', 'full_power_mem.trace', 'full_temperature_mem.trace', 'grid_steady_mem.log'
             , 'InstantaneousCPIStack.log', 'PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.log', 'power_core.trace', 'power_mem.trace', 'sim.cfg', 'sim.info',
-            'sim.out', 'sim.scripts.py', 'sim.stats.sqlite3', 'steady_temperature_mem.log', 'temperature_core.init', 'temperature_mem.init', 'temperature_mem.trace', 'temperature_core.trace', 'tmp']
+            'sim.out', 'sim.scripts.py', 'sim.stats.sqlite3', 'steady_temperature_mem.log', 'temperature_core.init', 'temperature_mem.init', 'temperature_mem.trace', 
+            'temperature_core.trace', 'tmp', 'steady_temperature_core.log', 'all_transient_core.init', 'grid_steady_core.log']
     
     log_file = open(os.path.join(result_dir, 'simulation.log'), 'w+') 
     log_file.write(console_output)
@@ -65,7 +67,7 @@ def test_thermal_feature(cfg):
     console_output = ''
     print(command_line, args)
     
-    p = subprocess.Popen([command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
+    p = subprocess.Popen([command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=TEST_CASE_PATH)
     with p.stdout:
         for line in iter(p.stdout.readline, b''):
             linestr = line.decode('utf-8')
@@ -108,48 +110,53 @@ def test_video_generation_feature(cfg):
     console_output = ''
     test_case_result = ''
     SAMPLING_INTERVAL = 1
-   
-    if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
-        command_line = os.path.join(SNIPER_ROOT, 'scripts/heatView.py')
 
-        video_dir = os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'maps')
-        if os.path.exists(video_dir):
-            shutil.rmtree(video_dir)
-        os.mkdir(video_dir)
- 
-        args = '-t {trace_file} -o {video_dest} -s {sampling_interval}'  \
-            .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace'),
-                    video_dest=video_dir,
-                    sampling_interval=SAMPLING_INTERVAL)
+    if ENABLE_VIDEO_GENERATION:   
+        if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
+            command_line = os.path.join(SNIPER_ROOT, 'scripts/heatView.py')
 
-        p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
-        with p.stdout:
-            for line in iter(p.stdout.readline, b''):
-                linestr = line.decode('utf-8')
-                console_output += linestr
-        p.wait()
+            video_dir = os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video')
+            if os.path.exists(video_dir):
+                shutil.rmtree(video_dir)
+            os.mkdir(video_dir)
+    
+            args = '-t {trace_file} -o {video_dest} -s {sampling_interval}'  \
+                .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace'),
+                        video_dest=video_dir,
+                        sampling_interval=SAMPLING_INTERVAL)
+            print('Generating video for {}\n'.format(cfg))
 
-        dir = os.listdir(video_dir)
-        if len(dir) == 0:
-            error_log = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'), 'w+')
-            error_log.write(console_output)
-            test_case_result += 'Video generation failed for configuration {}.cfg. Please check {} for details.'.format(cfg,os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'))
-            print(test_case_result)
-            print('\n')
-            test_summary += test_case_result
-            test_summary += '\n'
-            return 0
+            p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
+            with p.stdout:
+                for line in iter(p.stdout.readline, b''):
+                    linestr = line.decode('utf-8')
+                    console_output += linestr
+            p.wait()
+
+            dir = os.listdir(video_dir)
+            if len(dir) == 0:
+                error_log = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'), 'w+')
+                error_log.write(console_output)
+                test_case_result += 'Video generation failed for configuration {}.cfg. Please check {} for details.'.format(cfg,os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_gen_error.log'))
+                print(test_case_result)
+                print('\n')
+                test_summary += test_case_result
+                test_summary += '\n'
+                return 0
+            else:
+                pass_count += 1
+                video_log_file = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_generation.log'), 'w+')
+                video_log_file.write(console_output)
+                test_summary += 'Video generated for {} and saved {}'.format(cfg, video_dir)
+                test_summary += '\n'
+                print('Video for {} saved in {}\n'.format(cfg, video_dir))
         else:
-            pass_count += 1
-            video_log_file = open(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'video_generation.log'), 'w+')
-            video_log_file.write(console_output)
-            test_summary += 'Video generated for {} and saved {}'.format(cfg, video_dir)
+            test_summary += 'Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg)
             test_summary += '\n'
-            print('Video for {} saved in {}\n'.format(cfg, video_dir))
+            print('Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg))
     else:
-        test_summary += 'Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg)
-        test_summary += '\n'
-        print('Video for {} cannot be generated due to unsuccessful simulation.\n'.format(cfg))
+        print("Video generation disabled. Skipping testing this feature.\n")
+
 
 def auto_test():
     global test_summary
