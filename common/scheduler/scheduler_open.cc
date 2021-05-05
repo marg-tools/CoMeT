@@ -63,8 +63,8 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	}
 
 	performanceCounters = new PerformanceCounters(
-		Sim()->getCfg()->getString("hotspot/combined_instpower_trace_file").c_str(),
-		Sim()->getCfg()->getString("hotspot/combined_insttemperature_trace_file").c_str(),
+		Sim()->getCfg()->getString("hotspot/log_files/combined_instpower_trace_file").c_str(),
+		Sim()->getCfg()->getString("hotspot/log_files/combined_insttemperature_trace_file").c_str(),
 		"InstantaneousCPIStack.log");
 
 	//Initialize the cores in the system.
