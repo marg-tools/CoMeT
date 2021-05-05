@@ -14,8 +14,8 @@ TIM_SPECIFIC_HEAT_CAPACITY = 4e6
 TIM_THERMAL_RESISTIVITY = 0.25
 TIM_THICKNESS = 2.0e-05
 
-AIR_SPECIFIC_HEAT_CAPACITY = 1.75e6
-AIR_THERMAL_RESISTIVITY = 0.01
+AIR_SPECIFIC_HEAT_CAPACITY = 4e6  # this is currently not the value for air
+AIR_THERMAL_RESISTIVITY = 0.25  # this is currently not the value for air
 
 
 class Length(object):
@@ -354,6 +354,67 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
         return SILICON_THICKNESS
 
 
+class PadWithAirLayer(ThermalLayer):
+    """ wrap a layer with air to match the given dimension """
+    def __init__(self, total_width, total_height, content):
+        super().__init__(name=content.name)
+        self.total_width = total_width
+        self.total_height = total_height
+        assert isinstance(content, SimpleLayer)
+        self.content = content
+
+    def write_floorplan(self, directory):
+        with open(self._get_floorplan_filename(directory), 'w') as f:
+            f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
+            f.write(self.content.create_floorplan_elements())
+
+            content_pos_offset = (Length(0), Length(0)) if self.content.pos_offset is None else self.content.pos_offset
+
+            if content_pos_offset[1] > Length(0):
+                # pad bottom
+                f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                    'X1',
+                    self.content.total_width.meters, content_pos_offset[1].meters,
+                    content_pos_offset[0].meters, 0,
+                    AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+
+            if content_pos_offset[1] + self.content.total_height < self.total_height:
+                # pad top
+                f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                    'X2',
+                    self.content.total_width.meters, (self.total_height - content_pos_offset[1] - self.content.total_height).meters,
+                    content_pos_offset[0].meters, (content_pos_offset[1] + self.content.total_height).meters,
+                    AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+
+            if content_pos_offset[0] > Length(0):
+                # pad left
+                f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                    'X3',
+                    content_pos_offset[0].meters, self.total_height.meters,
+                    0, 0,
+                    AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+
+            if content_pos_offset[0] + self.content.total_width < self.total_width:
+                # pad right
+                f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                    'X4',
+                    (self.total_width - content_pos_offset[0] - self.content.total_width).meters, self.total_height.meters,
+                    (content_pos_offset[0] + self.content.total_width).meters, 0,
+                    AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+
+    def _has_power_consumption(self):
+        return self.content._has_power_consumption()
+
+    def _specific_heat_capacity(self):
+        return self.content._specific_heat_capacity()
+
+    def _thermal_resistivity(self):
+        return self.content._thermal_resistivity()
+
+    def _thickness(self):
+        return self.content._thickness()
+
+
 class ThermalStack(object):
     def __init__(self, name):
         self.name = name
@@ -429,10 +490,13 @@ def main():
 
         core = ThermalStack('cores')
         core.add_layer(CoreLayer(args.cores, args.corex, args.corey, name='cores'))
+        core.add_layer(TIMLayer(args.cores, args.corex, args.corey, name='core_tim'))
         core.write_files(args.out)
 
+        banks_2d = (args.banks[0], args.banks[1])
         mem = ThermalStack('mem')
         mem.add_layer(MemoryLayer(args.banks, args.bankx, args.banky, name='mem'))
+        mem.add_layer(TIMLayer(banks_2d, args.bankx, args.banky, name='mem_tim'))
         mem.write_files(args.out)
 
     elif args.mode == '3Dmem':
@@ -444,6 +508,7 @@ def main():
 
         core = ThermalStack('cores')
         core.add_layer(CoreLayer(args.cores, args.corex, args.corey, name='cores'))
+        core.add_layer(TIMLayer(args.cores, args.corex, args.corey, name='core_tim'))
         core.write_files(args.out)
 
         mem = ThermalStack('mem')
@@ -452,6 +517,7 @@ def main():
         for i in range(args.banks[2]):
             mem.add_layer(tim)
             mem.add_layer(MemoryLayer(banks_2d, args.bankx, args.banky, name=f'mem_bank_{i+1}', nb_offset=i*banks_per_layer))
+        mem.add_layer(tim)
         mem.write_files(args.out)
 
     elif args.mode == '2.5D':
@@ -470,7 +536,8 @@ def main():
 
         stack = ThermalStack('stack')
         stack.add_layer(InterposerLayer((1, 1), total_width, total_height, name='interposer'))
-        stack.add_layer(TIMLayer((1, 1), total_width, total_height, name='interposer_tim'))
+        tim = TIMLayer((1, 1), total_width, total_height, name='tim')
+        stack.add_layer(tim)
         stack.add_layer(CoreAndMemoryControllerLayer(
             args.cores, args.corex, args.corey,
             banks_2d, args.bankx, args.banky,
@@ -480,10 +547,11 @@ def main():
             cores_width + args.core_mem_distance,  # x
             Length(0) if mem_height > cores_height else 0.5 * (cores_height - mem_height)  # y
         )
-        tim = TIMLayer(banks_2d, args.bankx, args.banky, name='mem_tim', pos_offset=mem_offset)
         for i in range(args.banks[2]):
             stack.add_layer(tim)
-            stack.add_layer(MemoryLayer(banks_2d, args.bankx, args.banky, name=f'mem_bank_{i+1}', pos_offset=mem_offset, nb_offset=i*banks_per_layer))
+            mem_banks = MemoryLayer(banks_2d, args.bankx, args.banky, name=f'mem_bank_{i+1}', pos_offset=mem_offset, nb_offset=i*banks_per_layer)
+            stack.add_layer(PadWithAirLayer(total_width, total_height, mem_banks))
+        stack.add_layer(tim)
         stack.write_files(args.out)
 
     elif args.mode == '3D':
