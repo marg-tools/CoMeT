@@ -217,7 +217,7 @@ typedef struct thermal_config_t_st
        /* disable printing of steady state temperature on stdout */
  	int steady_state_print_disable;	
        /* type of memory passed for specific customization DDR, 3Dmem, 2.5D, 3D*/
- 	char memory_type[STR_SIZE];	
+ 	char type[STR_SIZE];	
 	int detailed_3D_used; //BU_3D: Added parameter to check for heterogenous R-C model 
 }thermal_config_t;
 

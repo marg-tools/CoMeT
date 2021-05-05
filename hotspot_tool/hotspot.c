@@ -89,12 +89,16 @@ void usage(int argc, char **argv)
 void global_config_from_strs(global_config_t *config, str_pair *table, int size)
 {
   int idx;
-  if ((idx = get_str_index(table, size, "f")) >= 0) {
-      if(sscanf(table[idx].value, "%s", config->flp_file) != 1)
-        fatal("invalid format for configuration  parameter flp_file\n");
-  } else {
-      fatal("required parameter flp_file missing. check usage\n");
-  }
+  // if ((idx = get_str_index(table, size, "f")) >= 0) {
+  //     if(sscanf(table[idx].value, "%s", config->flp_file) != 1)
+  //       fatal("invalid format for configuration  parameter flp_file\n");
+  // } else {
+  //     fatal("required parameter flp_file missing. check usage\n");
+  // }
+
+  if ((idx = get_str_index(table, size, "grid_layer_file")) < 0)
+      fatal("required parameter grid_layer_file missing. check usage\n");
+
   if ((idx = get_str_index(table, size, "p")) >= 0) {
       if(sscanf(table[idx].value, "%s", config->p_infile) != 1)
         fatal("invalid format for configuration  parameter p_infile\n");
@@ -328,11 +332,12 @@ int main(int argc, char **argv)
   size = parse_cmdline(table, MAX_ENTRIES, argc, argv);
   global_config_from_strs(&global_config, table, size);
 
-//  printf("LOKESH leakage_vector: %s",leakage_vector);
-for (i = 0; i < 16; ++i)
+  // printf("LOKESH leakage_vector: %s, length = %d",leakage_vector, strlen(leakage_vector));
+  int length_lv = strlen(leakage_vector);	
+for (i = 0; i < (length_lv/2); ++i)
     leakage[i] = 1;
 
-for (i = 0; i < 32; ++i)
+for (i = 0; i < length_lv; ++i)
 {
 
   if (leakage_vector[i] == '0')
@@ -397,7 +402,8 @@ for (i = 0; i < 32; ++i)
    * parameter is overridden by the layer configuration 
    * file in the grid model when the latter is specified.
    */
-  flp = read_flp(global_config.flp_file, FALSE);
+
+  // flp = read_flp(global_config.flp_file, FALSE);
   // LOKESH
   printf("flp_file= %s\n", global_config.flp_file);
   printf("do_detailed_3D= %d\n", do_detailed_3D);
@@ -631,7 +637,7 @@ for (i = 0; i < 32; ++i)
   if (do_transient)
     fclose(tout);
   delete_RC_model(model);
-  free_flp(flp, FALSE);
+  //free_flp(flp, FALSE);
   if (do_transient)
     free_dvector(temp);
   free_dvector(power);

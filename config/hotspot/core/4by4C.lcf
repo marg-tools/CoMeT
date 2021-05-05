@@ -1,0 +1,37 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+#Example
+
+#0
+#Y
+#Y
+#1.75e6
+#0.01
+#0.00015
+#3d/3d.flp
+
+# Layer 1: Silicon Logic
+0
+Y
+Y
+1.75e6
+0.01
+0.00005
+hotspot/floorplan/4x4_manycore.flp
+
+# Layer 2: thermal interface material (TIM)
+1
+Y
+N
+4e6
+0.25
+2.0e-05
+hotspot/floorplan/TIM_4x4_manycore.flp
