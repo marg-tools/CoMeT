@@ -154,6 +154,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
                 }
                 ++read_adv_count;
                 read_last_printed_timestamp =  read_last_printed_timestamp + ACCUMULATION_TIME;
+                rdt.push_back(read_trace_data());
             }
 
             rdt[read_adv_count].rd_interval_start_time = read_interval_start_time;
@@ -237,10 +238,11 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
                 wrt[write_adv_count].wr_interval_start_time = write_last_printed_timestamp + ACCUMULATION_TIME;
                 wrt[write_adv_count].write_access_count_per_epoch = 0;
                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                    wrt[read_adv_count].bank_write_access_count[i] = 0;
+                    wrt[write_adv_count].bank_write_access_count[i] = 0;
                 }
                 ++write_adv_count;
                 write_last_printed_timestamp =  write_last_printed_timestamp + ACCUMULATION_TIME;
+                wrt.push_back(write_trace_data());
             }
 
             wrt[write_adv_count].wr_interval_start_time = write_interval_start_time;
