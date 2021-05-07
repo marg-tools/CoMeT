@@ -519,7 +519,8 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     Headings += "Core"+str(id)+"-EU\t" # Execution Unit
    
    if sniper_config.get_config_bool(cfg, "core_power/tp"):
-    Headings += "Core"+str(id)+"-TP\t" # Total Power
+    #Headings += "Core"+str(id)+"-TP\t" # Total Power
+    Headings += "C_"+str(id)+"\t" # Total Power
 
    id = id+1
    

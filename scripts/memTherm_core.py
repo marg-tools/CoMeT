@@ -89,8 +89,14 @@ executable = hotspot_path + 'hotspot'
 
 hotspot_config_path = os.getenv('SNIPER_ROOT') + '/' 
 #hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), "/") 
-init_file_external = hotspot_config_path + sim.config.get('hotspot/init_file_external_mem')
-c_init_file_external = hotspot_config_path + sim.config.get('hotspot/init_file_external_core')
+if sim.config.get('hotspot/init_file_external_mem') == "None":
+    init_file_external = "None"
+else:
+    init_file_external = hotspot_config_path + sim.config.get('hotspot/init_file_external_mem')
+if sim.config.get('hotspot/init_file_external_core') == "None":
+    c_init_file_external = "None"
+else:
+    c_init_file_external = hotspot_config_path + sim.config.get('hotspot/init_file_external_core')
 hotspot_config_file      =   hotspot_config_path + sim.config.get('hotspot/hotspot_config_file_mem')
 c_hotspot_config_file      =   hotspot_config_path + sim.config.get('hotspot/hotspot_config_file_core')
 #hotspot_floorplan_file   =   sim.config.get('hotspot/floorplan_file')
@@ -146,8 +152,6 @@ hotspot_command = executable  \
                   + ' -detailed_3D on'
 #                  + ' -f ' + hotspot_floorplan_file \
 
-if init_file != "None":
-    hotspot_command += ' -init_file ' + init_file
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
@@ -159,10 +163,12 @@ c_hotspot_config_path = hotspot_config_path
 
 #initialization and setting up files
 os.system("echo copying files for first run")
-os.system("ls -l " + init_file_external)
-os.system("cp " + init_file_external + " " + init_file)
-os.system("ls -l " + c_init_file_external)
-os.system("cp " + c_init_file_external + " " + c_init_file)
+if (init_file_external != "None"):
+    os.system("ls -l " + init_file_external)
+    os.system("cp " + init_file_external + " " + init_file)
+if (c_init_file_external != "None"):
+    os.system("ls -l " + c_init_file_external)
+    os.system("cp " + c_init_file_external + " " + c_init_file)
 os.system('mkdir -p hotspot')
 os.system("cp -r " + hotspot_floorplan_folder + " " + './hotspot')
 os.system("rm -f " + full_temperature_trace_file)
@@ -176,7 +182,7 @@ for filename in ('PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.l
 #DDR:    B0_0 B0_1 ... B3_3
 #3Dmem:   LC0_0 LC0_1 ... LC3_3 (logic core), B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ...
 #3D:   B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ..., C0_0 C0_1 ... C3_3 (top layer core)
-#2.5D   C0_0 C0_1 ... C3_3 (core part), LC0_0 LC0_1 ... LC3_3 (logic core base), X1, X2, X3, B0_0 B0_1 ... B3_3, X0, X1, X2, X3 (layer0),  B0_0 B0_1 ... B3_3, X0, X1, X2, X3 (layer1), ...
+#2.5D   C0_0 C0_1 ... C3_3 (core part), LC0_0 LC0_1 ... LC3_3 (logic core base), X1, X2, X3, B0_0 B0_1 ... B3_3, X1, X2, X3 (layer0),  B0_0 B0_1 ... B3_3, X1, X2, X3 (layer1), ...
 def gen_ptrace_header():
     # For a 2by1 ptrace with four layers header should be B0_0    B0_1    B0_0    B0_1    B0_0    B0_1    B0_0    B0_1
     # For 3D: core is at the top, whereas for 3Dmem, 2.5D config. the 3Dmem is at the bottom.
@@ -186,12 +192,14 @@ def gen_ptrace_header():
         # ptrace_header=ptrace_header + "I0" + "\t" 
         for x in range(0,cores_in_x):
             for y in range(0,cores_in_y):
-                ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
+                ptrace_header=ptrace_header + "C_" + str(x*cores_in_y + y) + "\t" 
+                #ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
     
     if type_of_stack== "3Dmem" or type_of_stack== "2.5D":
         for x in range(0,logic_cores_in_x):
             for y in range(0,logic_cores_in_y):
-                ptrace_header=ptrace_header + "LC" + str(x) + "_" + str(y) + "\t" 
+                ptrace_header=ptrace_header + "LC_" + str(x*logic_cores_in_y + y) + "\t" 
+                #ptrace_header=ptrace_header + "LC" + str(x) + "_" + str(y) + "\t" 
     
     if type_of_stack=="2.5D":
         for x in range(1,4):
@@ -202,15 +210,18 @@ def gen_ptrace_header():
             for y in range(0,banks_in_y):
                     #                atrace_header=atrace_header + "B" + str(x) + "_" + str(y) + "\t" 
                 #if type_of_stack== "3D" or type_of_stack== "3Dmem" or type_of_stack=="DDR":
-                ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
+                bank_number = z*banks_in_x*banks_in_y + x*banks_in_y + y
+                ptrace_header=ptrace_header + "B_" + str(bank_number) + "\t" 
+                #ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
         if type_of_stack=="2.5D":
-            for x in range(0,4):
+            for x in range(1,4):
                 ptrace_header=ptrace_header + "X" + str(x) + "\t" 
     
     if type_of_stack=="3D":
         for x in range(0,cores_in_x):
             for y in range(0,cores_in_y):
-                ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
+                ptrace_header=ptrace_header + "C_" + str(x*cores_in_y + y) + "\t" 
+                #ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
 
     with open("%s" %(power_trace_file), "w") as f:
         f.write("%s\n" %(ptrace_header))
@@ -328,17 +339,17 @@ class memTherm:
             power_trace = power_trace + str(0.00) + '\t'
      #add bank power into the main power trace
     for bank in range(len(bank_power_trace)):
-            #add 0 power for X0, X1, X2, X3 for 2.5D
+            #add 0 power for X1, X2, X3 for 2.5D
         if (type_of_stack == "2.5D" and bank%(banks_in_x*banks_in_y)==0 and bank>0):
             power_trace = power_trace + str(0.00) + '\t'
             power_trace = power_trace + str(0.00) + '\t'
             power_trace = power_trace + str(0.00) + '\t'
-            power_trace = power_trace + str(0.00) + '\t'
+            #power_trace = power_trace + str(0.00) + '\t'
         #add bank power trace for all type of memories
         power_trace = power_trace + str(bank_power_trace[bank]) + '\t'
-    #add 0 power for X0, X1, X2, X3 for 2.5D at last
+    #add 0 power for X1, X2, X3 for 2.5D at last
     if (type_of_stack == "2.5D"):
-        for x in range(0,4):
+        for x in range(1,4):
             power_trace = power_trace + str(0.00) + '\t'
     c_power_data = ""
       #read core power and add to main power trace at last for 3D
@@ -370,7 +381,8 @@ class memTherm:
     if (core_thermal_enabled == 'true'):
      c_thermalLogFileName = file(c_full_temperature_trace_file, 'a');
     
-    needInitializing = os.stat(c_full_power_trace_file).st_size == 0
+    first_run = (sum(1 for linee in open(combined_temperature_trace_file, 'r')) == 1) 
+#    needInitializing = os.stat(c_full_power_trace_file).st_size == 0
     if (core_thermal_enabled == 'true'):
      c_hotspot_args = c_executable  \
                     + ' -c '+ c_hotspot_config_file \
@@ -387,7 +399,7 @@ class memTherm:
                     + ' -grid_layer_file ' + c_hotspot_layer_file \
                     + ' -detailed_3D on'
                     #+ ' -f ' + c_hotspot_floorplan_file \
-     if not needInitializing:
+     if (c_init_file_external!= "None") or (not first_run):
          c_hotspot_args += ' -init_file ' + c_init_file
 
      #print hotspot_binary, hotspot_args
@@ -485,7 +497,11 @@ class memTherm:
      #calculate memory power trace (combines with core trace in case of 3D and 2.5D within function)
     self.calc_power_trace(time, time_delta)
      #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
-    os.system(hotspot_command)
+    hcmd = hotspot_command
+    first_run = (sum(1 for linee in open(combined_temperature_trace_file, 'r')) == 1) 
+    if (init_file_external!= "None") or (not first_run):
+        hcmd += ' -init_file ' + init_file
+    os.system(hcmd)
     self.format_trace_file(True, c_temperature_trace_file, temperature_trace_file, combined_temperature_trace_file, combined_insttemperature_trace_file)
     self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
       #concatenate the per interval temperature trace into a single file
