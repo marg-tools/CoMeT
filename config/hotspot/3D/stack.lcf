@@ -15,7 +15,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_1.flp
+hotspot/3D/mem_bank_1.flp
 
 # Layer "tim"
 1
@@ -24,7 +24,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_2"
 2
@@ -33,7 +33,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_2.flp
+hotspot/3D/mem_bank_2.flp
 
 # Layer "tim"
 3
@@ -42,7 +42,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_3"
 4
@@ -51,7 +51,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_3.flp
+hotspot/3D/mem_bank_3.flp
 
 # Layer "tim"
 5
@@ -60,7 +60,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_4"
 6
@@ -69,7 +69,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_4.flp
+hotspot/3D/mem_bank_4.flp
 
 # Layer "tim"
 7
@@ -78,7 +78,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_5"
 8
@@ -87,7 +87,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_5.flp
+hotspot/3D/mem_bank_5.flp
 
 # Layer "tim"
 9
@@ -96,7 +96,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_6"
 10
@@ -105,7 +105,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_6.flp
+hotspot/3D/mem_bank_6.flp
 
 # Layer "tim"
 11
@@ -114,7 +114,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_7"
 12
@@ -123,7 +123,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_7.flp
+hotspot/3D/mem_bank_7.flp
 
 # Layer "tim"
 13
@@ -132,7 +132,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "mem_bank_8"
 14
@@ -141,7 +141,7 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/mem_bank_8.flp
+hotspot/3D/mem_bank_8.flp
 
 # Layer "tim"
 15
@@ -150,7 +150,7 @@ N
 4000000.0
 0.25
 2e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/tim.flp
+hotspot/3D/tim.flp
 
 # Layer "cores"
 16
@@ -159,5 +159,5 @@ Y
 1750000.0
 0.01
 5e-05
-/home/kedia/hotspot_sniper/sniper/config/hotspot/3D/cores.flp
+hotspot/3D/cores.flp
 
