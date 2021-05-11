@@ -1,40 +1,45 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <string.h>
 #include "call-stack.H"
-using std::map;
-using std::set;
-using std::vector;
-using std::list;
-using std::string;
-using std::hex;
-using std::list;
-using std::ostringstream;
-using std::setw;
-using std::vector;
-using std::right;
-using std::dec;
-using std::setfill;
-using std::endl;
-using std::left;
 
 #if defined(TARGET_WINDOWS)
 #define strdup _strdup
 #endif
 
+using namespace std;
 using namespace CALLSTACK;
 static REG vreg;
 KNOB_COMMENT _comment("pintool:call-stack", "Call Stack knobs");
@@ -44,7 +49,6 @@ KNOB<BOOL> _knob_source_location(KNOB_MODE_WRITEONCE,
                                  "1",
                                  "Emit source location (file,line,column) ");
 
-/// @cond INTERNAL_DOXYGEN
 
 ///////////////////////// Analysis Functions //////////////////////////////////
 static void a_process_call(ADDRINT target,
@@ -121,9 +125,9 @@ i_trace(TRACE trace, void *v)
             continue;
         }
 #endif
-        if( INS_IsDirectControlFlow(tail) ) {
+        if( INS_IsDirectBranchOrCall(tail) ) {
             //check if direct or indirect call and take the target accordingly
-            ADDRINT target = INS_DirectControlFlowTargetAddress(tail);
+            ADDRINT target = INS_DirectBranchOrCallTargetAddress(tail);
             INS_InsertCall(tail, IPOINT_BEFORE,
                                 (AFUNPTR)a_process_call,
                                 IARG_ADDRINT, target,
@@ -140,7 +144,7 @@ i_trace(TRACE trace, void *v)
                     IARG_END);
             }
         }
-        if( INS_IsIndirectControlFlow(tail) && !INS_IsRet(tail) ) {
+        if( INS_IsIndirectBranchOrCall(tail) && !INS_IsRet(tail) ) {
             INS_InsertCall(tail, IPOINT_TAKEN_BRANCH,
                                 (AFUNPTR)a_process_call,
                                 IARG_BRANCH_TARGET_ADDR,
@@ -651,4 +655,3 @@ void CallStackManager::on_ret_fire(THREADID tid, CONTEXT* ctxt, ADDRINT ip){
         }
     }
 }
-/// @endcond

@@ -26,14 +26,14 @@ def Version():
 #######################################################################
 
 def Usage():
-    print("Usage: flowgraph.py [OPTION]+ assembler-listing edge-profile")
-    print()
-    print("flowgraph converts a disassembled routine into a flowgraph which can be rendered using vcg") 
-    print()
-    print("assembler-listing is a textual disassembler listing generated with")
-    print("objdump-routine.csh or directly with objdump")
-    print()
-    print("edge-profile is a profile generated with the edgcnt Pin tool")
+    print "Usage: flowgraph.py [OPTION]+ assembler-listing edge-profile"
+    print
+    print "flowgraph converts a disassembled routine into a flowgraph which can be rendered using vcg" 
+    print
+    print "assembler-listing is a textual disassembler listing generated with"
+    print "objdump-routine.csh or directly with objdump"
+    print
+    print "edge-profile is a profile generated with the edgcnt Pin tool"
 
     
     return -1
@@ -43,15 +43,15 @@ def Usage():
 #######################################################################
 
 def Info(str):
-    print("I:",str, file=sys.stderr)
+    print >> sys.stderr,"I:",str
     return
 
 def Warning(str):
-    print("W:", str, file=sys.stderr)
+    print >> sys.stderr,"W:", str
     return
 
 def Error(str):
-    print("E:",str, file=sys.stderr)
+    print >> sys.stderr, "E:",str
     sys.exit(-1)
 
 
@@ -120,7 +120,7 @@ def ProcessAssemblerListing(lines):
         if not match:
 #            print "bad line ",l
             continue
-        addr = int(match.group(1),16)
+        addr = long(match.group(1),16)
         ins = INS( addr,  match.group(2) )
         ALL_INS[addr] = ins
         if last_ins:
@@ -160,25 +160,25 @@ def ProcessEdgProfile(lines):
         if not match: continue
 
         if v == 2:
-            src = int(match.group(1),16)
-            dst = int(match.group(2),16)
-            count = int(match.group(3))
+            src = long(match.group(1),16)
+            dst = long(match.group(2),16)
+            count = long(match.group(3))
             type = "u"
         elif v == 3:
-            src = int(match.group(1),16)
-            dst = int(match.group(2),16)
+            src = long(match.group(1),16)
+            dst = long(match.group(2),16)
             type = match.group(3)
-            count = int(match.group(4))
+            count = long(match.group(4))
 
-        if src in ALL_INS:
+        if ALL_INS.has_key(src):
             next = ALL_INS[src].get_next()
             if next: next.set_leader(1)
 
-        if dst in ALL_INS:    
+        if ALL_INS.has_key(dst):    
             ins = ALL_INS[dst]
             ins.set_leader(1)
 
-        if src in ALL_INS or dst in ALL_INS:
+        if ALL_INS.has_key(src) or ALL_INS.has_key(dst):
             edg_list.append( (src,dst,count,type) )            
             
     return edg_list
@@ -197,7 +197,7 @@ class EDG:
     def is_fallthru(self):
         return self._fallthru
     
-    def StringVCG(self, threshold = 100000000000):
+    def StringVCG(self, threshold = 100000000000L):
         s = ""
         if self._count > threshold:
             s += "\t" + "nearedge:\n"
@@ -333,7 +333,7 @@ ALL_EDG = []
 def CreateCFG(edg_list):
     no_interproc_edges = 1
 
-    ins_list = list(ALL_INS.items())
+    ins_list = ALL_INS.items()
     ins_list.sort() # by addr
 
     bbl_list = []
@@ -365,17 +365,17 @@ def CreateCFG(edg_list):
     
     for (src,dst,count,type) in edg_list:
 
-        if src in ALL_INS:
+        if ALL_INS.has_key(src):
             bbl_src = ALL_INS[src].get_bbl()
         else:
-            assert( dst in ALL_BBL )
+            assert( ALL_BBL.has_key(dst) )
             if no_interproc_edges:
                 ALL_BBL[dst].add_in_count(count)
                 continue             
             bbl_src = BBL(src)
             ALL_BBL[src] = bbl_src
 
-        if dst in ALL_BBL:
+        if ALL_BBL.has_key(dst):
             bbl_dst = ALL_BBL[dst]
         else:
             if no_interproc_edges:
@@ -425,35 +425,35 @@ def CreateCFG(edg_list):
 def DumpVCG():
     start = 0
     end = 0 
-    print("// ###################################################################################")
-    print("// VCG Flowgraph for %x - %x" % (start,end))
-    print("// ###################################################################################")
+    print  "// ###################################################################################"
+    print  "// VCG Flowgraph for %x - %x" % (start,end)
+    print  "// ###################################################################################"
  
-    print("graph:")
-    print("{");
+    print  "graph:"
+    print  "{";
 
-    print("title: \"Control Flow Graph for rtn %x - %x \"" % (start,end));
-    print("label: \"Control Flow Graph for rtn %x - %x \"" % (start,end));
-    print("display_edge_labels: yes")
-    print("layout_downfactor: 100")
-    print("layout_nearfactor: 10")
-    print("layout_upfactor: 1")
+    print "title: \"Control Flow Graph for rtn %x - %x \"" % (start,end);
+    print "label: \"Control Flow Graph for rtn %x - %x \"" % (start,end);
+    print "display_edge_labels: yes"
+    print "layout_downfactor: 100"
+    print "layout_nearfactor: 10"
+    print "layout_upfactor: 1"
 #    print "dirty_edge_labels: yes"
-    print("layout_algorithm: mindepth")
-    print("manhatten_edges: yes")
-    print("edge.arrowsize: 15")
-    print("late_edge_labels: yes")    
+    print "layout_algorithm: mindepth"
+    print "manhatten_edges: yes"
+    print "edge.arrowsize: 15"
+    print "late_edge_labels: yes"    
 
     for e in ALL_EDG:
-        print(e.StringVCG())
+        print e.StringVCG()
 
-    bbl_list = list(ALL_BBL.items())
+    bbl_list = ALL_BBL.items()
     bbl_list.sort()
     for (x,b) in bbl_list: 
-        print(b.StringVCG())
+        print b.StringVCG()
 
-    print("}");
-    print("// eof")
+    print "}";
+    print "// eof"
     return
 #######################################################################
 # Main

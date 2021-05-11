@@ -1,16 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 // <COMPONENT>: debugger-protocol
 // <FILE-TYPE>: component public header
 
@@ -24,7 +41,7 @@
 namespace DEBUGGER_PROTOCOL {
 
 /*!
- * The macOS* signal numbers.  These are the same values defined in the system <signal.h> header.
+ * The OS X* signal numbers.  These are the same values defined in the system <signal.h> header.
  */
 enum MAC_SIGNAL
 {
@@ -65,10 +82,10 @@ enum MAC_SIGNAL
 #if defined(DEBUGGER_PROTOCOL_BUILD)    // Library clients should NOT define this.
 
 /*!
- * When LLDB connects to an macOS* process, it expects that these signals are initially not
- * intercepted.  If a back-end connects to a debugger of type FRONTEND_TYPE_LLDB, the
+ * When GDB connects to an OS X* process, it expects that these signals are initially not
+ * intercepted.  If a back-end connects to a debugger of type FRONTEND_TYPE_GDB, the
  * back-end should arrange for these signals to be handled internally by the process,
- * without notifying LLDB.  Note that these are only an initial default setting.  LLDB may
+ * without notifying GDB.  Note that these are only an initial default setting.  GDB may
  * explicitly ask to intercept these signals later via IEVENT_INTERCEPTION.
  */
 DEBUGGER_PROTOCOL_API EVENT DefaultMacSignalsNotInterceptedByGdb[] =
@@ -121,7 +138,7 @@ enum EVENT_INFO_MAC_VERSION
 };
 
 /*!
- * Information about a signal received on a 32-bit macOS* target.
+ * Information about a signal received on a 32-bit OS X* target.
  */
 struct /*<POD>*/ EVENT_INFO_MAC32
 {
@@ -130,7 +147,7 @@ struct /*<POD>*/ EVENT_INFO_MAC32
 };
 
 /*!
- * Information about a signal received on a 64-bit macOS* target.
+ * Information about a signal received on a 64-bit OS X* target.
  */
 struct /*<POD>*/ EVENT_INFO_MAC64
 {

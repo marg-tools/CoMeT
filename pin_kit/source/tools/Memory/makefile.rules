@@ -21,15 +21,15 @@ TEST_TOOL_ROOTS := icache dcache allcache dcache_xscale_config footprint memalig
                    memory_limit malloc_stress
 
 # This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
-TEST_ROOTS := memory_allocation_access_protection new_delete address_mapping_oom address_mapping_zero check_memory_access
+TEST_ROOTS := memory_allocation_access_protection new_delete address_mapping_oom address_mapping_zero
 
 # This defines the tools which will be run during the the tests, and were not already defined in
 # TEST_TOOL_ROOTS.
 TOOL_ROOTS := memory_allocation_from_app_access_protection_tool memory_allocation_from_tool_access_protection_tool \
-              new_delete_tool check_memory_access_tool
+              new_delete_tool
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := access_protection_app new_delete_app mmap_reader_app check_memory_access_app
+APP_ROOTS := access_protection_app new_delete_app mmap_reader_app
 
 # This defines any additional object files that need to be compiled.
 OBJECT_ROOTS :=
@@ -62,6 +62,12 @@ endif
 
 ###### Handle exceptions here ######
 
+# Mac OS X*
+ifeq ($(TARGET_OS),mac)
+    # See Mantis 4401
+    TEST_TOOL_ROOTS := $(filter-out address_mapping_probe, $(TEST_TOOL_ROOTS))
+endif
+
 # see mantis 4497
 ifeq ($(TARGET_DOCKER),1)
     TEST_TOOL_ROOTS := $(filter-out restrict_memory_vdso, $(TEST_TOOL_ROOTS))
@@ -84,9 +90,6 @@ SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 # This section contains recipes for tests other than the default.
 # See makefile.default.rules for the default test rules.
 # All tests in this section should adhere to the naming convention: <testname>.test
-
-check_memory_access.test: $(OBJDIR)check_memory_access_tool$(PINTOOL_SUFFIX) $(OBJDIR)check_memory_access_app$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)check_memory_access_tool$(PINTOOL_SUFFIX) -- $(OBJDIR)check_memory_access_app$(EXE_SUFFIX)
 
 # Checks the correctness of the APIs: PIN_CheckReadAccess and PIN_CheckWriteAccess.
 memory_allocation_access_protection.test: $(OBJDIR)memory_allocation_from_tool_access_protection_tool$(PINTOOL_SUFFIX) $(OBJDIR)memory_allocation_from_app_access_protection_tool$(PINTOOL_SUFFIX) $(OBJDIR)access_protection_app$(EXE_SUFFIX)
@@ -146,14 +149,17 @@ ifeq ($(TARGET),intel64)
     PIN_IMAGE_RANGE_PARAM := -pin_image_memory_range $(PIN_IMAGE_RANGE)
     PIN_RESTRICT_RANGE_PARAM := -restrict_memory 0x304000000:0x304010000
 endif
+
+# -pin_image_memory_range is not supported on Windows and OS X*.
 ifeq ($(TARGET_OS),mac)
+    PIN_IMAGE_RANGE := 0:0
+    PIN_IMAGE_RANGE_PARAM :=
     ifeq ($(TARGET),intel64)
-        # On macOS* 64 bit the lowest 4GB cannot be allocated so we're using
+        # On OS X* 64 bit the lowest 4GB cannot be allocated so we're using
         # the region 0:0x180000000 which is actually 0x100000000:0x180000000 
         ZERO_BASED_REGION := 0:0x180000000
     endif
 endif
-# -pin_image_memory_range is not supported on Windows.
 ifeq ($(TARGET_OS),windows)
     PIN_IMAGE_RANGE := 0:0
     PIN_IMAGE_RANGE_PARAM :=

@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -42,7 +29,7 @@ typedef UINT64 OS_PROCESS_WAITABLE_PROCESS;
  * @retval      OS_RETURN_CODE_PROCESS_QUERY_FAILED If the operation Failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_GetCommandLine(NATIVE_PID pid, USIZE* argc, CHAR*** argv, USIZE* bufsize);
@@ -58,12 +45,12 @@ OS_RETURN_CODE OS_GetCommandLine(NATIVE_PID pid, USIZE* argc, CHAR*** argv, USIZ
  * @retval      OS_RETURN_CODE_NO_ERROR                 If the operation succeeded
  * @retval      OS_RETURN_CODE_PROCESS_UPDATE_FAILED    If the operation Failed
  *
- * @note On Linux and macOS* this function will retrieve the initial environment
+ * @note On Linux and OS X* this function will retrieve the initial environment
  *       block that was valid when the process started.
  *       This function doesn't catch up with changes done to the environment variables
  *       while the process is running.
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_GetEnvironmentBlock(NATIVE_PID pid, CHAR*** block, USIZE* bufSize);
@@ -74,7 +61,7 @@ OS_RETURN_CODE OS_GetEnvironmentBlock(NATIVE_PID pid, CHAR*** block, USIZE* bufS
  * @param[in]  code         Process descriptor
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 NORETURN void OS_ExitProcess(INT code);
@@ -90,7 +77,7 @@ NORETURN void OS_ExitProcess(INT code);
  * @retval      OS_RETURN_CODE_PROCESS_QUERY_FAILED If the operation Failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_IsDebuggerPresent(NATIVE_PID pid, BOOL_T* isPresent);
@@ -105,7 +92,7 @@ OS_RETURN_CODE OS_IsDebuggerPresent(NATIVE_PID pid, BOOL_T* isPresent);
  * @retval      OS_RETURN_CODE_PROCESS_QUERY_FAILED If the operation Failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS*\n
+ *   @b O/S:   Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_GetUid(NATIVE_UID* uid);
@@ -149,7 +136,7 @@ OS_RETURN_CODE OS_FindStdFiles(NATIVE_FD* files);
  * @retval      OS_RETURN_CODE_PROCESS_QUERY_FAILED If the operation Failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_CreateProcess(const CHAR* args, NATIVE_FD* stdFiles, NATIVE_FD* closeFiles,
@@ -172,7 +159,7 @@ typedef OS_RETURN_CODE (*OS_FnPtrCreateProcess)(const CHAR* args, NATIVE_FD* std
  * @retval      OS_RETURN_CODE_PROCESS_QUERY_FAILED If the operation Failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_WaitForProcessTermination(OS_PROCESS_WAITABLE_PROCESS process, UINT32* exitStatus);
@@ -183,7 +170,7 @@ OS_RETURN_CODE OS_WaitForProcessTermination(OS_PROCESS_WAITABLE_PROCESS process,
  * notify the debugger about a breakpoint that was triggered.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID OS_TriggerSoftwareBreakpoint();
@@ -195,7 +182,7 @@ VOID OS_TriggerSoftwareBreakpoint();
  * @note    Must be called earliest as possible by the child process after it was created for functional correctness.
  *
  * @par Availability:
- *   - @b O/S:   Linux & macOS*
+ *   - @b O/S:   Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_NotifyFork();
@@ -205,7 +192,7 @@ void OS_NotifyFork();
  * This value is increased by one every time OS_NotifyFork() is called.
  *
  * @par Availability:
- *   - @b O/S:   Linux & macOS*
+ *   - @b O/S:   Linux & OS X*
  *   - @b CPU:   All
  */
 UINT32 OS_GetForksCount();

@@ -1,23 +1,43 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*! @file
  *  pin tool combined from multi-DLLs (main_dll, dynamic_secondary_dll, static_secondary_dll). 
  *  This is the "main DLL", use PIN API only in this DLL
  *  usage of PIN API in dynamic_secondary_dll and static_secondary_dll is not allowed
  *  (see README for more inforamtion)
  *
- *  NOTE: New Pin image loader supports dynamic loading of Pin DLLs.
- *        Look at Mantis 3280 for implementation details.
- *        The test also validates the dynamic loading feature.
+ *  NOTE: New Pin image loader does not (yet) support dynamic loading of Pin DLLs.
+ *        Code related to dynamic_secondary_dll was suppressed.
+ *        Look at Mantis 3280 for updates.
+ *        #define DYN_LOAD will enable validation of dynamic loading feature in the test.
  */
 
 #include <iostream>
@@ -28,19 +48,10 @@
 
 #include "pin.H"
 
-using std::cerr;
-using std::endl;
-using std::hex;
-using std::string;
+using namespace std;
 
 KNOB<BOOL> KnobEnumerate(KNOB_MODE_WRITEONCE, "pintool",
     "enumerate", "0", "Enumerate modules loaded by Pin");
-
-KNOB<string> KnobOutputFile1(KNOB_MODE_WRITEONCE, "pintool", 
-    "o1", "static_secondary_dll.out", "Output file 1");
-
-KNOB<string> KnobOutputFile2(KNOB_MODE_WRITEONCE, "pintool", 
-    "o2", "dynamic_secondary_dll.out", "Output file 2");
 
 /* ===================================================================== */
 /* Global Variables and Declerations */
@@ -49,17 +60,19 @@ KNOB<string> KnobOutputFile2(KNOB_MODE_WRITEONCE, "pintool",
 PIN_LOCK pinLock;
 
 typedef VOID (* BEFORE_BBL)(ADDRINT ip);
-typedef int (* INIT_F)(bool enumerate, const char* out_filename);
+typedef int (* INIT_F)(bool enumerate);
 typedef VOID (* FINI_F)();
 
+#if defined(DYN_LOAD)
 // Functions pointers for dynamic_secondary_dll
 BEFORE_BBL pBeforeBBL2;
 INIT_F pInit2;
 FINI_F pFini2;
+#endif
 
 // Dll imports for static_secondary_dll
 extern "C" __declspec( dllimport ) VOID BeforeBBL1(ADDRINT ip);
-extern "C" __declspec( dllimport ) VOID Init1(const char*);
+extern "C" __declspec( dllimport ) VOID Init1();
 extern "C" __declspec( dllimport ) VOID Fini1();
 
 /* ===================================================================== */
@@ -69,7 +82,9 @@ VOID PIN_FAST_ANALYSIS_CALL BeforeBBL(ADDRINT ip)
 {
     PIN_GetLock(&pinLock, PIN_GetTid());
     BeforeBBL1(ip);
+#if defined(DYN_LOAD)
     pBeforeBBL2(ip);
+#endif
     PIN_ReleaseLock(&pinLock);
 }
 
@@ -91,7 +106,9 @@ VOID ThreadStart(THREADID threadid, CONTEXT *ctxt, INT32 flags, VOID *v)
 {
     PIN_GetLock(&pinLock, PIN_GetTid());
     BeforeBBL1(0);
+#if defined(DYN_LOAD)
     pBeforeBBL2(0);
+#endif
     PIN_ReleaseLock(&pinLock);
 }
 
@@ -99,7 +116,9 @@ VOID ThreadFini(THREADID threadid, const CONTEXT *ctxt, INT32 code, VOID *v)
 {
     PIN_GetLock(&pinLock, PIN_GetTid());
     BeforeBBL1(0);
+#if defined(DYN_LOAD)
     pBeforeBBL2(0);
+#endif
     PIN_ReleaseLock(&pinLock);
 }
 
@@ -109,7 +128,9 @@ VOID ThreadFini(THREADID threadid, const CONTEXT *ctxt, INT32 code, VOID *v)
 VOID Fini(INT32 code, VOID *v)
 {
     Fini1();
+#if defined(DYN_LOAD)
     pFini2();
+#endif
 }
 
 // This function gets info of an image loaded by Pin loader.
@@ -138,10 +159,11 @@ int main(int argc, char * argv[])
     PIN_AddFiniFunction(Fini, 0);
 
     // Call Static secondary dll Init1()
-    Init1(KnobOutputFile1.Value().c_str());
+    Init1();
 
     int nModules;
 
+#if defined(DYN_LOAD)
     // Dynamic secondary dll - load library, initialize function pointers
     // and call Init2()
     VOID * module = dlopen("dynamic_secondary_dll.dll", RTLD_NOW);
@@ -159,7 +181,8 @@ int main(int argc, char * argv[])
         exit(1);
     }
 
-    nModules = pInit2(KnobEnumerate, KnobOutputFile2.Value().c_str());
+    nModules = pInit2(KnobEnumerate);
+#endif
 
     int nModulesMain = 0;
     // Enumerate DLLs currently loaded by Pin loader.

@@ -79,7 +79,6 @@ private:
   enum { _S_bufsize = 256 };
   char _M_static_name[_S_bufsize];
   char *_M_name;
-  unsigned int _M_name_size; // name size without null terminating character
 };
 
 #    if defined (_STLP_USE_NO_IOSTREAMS) && !defined (__BUILDING_STLPORT)

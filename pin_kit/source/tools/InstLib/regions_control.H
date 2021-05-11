@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #ifndef REGIONS_CONTROL_H
 #define REGIONS_CONTROL_H
 
@@ -108,6 +127,7 @@ class IREGION
         UINT32 _weightTimesHundredThousand; // computed + assigned
          // Convert input weight ('double' 0--1)  to  UINT32 to avoid
          // floating point code in the pintools.
+        BOOL _isGlobal;
     public:
         IREGION()
         {
@@ -121,10 +141,12 @@ class IREGION
             _prolog_length = 0;
             _epilog_length = 0;
             _weightTimesHundredThousand = 0;
+            _isGlobal = FALSE;
         }
         string GetComment() const { return _comment;}
         UINT32 GetRegionId() const { return _rid;}
         UINT64 GetRegionStartICount() const { return _icountStart; }
+        BOOL IsGlobalRegion() const { return _isGlobal; }
         UINT64 GetRegionEndICount() const { return _icountEnd; }
         UINT64 GetWarmupLength() const { return _warmup_length; }
         UINT64 GetPrologLength() const { return _prolog_length; }
@@ -132,8 +154,6 @@ class IREGION
         UINT64 GetEpilogLength() const { return _epilog_length;}
         UINT32 GetWeightTimesHundredThousand() const {
             return _weightTimesHundredThousand;}
-        VOID SetICountEnd(UINT64 icountEnd) {_icountEnd = icountEnd;}
-        VOID SetEpilogLength(UINT64 epilog_length) {_epilog_length = epilog_length;}
 };
 
 class IEVENT
@@ -307,6 +327,7 @@ class CONTROL_IREGIONS
     {
         _cm = cm;
         _valid = true;
+        _isGlobal = false;
         _maxThreads = PIN_MAX_THREADS;
         _regions = new IREGION_VECTOR[_maxThreads];
         _events = new IEVENT_VECTOR[_maxThreads];
@@ -314,8 +335,7 @@ class CONTROL_IREGIONS
         _last_triggered_region = new IREGION * [_maxThreads];
         memset(_last_triggered_region , 0, 
             sizeof(_last_triggered_region[0]) * _maxThreads);
-        _passContext = FALSE;
-        _active = false;
+        _last_triggered_regionGlobal = new IREGION;
     }
 
     /*! @ingroup CONTROLLER_IREGIONS
@@ -356,35 +376,11 @@ class CONTROL_IREGIONS
         // Copy region controller events
         *regionControlChains = &_regionControlChains;
 
-        // Set Region name callback
-        _cm->SetRegionInfoCallback(CONTROL_IREGIONS::RegionInfoCallback, this);
-
         return 1;
     }
     bool IsActive() const { return _active; };
     IREGION * LastTriggeredRegion(THREADID tid) const { 
         return _last_triggered_region[tid];}
-
-    // Region name callback
-    static CONTROL_REGION_INFO RegionInfoCallback(THREADID tid, VOID * region_info_param)  {
-        CONTROL_REGION_INFO region_info;
-        CONTROL_IREGIONS * ci = (CONTROL_IREGIONS *)region_info_param;
-        IREGION * curr_region = ci->LastTriggeredRegion(tid);
-
-        // Build the region name
-        string weight_string = REGION_UTILS::WeightToString(curr_region->GetWeightTimesHundredThousand());
-        region_info.regionName = "_t" + decstr(tid) +
-            "r" + decstr(curr_region->GetRegionId()) +
-            "_warmup" + decstr(curr_region->GetWarmupLength()) +
-            "_prolog" + decstr(curr_region->GetPrologLength()) +
-            "_region" + decstr(curr_region->GetRegionLength()) +
-            "_epilog" + decstr(curr_region->GetEpilogLength()) +
-            "_" + StringDecSigned(curr_region->GetRegionId(), 3, '0') +
-            "_" + weight_string;
-        region_info.regionId = curr_region->GetRegionId();
-
-        return region_info;
-    }
 
     // Get the next region event
     VOID SetTriggeredRegion(THREADID tid, VOID* event_handler)  { 
@@ -423,7 +419,6 @@ class CONTROL_IREGIONS
                 break;
             }
 
-            UINT32 recordLen = 0;
             CHAR record[BUFSIZE+1];
             CHAR urecord[BUFSIZE+1];
             string field;
@@ -431,19 +426,18 @@ class CONTROL_IREGIONS
             double t_weight;
             string t_comment;
             INT32 t_rid;
-            INT32 t_tid;
+            INT32 t_tid = 0;
             UINT64 t_icountStart;
             UINT64 t_icountEnd;
 
             rfile.getline(record, BUFSIZE);
             lineNum++;
 
-            recordLen = strnlen_s(record, BUFSIZE+1);
-            if (recordLen == 0) continue;
+            if(strlen(record)==0) continue;
 
             // Create a temporary record with lower case letters
-            for (UINT32 i = 0; i <= recordLen; i++) 
-                urecord[i] = tolower(record[i]);
+            for(UINT32 i=0; i <= strlen(record); i++)
+                urecord[i] = tolower(record[i]); 
 
             // first word "comment" : this is the header
             if(strncmp(urecord,"comment",7)==0) continue;
@@ -465,7 +459,14 @@ class CONTROL_IREGIONS
             field.clear();
             getline(s, field, ',');
             ASSERT(!field.empty(), "Empty thread-id field.");
-            t_tid = REGION_UTILS::StringToUINT32(field, "thread-id");
+            if(!_isGlobal && strncmp(field.c_str(),"global",6)==0)
+            {
+                  _isGlobal = true;
+            }
+            if (! _isGlobal )
+            {
+                  t_tid = REGION_UTILS::StringToUINT32(field, "thread-id");
+            }
             // cerr << "thread-id " << t_tid << endl;
 
             field.clear();
@@ -513,14 +514,22 @@ class CONTROL_IREGIONS
                 cerr << "WARNING: regions:in file '" << filename << 
                     "' line number " << dec << lineNum << 
                     ": ignoring fields : " << tail  << endl;
-
-            ASSERTX(t_tid>=0 && (UINT32)t_tid<_maxThreads);
-            _regions[t_tid].push_back(IREGION());
-            region = & _regions[t_tid].back();
+            if(_isGlobal)
+            {
+                  _regionsGlobal.push_back(IREGION());
+                  region = & _regionsGlobal.back();
+                  region->_isGlobal = true;
+                  region->_tid = -1;
+            }
+            else
+            {
+                _regions[t_tid].push_back(IREGION());
+                region = & _regions[t_tid].back();
+                region->_tid = t_tid;
+            }
             region->_comment = t_comment;
             region->_rno = _regions[t_tid].size();
             region->_rid = t_rid;
-            region->_tid = t_tid;
             region->_weight = t_weight;
             region->_weightTimesHundredThousand = (UINT32)(t_weight*100000);
             region->_icountStart = t_icountStart;
@@ -556,12 +565,12 @@ class CONTROL_IREGIONS
     }
 
 
-    BOOL RegionHasOverlap(UINT32 tid, UINT64 span_begin, UINT64 span_end)
+    BOOL RegionHasOverlap(IEVENT_VECTOR iev, UINT64 span_begin, UINT64 span_end)
     {
         if(_rOverlapOkKnob) return false;
-        for ( UINT32 i = 0; i < _events[tid].size(); i++ )
+        for ( UINT32 i = 0; i < iev.size(); i++ )
         {
-                IEVENT * event = & _events[tid][i];
+                IEVENT * event = & iev[i];
                 if((span_begin <= event->icount) && (span_end >= event->icount))
                 {
                     if (xfile.is_open())
@@ -584,40 +593,73 @@ class CONTROL_IREGIONS
         return false;
     }
 
+    VOID PrintEventVector(IEVENT_VECTOR iv, INT32 tid=-1)
+    {
+      for ( UINT32 i = 0; i < iv.size(); i++ )
+      {
+        IEVENT * event = & iv[i];
+        string tidstr = _isGlobal ? "global": ("tid"+decstr(tid));
+        cerr << tidstr << " event " 
+          << IEVENT::EventToString(event->type) << " at " 
+          << dec << event->icount << endl; 
+      }
+    }
+
     VOID PrintEvents()
     {
         cerr << "Events:" << endl;
-        for(UINT32 tid=0; tid < _maxThreads; tid++)
+     
+        if(_isGlobal)
         {
-            for ( UINT32 i = 0; i < _events[tid].size(); i++ )
-            {
-                IEVENT * event = & _events[tid][i];
-                cerr << "tid " << dec << tid << " event " 
-                    << IEVENT::EventToString(event->type) << " at " 
-                    << dec << event->icount << endl; 
-            }
+          PrintEventVector(_eventsGlobal);
         }
+        else
+        {
+          for(UINT32 tid=0; tid < _maxThreads; tid++)
+          {
+            PrintEventVector(_events[tid]);
+          }
+        }
+    }
+
+    VOID ProcessEventsVector(IEVENT_VECTOR *irv, INT32 tid=-1)
+    {
+      sort(irv->begin(), irv->end(), IEVENT::EventLessThan);
+
+      // Add to controller strings
+      for ( UINT32 i = 0; i < irv->size(); i++ )
+      {
+        IEVENT * event = & (*irv)[i];
+        CHAIN_EVENT chain_event;
+        chain_event.event_handler = event;
+        if(_isGlobal)
+          chain_event.chain_str = _cm->EventToString(event->type)+
+                    ":icount:"+decstr(event->icount)+":global";
+        else
+        {
+          chain_event.chain_str = _cm->EventToString(event->type)+
+                    ":icount:"+decstr(event->icount)+":tid"+decstr(tid);
+          // Added for fixing JIRA SDE-2585 
+          chain_event.tid = tid;
+        _regionControlChains.push_back(chain_event);
+       }
+      }
     }
 
     // Sort the events according to their type and icount
     // Prepare controller events strings
     VOID ProcessEvents()
     {
-        for(UINT32 tid=0; tid < _maxThreads; tid++)
+        if(_isGlobal)
         {
-            sort(_events[tid].begin(), _events[tid].end(), 
-                IEVENT::EventLessThan);
-
-            // Add to controller strings
-            for ( UINT32 i = 0; i < _events[tid].size(); i++ )
-            {
-                IEVENT * event = & _events[tid][i];
-                CHAIN_EVENT chain_event;
-                chain_event.event_handler = event;
-                chain_event.chain_str = _cm->EventToString(event->type)+":icount:"+decstr(event->icount)+":tid"+decstr(tid);
-                chain_event.tid = tid;
-                _regionControlChains.push_back(chain_event);
-            }
+          ProcessEventsVector(&_eventsGlobal);
+        }
+        else
+        {
+          for(UINT32 tid=0; tid < _maxThreads; tid++)
+          {
+            ProcessEventsVector(&_events[tid], tid);
+          }
         }
     }
 
@@ -626,106 +668,131 @@ class CONTROL_IREGIONS
                         EVENT_TYPE type, IREGION * region)
     {
         IEVENT * event = 0;
-        _events[tid].push_back(IEVENT());
-        event = & _events[tid].back();
+        if(_isGlobal)
+        {
+          _eventsGlobal.push_back(IEVENT());
+          event = & _eventsGlobal.back();
+        }
+        else
+        {
+          _events[tid].push_back(IEVENT());
+          event = & _events[tid].back();
+        }
 
         event->icount = icount;
         event->type = type;
         event->iregion = region;
     }
 
+    VOID ProcessRegionsVector(IREGION_VECTOR *irv, INT32 tid = -1)
+    {
+      for ( UINT32 i = 0; i < irv->size(); i++ )
+      {
+        IREGION * region = & (*irv)[i];
+        UINT64 span_begin = 0;
+        UINT64 span_end = 0;
+
+        // cerr << "rno: " << region->_rno
+        // << " comment " << region->_comment
+        // << " icountStart " << region->_icountStart
+        // << " icountEnd " << region->_icountEnd
+        // << endl;
+
+        INT64 wstart = region->_icountStart-_rPrologKnob-_rWarmupKnob;
+        INT64 wend = region->_icountStart - _rPrologKnob;
+        INT64 pstart = wend;
+        INT64 pend = region->_icountStart;
+        INT64 rstart = pend;
+        INT64 estart = region->_icountEnd;
+        INT64 rend = estart;
+        INT64 eend = region->_icountEnd + _rEpilogKnob;
+
+        if(_rWarmupKnob && (wstart > 0))
+        {
+          // cerr << "WarmupStart " << dec << wstart << endl;
+          // cerr << "WarmupEnd " << dec << wend << endl;
+          span_begin = wstart;
+        }
+
+        if(_rPrologKnob && (pstart > 0))
+        {
+          // cerr << "PrologStart " << dec << pstart << endl;
+          // cerr << "PrologEnd " << dec << pend << endl;
+          if(!span_begin) span_begin = pstart;
+        }
+
+        if(!span_begin) span_begin = rstart;
+        // cerr << "RegionStart " << dec << rstart << endl;
+        // cerr << "RegionEnd " << dec << rend << endl;
+        span_end = rend;
+
+        if(_rEpilogKnob && (eend > estart))
+        {
+          // cerr << "EpilogStart " << dec << estart << endl;
+          // cerr << "EpilogEnd " << dec << eend << endl;
+          span_end = eend;
+        }
+
+        // cerr << "span_begin " << dec << span_begin << endl;
+        // cerr << "span_end " << dec << span_end << endl;
+
+        IEVENT_VECTOR iev;
+        if(_isGlobal)
+            iev = _eventsGlobal;
+        else
+            iev = _events[tid];;
+        if(RegionHasOverlap(iev, span_begin, span_end))
+        {
+          // cerr << "Region has overlap" << endl;
+          if (xfile.is_open())
+          {
+            xfile << region->_comment
+              << "," << (_isGlobal?"global":decstr(region->_tid))
+              << "," << region->_rid
+              << "," << region->_icountStart
+              << "," << region->_icountEnd
+              << "," << region->_weight
+              << endl;
+          }
+        }
+        else
+        {
+          if(_rWarmupKnob && (wstart > 0))
+          {
+            InsertOneEvent(tid, wstart, EVENT_WARMUP_START, region);
+            InsertOneEvent(tid, wend, EVENT_WARMUP_STOP, region);
+            region->_warmup_length = wend - wstart;
+          }
+        if(_rPrologKnob && (pstart > 0))
+        {
+          InsertOneEvent(tid, pstart, EVENT_PROLOG_START, region);
+          InsertOneEvent(tid, pend, EVENT_PROLOG_STOP, region);
+          region->_prolog_length = pend - pstart;
+        }
+        InsertOneEvent(tid, rstart, EVENT_START, region);
+        InsertOneEvent(tid, rend, EVENT_STOP, region);
+        if(_rEpilogKnob && (eend > estart))
+        {
+          InsertOneEvent(tid, estart, EVENT_EPILOG_START, region);
+          InsertOneEvent(tid, eend, EVENT_EPILOG_STOP, region);
+          region->_epilog_length = eend - estart;
+        }
+      }
+    }
+   }
+
     VOID ProcessRegions()
     {
-        for(UINT32 tid=0; tid < _maxThreads; tid++)
+        if(_isGlobal)
         {
-            for ( UINT32 i = 0; i < _regions[tid].size(); i++ )
-            {
-                IREGION * region = & _regions[tid][i];
-                UINT64 span_begin = 0;
-                UINT64 span_end = 0;
-
-                // cerr << "rno: " << region->_rno
-                // << " comment " << region->_comment
-                // << " icountStart " << region->_icountStart
-                // << " icountEnd " << region->_icountEnd
-                // << endl;
-
-                INT64 wstart = region->_icountStart-_rPrologKnob-_rWarmupKnob;
-                INT64 wend = region->_icountStart - _rPrologKnob;
-                INT64 pstart = wend;
-                INT64 pend = region->_icountStart;
-                INT64 rstart = pend;
-                INT64 estart = region->_icountEnd;
-                INT64 rend = estart;
-                INT64 eend = region->_icountEnd + _rEpilogKnob;
-
-                if(_rWarmupKnob && (wstart > 0))
-                {
-                    // cerr << "WarmupStart " << dec << wstart << endl;
-                    // cerr << "WarmupEnd " << dec << wend << endl;
-                    span_begin = wstart;
-                }
-
-                if(_rPrologKnob && (pstart > 0))
-                {
-                    // cerr << "PrologStart " << dec << pstart << endl;
-                    // cerr << "PrologEnd " << dec << pend << endl;
-                    if(!span_begin) span_begin = pstart;
-                }
-
-                if(!span_begin) span_begin = rstart;
-                // cerr << "RegionStart " << dec << rstart << endl;
-                // cerr << "RegionEnd " << dec << rend << endl;
-                span_end = rend;
-
-                if(_rEpilogKnob && (eend > estart))
-                {
-                    // cerr << "EpilogStart " << dec << estart << endl;
-                    // cerr << "EpilogEnd " << dec << eend << endl;
-                    span_end = eend;
-                }
-
-                // cerr << "span_begin " << dec << span_begin << endl;
-                // cerr << "span_end " << dec << span_end << endl;
-
-                if(RegionHasOverlap(tid, span_begin, span_end))
-                {
-                    // cerr << "Region has overlap" << endl;
-                    if (xfile.is_open())
-                    {
-                        xfile << region->_comment
-                            << "," << region->_tid
-                            << "," << region->_rid
-                            << "," << region->_icountStart
-                            << "," << region->_icountEnd
-                            << "," << region->_weight
-                            << endl;
-                    }
-                }
-                else
-                {
-                    if(_rWarmupKnob && (wstart > 0))
-                    {
-                        InsertOneEvent(tid, wstart, EVENT_WARMUP_START, region);
-                        InsertOneEvent(tid, wend, EVENT_WARMUP_STOP, region);
-                        region->_warmup_length = wend - wstart;
-                    }
-                    if(_rPrologKnob && (pstart > 0))
-                    {
-                        InsertOneEvent(tid, pstart, EVENT_PROLOG_START, region);
-                        InsertOneEvent(tid, pend, EVENT_PROLOG_STOP, region);
-                        region->_prolog_length = pend - pstart;
-                    }
-                    InsertOneEvent(tid, rstart, EVENT_START, region);
-                    InsertOneEvent(tid, rend, EVENT_STOP, region);
-                    if(_rEpilogKnob && (eend > estart))
-                    {
-                        InsertOneEvent(tid, estart, EVENT_EPILOG_START, region);
-                        InsertOneEvent(tid, eend, EVENT_EPILOG_STOP, region);
-                        region->_epilog_length = eend - estart;
-                    }
-                }
-            }
+            ProcessRegionsVector(&_regionsGlobal);
+        }
+        else
+        {
+          for(UINT32 tid=0; tid < _maxThreads; tid++)
+          {
+            ProcessRegionsVector(&_regions[tid], tid);
+          }
         }
 
         if (xfile.is_open())
@@ -744,12 +811,16 @@ class CONTROL_IREGIONS
     KNOB<string> _rOutFileKnob;
     IREGION_VECTOR *_regions; // per thread vector containing region info
     IEVENT_VECTOR *_events;  // per thread list (sorted by icount) of events
+    IREGION_VECTOR _regionsGlobal; // global region info
+    IEVENT_VECTOR _eventsGlobal;  // list (sorted by icount) of global events
     bool _active;
     THREADID _maxThreads;
     ofstream xfile;  // for writing out regions excluded due to overlap
     UINT32 _xcount; // number of regions excluded
     IREGION ** _last_triggered_region;
+    IREGION * _last_triggered_regionGlobal;
     BOOL _passContext;
+    BOOL _isGlobal;
     CHAIN_EVENT_VECTOR _regionControlChains;
 };
 }

@@ -1,19 +1,4 @@
 /*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-/*
  * Copyright (c) 1999
  * Silicon Graphics Computer Systems, Inc.
  *
@@ -53,7 +38,9 @@
 #  include <stl/_codecvt.h>
 #endif
 
-#if defined (_STLP_USE_WIN32_IO)
+#if defined(__PIN__)
+typedef NATIVE_FD _STLP_fd;
+#elif defined (_STLP_USE_WIN32_IO)
 typedef void* _STLP_fd;
 #elif defined (_STLP_USE_UNIX_EMULATION_IO) || defined (_STLP_USE_STDIO_IO) || defined (_STLP_USE_UNIX_IO)
 typedef int _STLP_fd;
@@ -73,7 +60,7 @@ public:                      // Opening and closing files.
 
   bool _M_open(const char*, ios_base::openmode, long __protection);
   bool _M_open(const char*, ios_base::openmode);
-  bool _M_open(int __id, ios_base::openmode = ios_base::__default_mode);
+  bool _M_open(NATIVE_FD __id, ios_base::openmode = ios_base::__default_mode);
 #if defined (_STLP_USE_WIN32_IO)
   bool _M_open(_STLP_fd __id, ios_base::openmode = ios_base::__default_mode);
 #endif /* _STLP_USE_WIN32_IO */
@@ -140,7 +127,7 @@ protected:                      // Data members.
 #endif
 
 public :
-  static size_t _STLP_CALL __page_size();
+  static size_t  _STLP_CALL __page_size() { return _M_page_size; }
   int  __o_mode() const { return (int)_M_openmode; }
   bool __is_open()      const { return (_M_is_open !=0 ); }
   bool __should_close() const { return (_M_should_close != 0); }

@@ -16,13 +16,13 @@ import json
 import socket
 
 if len(sys.argv) != 2:
-    print('Error Usage: python cntrl_client.py <file_name>')
+    print 'Error Usage: python cntrl_client.py <file_name>'
     exit(1)
     
 file_name = sys.argv[1]
 if not os.path.exists(file_name):
-    print('file file: ' + file_name + ' does not exists')
-    print('Have you run SDE with interactive controller?') 
+    print 'file file: ' + file_name + ' does not exists'
+    print 'Have you run SDE with interactive controller?' 
     exit(1)
 
 try:
@@ -35,8 +35,8 @@ try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect(('localhost', port))
         sock.send("1")
-except Exception as e:
-    print('ERROR: failed sending signal to SDE - ' + e.message)
+except Exception,e:
+    print 'ERROR: failed sending signal to SDE - ' + e.message
     if None != sock:
         sock.close()
     

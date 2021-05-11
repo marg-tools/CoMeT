@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -25,7 +12,7 @@
  */
 
 /*! @ingroup OS_APIS_PIN_TLS
- * Prototype for TLS value destructor function.
+ * Prototype for TLS value desctructor function.
  * The only argument for this function is the value stored in TLS.
  */
 typedef VOID (*TLS_DESTRUCTOR)(VOID*);
@@ -45,7 +32,7 @@ typedef ADDRINT PIN_TLS_INDEX;
  * @return      Pointer to the base address of the TLS data structure.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID* OS_TlsGetBaseAddress();
@@ -59,7 +46,7 @@ VOID* OS_TlsGetBaseAddress();
  * @return      Index for the newly allocated slot or OS_APIS_INVALID_PIN_TLS_INDEX on error.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 PIN_TLS_INDEX OS_TlsAlloc(TLS_DESTRUCTOR dest);
@@ -72,7 +59,7 @@ PIN_TLS_INDEX OS_TlsAlloc(TLS_DESTRUCTOR dest);
  * @return      True on success.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_TlsFree(PIN_TLS_INDEX idx);
@@ -86,7 +73,7 @@ BOOL_T OS_TlsFree(PIN_TLS_INDEX idx);
  * @return      Pointer to the value, or NULL otherwise.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID* OS_TlsGetValue(PIN_TLS_INDEX idx);
@@ -101,7 +88,7 @@ VOID* OS_TlsGetValue(PIN_TLS_INDEX idx);
  * @return      Pointer to the value, or NULL otherwise.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID* OS_TlsGetValueForThread(PIN_TLS_INDEX idx, NATIVE_TID ntid);
@@ -112,7 +99,7 @@ VOID* OS_TlsGetValueForThread(PIN_TLS_INDEX idx, NATIVE_TID ntid);
  * @return      Address of the static TLS for the current threads (which is a VOID* array).
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID** OS_TlsGetArrayAddress(void);
@@ -125,7 +112,7 @@ VOID** OS_TlsGetArrayAddress(void);
  * @return      Address of the static TLS for the specified threads (which is a VOID* array).
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID** OS_TlsGetArrayAddressForThread(NATIVE_TID ntid);
@@ -140,7 +127,7 @@ VOID** OS_TlsGetArrayAddressForThread(NATIVE_TID ntid);
  * @return      True on success.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_TlsSetValue(PIN_TLS_INDEX idx, VOID* val);
@@ -156,7 +143,7 @@ BOOL_T OS_TlsSetValue(PIN_TLS_INDEX idx, VOID* val);
  * @return      True on success.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_TlsSetValueForThread(PIN_TLS_INDEX idx, NATIVE_TID ntid, VOID* val);
@@ -168,7 +155,7 @@ BOOL_T OS_TlsSetValueForThread(PIN_TLS_INDEX idx, NATIVE_TID ntid, VOID* val);
  * @param[in]  ntid         The thread ID for which the TLS need to be freed.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 VOID OS_TlsFreeThreadTls(NATIVE_TID ntid);
@@ -182,7 +169,7 @@ VOID OS_TlsFreeThreadTls(NATIVE_TID ntid);
  *                          to the fixed TLS when a thread terminates.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_TlsAddStaticTlsDestructor(TLS_DESTRUCTOR destructor);

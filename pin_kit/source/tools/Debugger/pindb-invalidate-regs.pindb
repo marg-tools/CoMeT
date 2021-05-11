@@ -1,5 +1,4 @@
-p $eflags
-monitor clear-eflags
+monitor clear-sp
 invalidate-regs
-p $eflags
+p $sp
 q

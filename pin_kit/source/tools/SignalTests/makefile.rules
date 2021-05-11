@@ -23,7 +23,7 @@
 # defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
 # Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
 TEST_TOOL_ROOTS := sigsuspend double recursive setcontext sigusr2 sigenable interceptall faulttool action-pending \
-                   interceptsegv resetsegv-safecopy
+                   interceptsegv resetsegv-safecopy deprecated-intercept
 
 # This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
 TEST_ROOTS := nestmask altstack errcheck fatallog sigcont fastsigcheck sigprocmask_short sig64 fatalsync futex maskcheck \
@@ -43,7 +43,7 @@ TOOL_ROOTS := syncasynctool exittool logtool intercepttool sigflowcheck spilltoo
 # This defines all the applications that will be run during the tests.
 APP_ROOTS := simple nestmask syncasyncapp fpcheck maskcheck segv blockloop exithandler altstack errcheck fatal sigcont \
              sigenableapp sigprocmask_short sig64 fatalsync blockingsyscall futex asyncfpe fatal_block_sync suspendmask \
-             efault shortmask segv_for_regbindings_cache_test resetsegv movsbtest_$(TARGET) resetcont \
+             efault shortmask segv_for_regbindings_cache_test resetsegv movsbtest_$(TARGET) resetcont handle-usr1 \
              inst-type-app then-stress-app segv_on_fetch replay-signal-app call-app call-app-stress xmmcheck_$(TARGET) \
              xmmfaultcheck_$(TARGET) forktest_altstack threadtest_altstack async_exceptions
 
@@ -111,17 +111,17 @@ endif
 # The following tests are disabled. See Mantis #443.
 TEST_TOOL_ROOTS := $(filter-out sigsuspend double recursive setcontext sigusr2, $(TEST_TOOL_ROOTS))
 
-# See Mantis 4053
-ifeq ($(TARGET_OS),linux)
-    TEST_ROOTS := $(filter-out mtstress, $(TEST_ROOTS))
-    APP_ROOTS := $(filter-out mtstress, $(APP_ROOTS))
-endif
-
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
+ifeq ($(TARGET_OS),linux)
+    # See Mantis 4053
+    SANITY_SUBSET := $(filter-out mtstress, $(SANITY_SUBSET))
+endif
+
 
 ##############################################################
 #
@@ -471,6 +471,27 @@ resetcont.test: $(OBJDIR)resetcont$(EXE_SUFFIX) $(OBJDIR)logtool$(PINTOOL_SUFFIX
 resetsegv-safecopy.test: $(OBJDIR)resetsegv$(EXE_SUFFIX) $(OBJDIR)resetsegv-safecopy$(PINTOOL_SUFFIX)
 	$(PIN) -t $(OBJDIR)resetsegv-safecopy$(PINTOOL_SUFFIX) -- $(OBJDIR)resetsegv$(EXE_SUFFIX)
 
+# Test the deprecated PIN_AddSignalInterceptFunction() function.
+#
+deprecated-intercept.test: $(OBJDIR)handle-usr1$(EXE_SUFFIX) $(OBJDIR)deprecated-intercept$(PINTOOL_SUFFIX)
+	$(PIN) -t $(OBJDIR)deprecated-intercept$(PINTOOL_SUFFIX) -o $(OBJDIR)deprecated-intercept.pass-handle.toolout \
+	  -p -- $(OBJDIR)handle-usr1$(EXE_SUFFIX) yes > $(OBJDIR)deprecated-intercept.pass-handle.out
+	$(CMP) $(OBJDIR)deprecated-intercept.pass-handle.toolout deprecated-intercept.tool.reference
+	$(CMP) $(OBJDIR)deprecated-intercept.pass-handle.out deprecated-intercept.app-handle.reference
+	$(PIN) -t $(OBJDIR)deprecated-intercept$(PINTOOL_SUFFIX) -o $(OBJDIR)deprecated-intercept.nopass-handle.toolout \
+	  -- $(OBJDIR)handle-usr1$(EXE_SUFFIX) yes > $(OBJDIR)deprecated-intercept.nopass-handle.out
+	$(CMP) $(OBJDIR)deprecated-intercept.nopass-handle.toolout deprecated-intercept.tool.reference
+	$(CMP) $(OBJDIR)deprecated-intercept.nopass-handle.out deprecated-intercept.app-nohandle.reference
+	$(PIN) -t $(OBJDIR)deprecated-intercept$(PINTOOL_SUFFIX) -o $(OBJDIR)deprecated-intercept.pass-nohandle.toolout \
+	  -p -- $(OBJDIR)handle-usr1$(EXE_SUFFIX) no > $(OBJDIR)deprecated-intercept.pass-nohandle.out
+	$(CMP) $(OBJDIR)deprecated-intercept.pass-nohandle.toolout deprecated-intercept.tool.reference
+	$(CMP) $(OBJDIR)deprecated-intercept.pass-nohandle.out deprecated-intercept.app-nohandle.reference
+	$(PIN) -t $(OBJDIR)deprecated-intercept$(PINTOOL_SUFFIX) -o $(OBJDIR)deprecated-intercept.nopass-nohandle.toolout \
+	  -- $(OBJDIR)handle-usr1$(EXE_SUFFIX) no > $(OBJDIR)deprecated-intercept.nopass-nohandle.out
+	$(CMP) $(OBJDIR)deprecated-intercept.nopass-nohandle.toolout deprecated-intercept.tool.reference
+	$(CMP) $(OBJDIR)deprecated-intercept.nopass-nohandle.out deprecated-intercept.app-nohandle.reference
+	$(RM) $(OBJDIR)deprecated-intercept.*.toolout $(OBJDIR)deprecated-intercept.*.out
+
 # Test the behavior when a signal cannot be handled because the application's stack is bad.
 #
 # On Linux, the kernel delivers a SEGV, which also cannot be handled.  The kernel then
@@ -632,6 +653,10 @@ sigsegv_attach.test: $(OBJDIR)sigsegv_attach$(PINTOOL_SUFFIX) $(OBJDIR)sigsegv_a
 # See makefile.default.rules for the default build rules.
 
 ###### Special tools' build rules ######
+
+# This tool only needs a special compilation rule. For linking we use the default. 
+$(OBJDIR)deprecated-intercept$(OBJ_SUFFIX): deprecated-intercept.cpp
+	$(CXX) $(TOOL_CXXFLAGS) $(ENABLE_DEPRECATED) $(COMP_OBJ)$@ $<
 
 ###### Special applications' build rules ######
 

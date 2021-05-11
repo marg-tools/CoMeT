@@ -1,19 +1,4 @@
 /*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-/*
  * Copyright (C) 2008 The Android Open Source Project
  * All rights reserved.
  *
@@ -72,7 +57,7 @@ enum {
   RTLD_GLOBAL = 8,
   RTLD_NOLOAD = 0x10,
   RTLD_NODELETE = 0x80,
-  RTLD_FIRST = 0x100,   /* macOS 10.5 and later */
+  RTLD_FIRST = 0x100,   /* Mac OS X 10.5 and later */
 #else
 # if defined(__LP64__)
   RTLD_NOW  = 2,
@@ -94,8 +79,8 @@ enum {
 #if defined(__APPLE__)
 # define RTLD_NEXT       ((void *) -1)   /* Search subsequent objects. */
 # define RTLD_DEFAULT    ((void *) -2)   /* Use default search algorithm. */
-# define RTLD_SELF       ((void *) -3)   /* Search this and subsequent objects (macOS 10.5 and later) */
-# define RTLD_MAIN_ONLY  ((void *) -5)   /* Search main executable only (macOS 10.5 and later) */
+# define RTLD_SELF       ((void *) -3)   /* Search this and subsequent objects (Mac OS X 10.5 and later) */
+# define RTLD_MAIN_ONLY  ((void *) -5)   /* Search main executable only (Mac OS X 10.5 and later) */
 #else
 # if defined (__LP64__)
 #  define RTLD_DEFAULT  ((void*) 0)

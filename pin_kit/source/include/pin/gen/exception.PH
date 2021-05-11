@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -176,7 +176,7 @@ struct EXCEPTION_INFO
     /*!
      * Remove the exception information and initialize this structure as empty.
      */
-    VOID Reset() {m_exceptCode = EXCEPTCODE_NONE; m_exceptAddress = 0; }
+    VOID Reset() {m_exceptCode = EXCEPTCODE_NONE;}
 
     /*!
      * @return TRUE, if this structure has been reset and does not contain a valid
@@ -187,12 +187,12 @@ struct EXCEPTION_INFO
     /*!
      * @return The string representation of this structure.
      */
-    std::string ToString() const;
+    string ToString() const;
 
     /*!
      * @return The name of the exception's code.
      */
-    std::string GetCodeAsString() const;
+    string GetCodeAsString() const;
 
   public:
 
@@ -377,7 +377,7 @@ typedef struct EXCEPTION_INFO EXCEPTION_INFO;
 
                                                                   /* DO NOT EDIT */
 inline VOID PIN_InitExceptionInfo(EXCEPTION_INFO * pExceptInfo,
-                                        EXCEPTION_CODE exceptCode,
+                                        EXCEPTION_CODE exceptCode, 
                                         ADDRINT exceptAddress)
 {
     pExceptInfo->Init(exceptCode, exceptAddress);
@@ -422,52 +422,52 @@ inline ADDRINT PIN_GetExceptionAddress(const EXCEPTION_INFO * pExceptInfo)
 }
 
                                                                   /* DO NOT EDIT */
-inline VOID PIN_SetExceptionAddress(EXCEPTION_INFO * pExceptInfo,
+inline VOID PIN_SetExceptionAddress(EXCEPTION_INFO * pExceptInfo, 
                                           ADDRINT exceptAddress)
 {
     pExceptInfo->SetExceptAddress(exceptAddress);
 }
 
                                                                   /* DO NOT EDIT */
-inline FAULTY_ACCESS_TYPE PIN_GetFaultyAccessType(const EXCEPTION_INFO * pExceptInfo)
+inline FAULTY_ACCESS_TYPE PIN_GetFaultyAccessType(const EXCEPTION_INFO * pExceptInfo) 
 {
     return pExceptInfo->GetFaultyAccessType();
 }
 
                                                                   /* DO NOT EDIT */
 inline BOOL PIN_GetFaultyAccessAddress(const EXCEPTION_INFO * pExceptInfo,
-                                             ADDRINT * pAccessAddress)
+                                             ADDRINT * pAccessAddress) 
 {
     return pExceptInfo->GetFaultyAccessAddress(pAccessAddress);
 }
 
                                                                   /* DO NOT EDIT */
-inline UINT32 PIN_GetFpErrorSet(const EXCEPTION_INFO * pExceptInfo)
+inline UINT32 PIN_GetFpErrorSet(const EXCEPTION_INFO * pExceptInfo) 
 {
     return pExceptInfo->GetFpErrors();
 }
 
                                                                   /* DO NOT EDIT */
-inline UINT32 PIN_GetWindowsExceptionCode(const EXCEPTION_INFO * pExceptInfo)
+inline UINT32 PIN_GetWindowsExceptionCode(const EXCEPTION_INFO * pExceptInfo) 
 {
     return pExceptInfo->GetWindowsSysExceptionCode();
 }
 
                                                                   /* DO NOT EDIT */
-inline UINT32 PIN_CountWindowsExceptionArguments(const EXCEPTION_INFO * pExceptInfo)
+inline UINT32 PIN_CountWindowsExceptionArguments(const EXCEPTION_INFO * pExceptInfo) 
 {
     return pExceptInfo->CountWindowsSysArguments();
 }
 
                                                                   /* DO NOT EDIT */
 inline ADDRINT PIN_GetWindowsExceptionArgument(const EXCEPTION_INFO * pExceptInfo,
-                                                     UINT32 argNum)
+                                                     UINT32 argNum) 
 {
     return pExceptInfo->GetWindowsSysArgument(argNum);
 }
 
                                                                   /* DO NOT EDIT */
-inline std::string PIN_ExceptionToString(const EXCEPTION_INFO * pExceptInfo)
+inline string PIN_ExceptionToString(const EXCEPTION_INFO * pExceptInfo) 
 {
     return pExceptInfo->ToString();
 }

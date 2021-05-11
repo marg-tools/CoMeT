@@ -57,25 +57,16 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-###### Handle exceptions here ######
-
-# see mantis 4822
-ifeq ($(TARGET),ia32)
-    ifeq ($(TARGET_OS),linux)
-        ifeq ($(DIST_NAME_UBUNTU),1)
-            DIST_VER_GE_1910 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 19.10)
-            ifeq ($(DIST_VER_GE_1910),1)
-                TEST_TOOL_ROOTS := $(filter-out indirect_jmp_with_translation, $(TEST_TOOL_ROOTS))
-            endif
-        endif
-    endif
-endif
-
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
+ifeq ($(TARGET_OS),windows)
+    # See Mantis 4378
+    SANITY_SUBSET := $(filter-out memory_addr_callback, $(SANITY_SUBSET))
+endif
 
 
 ##############################################################

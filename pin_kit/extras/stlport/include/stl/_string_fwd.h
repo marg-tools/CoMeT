@@ -48,7 +48,6 @@ _STLP_MOVE_TO_PRIV_NAMESPACE
 //This function limits header dependency between exception and string
 //implementation. It is implemented in _string.h
 const char* _STLP_CALL __get_c_string(const string& __str);
-size_t _STLP_CALL __get_c_string_length(const string& __str);
 
 _STLP_MOVE_TO_STD_NAMESPACE
 

@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 
 #include "ialarm.H"
 #include "alarm_manager.H"
@@ -23,8 +42,6 @@ using namespace CONTROLLER;
 set<ADDRINT> IALARM::_thread_first_ip;
 ADDRINT IALARM::_threads_first_ip_vec[PIN_MAX_THREADS];
 
-/// @cond INTERNAL_DOXYGEN
-
 IALARM::IALARM(UINT32 tid ,UINT64 count,BOOL need_ctxt, 
        ALARM_MANAGER* manager){
     _tid = tid;
@@ -32,10 +49,9 @@ IALARM::IALARM(UINT32 tid ,UINT64 count,BOOL need_ctxt,
     _need_context = need_ctxt;
     _alarm_manager = manager;
     memset(_thread_count,0,sizeof(_thread_count));
-    memset(_armed,0,sizeof(_armed));
-    _global_armed = 0;
+    for (UINT32 i=0; i<PIN_MAX_THREADS; i++)
+        _armed[i]=0;
     _activate_late_handler = FALSE;
-    _address = 0;
     PIN_InitLock(&_lock);
 
     static BOOL thread_callback_added = FALSE;
@@ -160,7 +176,10 @@ ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::Count(IALARM* ialarm,
 ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::GlobalCount(IALARM* ialarm, 
                                              UINT32 tid,
                                              UINT32 ninst){
-    UINT32 should_count = ialarm->_global_armed;
+    UINT32 armed = ialarm->_armed[tid];
+    UINT32 correct_tid = (ialarm->_tid == tid) | (ialarm->_tid == ALL_THREADS);
+
+    UINT32 should_count = armed & correct_tid;
 
     // Increment global counter
     ATOMIC::OPS::Increment<UINT64>(&ialarm->_global_count._count, ninst*(should_count));
@@ -218,8 +237,8 @@ VOID IALARM::LateFire(IALARM* ialarm, CONTEXT* ctxt, VOID * ip, UINT32 tid) {
 
 VOID IALARM::Arm(){
     PIN_GetLock(&_lock,0);
-    memset(_armed,1,sizeof(_armed));
-    _global_armed = 1;
+    for (UINT32 i=0; i<PIN_MAX_THREADS; i++)
+        _armed[i]=1;
     PIN_ReleaseLock(&_lock);
 }
 
@@ -231,10 +250,10 @@ VOID IALARM::Disarm(THREADID tid){
 
 VOID IALARM::Disarm(){
     PIN_GetLock(&_lock,0);
-    memset(_armed,0,sizeof(_armed));
+    for (UINT32 i=0; i<PIN_MAX_THREADS; i++)
+        _armed[i]=0;
     memset(_thread_count,0,sizeof(_thread_count));
     _global_count._count = 0;
-    _global_armed = 0;
     PIN_ReleaseLock(&_lock);
 }
 
@@ -334,48 +353,29 @@ VOID IALARM::TraceAddress(TRACE trace, VOID* v)
 
 // Instrumentation of indirect branch checking
 VOID IALARM::InsertIfCall_Target(IALARM* alarm, INS ins){
-    if (alarm->HasGlobalCounter())
-        INS_InsertIfCall(ins, IPOINT_TAKEN_BRANCH,
-            AFUNPTR(CheckTargetGlobal),
-            IARG_FAST_ANALYSIS_CALL,
-            IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
-            IARG_PTR, alarm,
-            IARG_BRANCH_TARGET_ADDR,
-            IARG_END);
-    else
-        INS_InsertIfCall(ins, IPOINT_TAKEN_BRANCH,
-            AFUNPTR(CheckTarget),
-            IARG_FAST_ANALYSIS_CALL,
-            IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
-            IARG_PTR, alarm,
-            IARG_THREAD_ID,
-            IARG_BRANCH_TARGET_ADDR,
-            IARG_END);
+    INS_InsertIfCall(ins, IPOINT_TAKEN_BRANCH,
+        AFUNPTR(CheckTarget),
+        IARG_FAST_ANALYSIS_CALL,
+        IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
+        IARG_PTR, alarm,
+        IARG_THREAD_ID,
+        IARG_BRANCH_TARGET_ADDR,
+        IARG_END);
 }
 
 // Instrumentation of first ip address checking
 VOID IALARM::InsertIfCall_FirstIp(IALARM* alarm, INS ins, IPOINT point){
-    if (alarm->HasGlobalCounter())
-        INS_InsertIfCall(ins, point,
-            AFUNPTR(CheckFirstIpGlobal),
-            IARG_FAST_ANALYSIS_CALL,
-            IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
-            IARG_PTR, alarm,
-            IARG_THREAD_ID,
-            IARG_INST_PTR,
-            IARG_END);
-    else
-        INS_InsertIfCall(ins, point,
-            AFUNPTR(CheckFirstIp),
-            IARG_FAST_ANALYSIS_CALL,
-            IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
-            IARG_PTR, alarm,
-            IARG_THREAD_ID,
-            IARG_INST_PTR,
-            IARG_END);
+    INS_InsertIfCall(ins, point,
+        AFUNPTR(CheckFirstIp),
+        IARG_FAST_ANALYSIS_CALL,
+        IARG_CALL_ORDER, alarm->GetInstrumentOrder(),
+        IARG_PTR, alarm,
+        IARG_THREAD_ID,
+        IARG_INST_PTR,
+        IARG_END);
 }
 
-// Check if we have reached the target we need for global counter
+// Check if we have reached the target we need
 ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckTarget(IALARM* ialarm, 
                                                    THREADID tid,
                                                    ADDRINT branch_target) {
@@ -387,23 +387,17 @@ ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckTarget(IALARM* ialarm,
     // Increment counter if needed
     ialarm->_thread_count[tid]._count += should_count;
 
-    // Return if we have reached thread or global counter
-    return should_count & (ialarm->_thread_count[tid]._count >= ialarm->_target_count._count);
-}
-
-// Check if we have reached the target we need
-ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckTargetGlobal(IALARM* ialarm, 
-                                                   ADDRINT branch_target) {
-    UINT32 should_count = ialarm->_global_armed & (ialarm->_address == branch_target);
-
     // Increment global counter
+    ialarm->_global_count._count += should_count;
     ATOMIC::OPS::Increment<UINT64>(&ialarm->_global_count._count, should_count);
 
     // Return if we have reached thread or global counter
-    return should_count & (ialarm->_global_count._count >= ialarm->_target_count._count);
+    return should_count & ((ialarm->_thread_count[tid]._count >= ialarm->_target_count._count) |
+                            (ialarm->HasGlobalCounter() & 
+                             (ialarm->_global_count._count >= ialarm->_target_count._count)));
 }
 
-// Check if we have reached the target we need in the first ip of the thread
+// Check if we have reached the target we need
 ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckFirstIp(IALARM* ialarm, 
                                                    THREADID tid,
                                                    ADDRINT addr) {
@@ -419,26 +413,13 @@ ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckFirstIp(IALARM* ialarm,
     // Increment counter if needed
     ialarm->_thread_count[tid]._count += should_count;
 
-    // Return if we have reached thread or global counter
-    return should_count & (ialarm->_thread_count[tid]._count >= ialarm->_target_count._count);
-}
-
-// Check if we have reached the target we need in the first ip of the thread
-// for global counting
-ADDRINT PIN_FAST_ANALYSIS_CALL IALARM::CheckFirstIpGlobal(IALARM* ialarm, 
-                                                    THREADID tid,
-                                                    ADDRINT addr) {
-    UINT32 should_count = ialarm->_global_armed & (addr == _threads_first_ip_vec[tid]);
-
-    // Reset the vector value of this thread so that next time 
-    // we will not count it and comparison to first ip will not return true.
-    _threads_first_ip_vec[tid] = 0;
-
     // Increment global counter
     ATOMIC::OPS::Increment<UINT64>(&ialarm->_global_count._count, should_count);
 
     // Return if we have reached thread or global counter
-    return should_count & (ialarm->_global_count._count >= ialarm->_target_count._count);
+    return should_count & ((ialarm->_thread_count[tid]._count >= ialarm->_target_count._count) |
+                            (ialarm->HasGlobalCounter() & 
+                             (ialarm->_global_count._count >= ialarm->_target_count._count)));
 }
 
 // Thread start callback
@@ -450,23 +431,4 @@ VOID IALARM::ThreadStart(THREADID tid, CONTEXT *ctxt, INT32 flags, VOID *v){
     // this IP might be already instrumented, so we need to reset 
     // the instrumentations on it's BB.
     PIN_RemoveInstrumentationInRange(first_ip, first_ip+15);
-
-    // Check if we need to fix thread id
-    // This is possible if thread translation callback is set
-    // This is only relevant if this is not a global counter because in global 
-    // counters we summarize all threads and there is not meaning to tid.
-    IALARM* ialarm = static_cast<IALARM*>(v);
-    if (!ialarm->HasGlobalCounter() && 
-        ialarm->_alarm_manager->GetControlChain()->GetControlManager()->GetThreadTransCallback() != NULL)
-    {
-        THREADID trans_tid = (ialarm->_alarm_manager->GetControlChain()->GetControlManager()->GetThreadTransCallback())(tid,NULL);
-        if (trans_tid != tid && ialarm->_tid == trans_tid)
-        {
-            ialarm->_armed[tid] = TRUE;
-            ialarm->_armed[trans_tid] = FALSE;
-            ialarm->_tid = tid;
-        }
-    }
 }
-
-/// @endcond

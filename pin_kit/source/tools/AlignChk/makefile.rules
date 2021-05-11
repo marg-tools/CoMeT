@@ -58,6 +58,14 @@ endif
 
 ###### Handle exceptions here ######
 
+# These tests fail - fix and remove the following:
+# Mantis 3159 - alignchk
+ifeq ($(TARGET_OS),windows)
+    ifeq ($(TARGET),intel64)
+        TEST_TOOL_ROOTS := $(filter-out alignchk, $(TEST_TOOL_ROOTS))
+    endif
+endif
+
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in

@@ -69,7 +69,7 @@ def CompareFile(filePattern, fileCompare):
             PrintNoMatch(patterns)
             return False
         if not Opts.quiet:
-            print(">> " + compLines[0])
+            print ">> " + compLines[0]
         compLines.pop(0)
         patterns.pop(0)
 
@@ -78,14 +78,14 @@ def CompareFile(filePattern, fileCompare):
 
 def PrintNoMatch(patList):
     if not Opts.quiet:
-        print()
+        print
     PrintError("Remaining patterns do not match:")
     for (x, patStr) in patList:
-        print(">> " + patStr)
+        print ">> " + patStr
 
 
 def PrintError(s):
-    print("Error: " + s)
+    print "Error: " + s
 
 
 if __name__ == "__main__": sys.exit(Main(sys.argv[1:]))

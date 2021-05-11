@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 
 #include <sstream> 
 #include "alarm_manager.H"
@@ -19,9 +38,7 @@
 
 
 using namespace CONTROLLER;
-
-/// @cond INTERNAL_DOXYGEN
-
+                      
 map<string, ALARM_TYPE> ALARM_MANAGER::InitAlarms(){
     map<string, ALARM_TYPE> alarm_map;
     alarm_map["icount"] = ALARM_TYPE_ICOUNT;
@@ -41,7 +58,6 @@ map<string, ALARM_TYPE> ALARM_MANAGER::InitAlarms(){
 #if !defined(TARGET_WINDOWS)
     alarm_map["signal"] = ALARM_TYPE_SIGNAL;
 #endif 
-    alarm_map["image_load"] = ALARM_TYPE_IMAGE_LOAD;
 
     return alarm_map;
 }
@@ -74,10 +90,7 @@ ALARM_MANAGER::ALARM_MANAGER(const string& control_str,
     _late_handler = late_handler;
     _vector_alarm = vector_alarm;
     _vector_index = vector_index;
-    _uniform_count = 0;
-    _uniform_period = 0;
-    _uniform_length = 0;
-
+    
     vector<string> control_tokens;
     
     PARSER::SplitArgs(":",control_str,control_tokens);   
@@ -167,9 +180,6 @@ IALARM* ALARM_MANAGER::GenerateAlarm(){
                                                       _count,ctxt,this);
     case ALARM_TYPE_SIGNAL: return new ALARM_SIGNAL(_alarm_value,_tid,
                                                     _count,ctxt,this);
-    case ALARM_TYPE_IMAGE_LOAD: return new ALARM_IMAGE_LOAD(_alarm_value, _tid,
-                                                           _count, ctxt, this);
-
     default: ASSERT(FALSE,"Unexcpected alarm");
     }
     return NULL; //pacify the compiler 
@@ -234,11 +244,6 @@ VOID ALARM_MANAGER::ParseAlarm(vector<string>& control_tokens){
     _alarm_value = control_tokens[0];
     control_tokens.erase(control_tokens.begin());
 
-    // Parse global icount value
-    if (_global_count && _vector_alarm)
-    {
-        _icount_alarm_value = PARSER::StringToUint64(_alarm_value);
-    }
 }
 
 
@@ -254,13 +259,12 @@ VOID ALARM_MANAGER::ParseCommon(vector<string>& control_tokens){
         BOOL found_bcast = PARSER::ParseBcastToken(token, &_bcast);
         BOOL found_count = PARSER::ParseCountToken(token, &_count);
         BOOL found_global = PARSER::ParseGlobalToken(token, &_global_count);
-        BOOL found_repeat = PARSER::ParseRepeatToken(token);
 
         // Check if we got illegal token
         // ParseCommon is called from the constructor of ALARM_MANAGER
         // and after the event id and alarm value tokens where parsed.
         // When we have reached then we parse all remaining tokens. 
-        ASSERT(found_tid || found_bcast || found_count || found_global || found_repeat,
+        ASSERT(found_tid || found_bcast || found_count || found_global,
             "Usage: redundant token: " + control_tokens[i] );
 
         if (found_tid)    used_tid = TRUE;
@@ -328,7 +332,7 @@ VOID ALARM_MANAGER::Fire(CONTEXT* ctx, VOID * ip, THREADID tid){
     // Whenever there is a Fire event for an alarm which is a part of
     // vector alarms we reuse this alarm for other alarm managers.
     // This is done in order to solve performance issues.
-    // Currently it is supported only for icount alarms.
+    // Currently it is supported only for icount alarams.
     // We do the following actions:
     // 1. Get the next alarm manager in the vector from the chain
     // 2. Update the icount alarm with the event data from the alarm manager
@@ -338,18 +342,12 @@ VOID ALARM_MANAGER::Fire(CONTEXT* ctx, VOID * ip, THREADID tid){
     if (_vector_alarm)
     {
         // Update the alarm with the data from next alarm manager and arm it
-        UINT32 tid_for_next_alarm = _tid;
-        if (_global_count)
-            tid_for_next_alarm = 0;
-        ALARM_MANAGER * next_alarm = _control_chain->GetNextAlaramManager(_vector_index,tid_for_next_alarm);
+        ALARM_MANAGER * next_alarm = _control_chain->GetNextAlaramManager(_vector_index,_tid);
         if (next_alarm)
         {
             _ialarm->UpdateAlarm(next_alarm,next_alarm->_alarm_value);
             next_alarm->_ialarm = _ialarm;
-            if (_global_count)
-                next_alarm->ArmAll();
-            else
-                next_alarm->ArmTID(_tid);
+            next_alarm->ArmTID(_tid);
             _ialarm = NULL;
         }
     }
@@ -389,14 +387,11 @@ BOOL ALARM_MANAGER::Disarm(THREADID tid){
         // already disarmed it
         if (_global_count)
         {
-            // Check if this is a race condition and we did not reach
-            // the needed global count
-            if (_vector_alarm && _icount_alarm_value > _ialarm->GetGlobalCount())
-            {
+            _ialarm->Lock();
+            BOOL armed = _ialarm->IsArmed(tid);
+            _ialarm->UnLock();
+            if (!armed)
                 return FALSE;
-            }
-            BOOL armed = _ialarm->DisarmGlobalArmed();
-            return armed;
         }
 
         _ialarm->Disarm();
@@ -409,12 +404,10 @@ BOOL ALARM_MANAGER::Disarm(THREADID tid){
 }
 
 VOID ALARM_MANAGER::Activate(){
-    if (_tid == ALL_THREADS || _global_count){
+    if (_tid == ALL_THREADS){
         ArmAll();
     }
     else{
         ArmTID(_tid);
     }
 }
-
-/// @endcond

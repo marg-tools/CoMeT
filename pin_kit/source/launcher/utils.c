@@ -1,50 +1,49 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #include "utils.h"
 #if defined(PIN_CRT) && defined(TARGET_LINUX)
 # include "pincrt_file_utils.h"
 #endif
 
-#define PATH_MAX_SIZE 4096
-
-/*
- * Only on linux the launcher_u linked with PinCRT which implements strnlen_s.
- * Instead on macOS* uses the system library function strnlen.
- */
-size_t get_strlen(const char* str)
-{
-    size_t len;
-#if defined(PIN_CRT) && defined(TARGET_LINUX)
-    len = strnlen_s(str, PATH_MAX_SIZE);
-#else
-    len = strnlen(str, PATH_MAX_SIZE);
-#endif
-    assert(len > 0);
-    return len;
-}
-
-char* appendPath(const char* s1, const char* s2, const char* s3)
+char* append3(const char* s1, const char* s2, const char* s3)
 {
     int n = 1;
     char* p = 0;
     if (s1)
-        n += get_strlen(s1);
+        n += strlen(s1);
     if (s2)
-        n += get_strlen(s2);
+        n += strlen(s2);
     if (s3)
-        n += get_strlen(s3);
+        n += strlen(s3);
     p = (char*) malloc(sizeof(char) * n);
-    if( p == NULL )
-        abort();
     if (s1)
         strcpy(p, s1);
     if (s2)
@@ -117,7 +116,7 @@ unsigned int check_not_directory(const char* fn)
  */
 unsigned int check_file_in_dir(const char* fn, const char *dir, char *buff)
 {
-    buff = appendPath(dir, "/", fn);
+    buff = append3(dir, "/", fn);
     return check_file_exists(buff) && check_not_directory(buff);
 }
 
@@ -130,25 +129,12 @@ unsigned int check_file_in_dir(const char* fn, const char *dir, char *buff)
 char *search_in_path(const char *exename)
 {
     const char dirsepchar = ':';
-    char* env_path;
-    char* syspath;
-    char* buff;
-    char* dir;
-    char* dirsep;
+
+    char *syspath = strdup(getenv("PATH"));
+    char *buff = (char*) malloc(strlen(syspath) + strlen(exename) + 2);
+    char *dir = syspath;
+    char *dirsep = strchr(dir, dirsepchar);
     char *path = 0;
-
-    env_path = getenv("PATH");
-    assert(env_path != NULL);
-
-    syspath = strdup(env_path);
-    assert(syspath != NULL);
-
-    buff = (char*) malloc(get_strlen(syspath) + get_strlen(exename) + 2);
-    assert(buff != NULL);
-
-    dir = syspath;
-    dirsep = strchr(dir, dirsepchar);
-
     while (dirsep)
     {
         *dirsep = 0;

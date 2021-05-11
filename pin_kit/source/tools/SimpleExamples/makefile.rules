@@ -63,7 +63,7 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     ifeq ($(TARGET),intel64)
         TEST_TOOL_ROOTS += fence
@@ -111,17 +111,17 @@ endif
 get_source_location.test: $(OBJDIR)get_source_location$(PINTOOL_SUFFIX) $(OBJDIR)get_source_app$(EXE_SUFFIX)
 	$(PIN) -t $(OBJDIR)get_source_location$(PINTOOL_SUFFIX) $(DWARF_FILE_KNOB) \
 	  -- $(OBJDIR)get_source_app$(EXE_SUFFIX) > $(OBJDIR)get_source_location.out 2>&1
-	$(QGREP) "get_source_app.cpp:13" $(OBJDIR)get_source_location.out
-	$(QGREP) "get_source_app.cpp:14" $(OBJDIR)get_source_location.out
-	$(QGREP) "get_source_app.cpp:15" $(OBJDIR)get_source_location.out
+	$(QGREP) "get_source_app.cpp:3" $(OBJDIR)get_source_location.out 
+	$(QGREP) "get_source_app.cpp:4" $(OBJDIR)get_source_location.out 
+	$(QGREP) "get_source_app.cpp:5" $(OBJDIR)get_source_location.out 
 	$(RM) $(OBJDIR)get_source_location.out
 
 get_source_location_gnu_debug.test: $(OBJDIR)get_source_location$(PINTOOL_SUFFIX) $(OBJDIR)get_source_app_gnu_debug$(EXE_SUFFIX)
 	$(PIN) -t $(OBJDIR)get_source_location$(PINTOOL_SUFFIX) \
 	  -- $(OBJDIR)get_source_app_gnu_debug$(EXE_SUFFIX) > $(OBJDIR)get_source_location_gnu_debug.out 2>&1
-	$(QGREP) "get_source_app.cpp:13" $(OBJDIR)get_source_location_gnu_debug.out
-	$(QGREP) "get_source_app.cpp:14" $(OBJDIR)get_source_location_gnu_debug.out
-	$(QGREP) "get_source_app.cpp:15" $(OBJDIR)get_source_location_gnu_debug.out
+	$(QGREP) "get_source_app.cpp:3" $(OBJDIR)get_source_location_gnu_debug.out 
+	$(QGREP) "get_source_app.cpp:4" $(OBJDIR)get_source_location_gnu_debug.out 
+	$(QGREP) "get_source_app.cpp:5" $(OBJDIR)get_source_location_gnu_debug.out 
 	$(RM) $(OBJDIR)get_source_location_gnu_debug.out
 
 regval.test: $(OBJDIR)regval$(PINTOOL_SUFFIX) $(OBJDIR)regval_app$(EXE_SUFFIX)

@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #ifndef _IALARM_H_
 #define _IALARM_H_
 
@@ -44,17 +63,19 @@ public:
     //disarm alarm for thread is tid and init the counter
     VOID Disarm();
 
-    // Disarm global alarm and return if we did do a reset
-    BOOL DisarmGlobalArmed() {return ATOMIC::OPS::CompareAndDidSwap<BOOL>(&_global_armed, 1, 0);}
+    // Return if armed
+    BOOL IsArmed(THREADID tid) {return _armed[tid];}
 
     //set the number of counts to raise the vent after
-    VOID SetCount(UINT64 count) { _target_count._count = count; }
-    UINT64 GetCount() { return _target_count._count; }
-    UINT64 GetGlobalCount() { return _global_count._count; }
+    VOID SetCount(UINT64 count) {_target_count._count = count;}
 
     // Return if this alarms has global counter flag
     BOOL HasGlobalCounter();
-     
+    
+    // Lock and unlock alarm
+    VOID Lock() {PIN_GetLock(&_lock,0);}
+    VOID UnLock() {PIN_ReleaseLock(&_lock);}
+    
     virtual VOID UpdateAlarm(ALARM_MANAGER * alarm_manager, const string& icount_str)
     {
         ASSERT(FALSE,"UpdateAlarm is not supported for this alarm type");
@@ -100,10 +121,8 @@ protected:
 
     // Analysis routines for address alarms
     static ADDRINT PIN_FAST_ANALYSIS_CALL CheckTarget(IALARM* ialarm, UINT32 tid, ADDRINT branch_target);
-    static ADDRINT PIN_FAST_ANALYSIS_CALL CheckTargetGlobal(IALARM* ialarm, ADDRINT branch_target);
     static ADDRINT PIN_FAST_ANALYSIS_CALL CheckFirstIp(IALARM* ialarm, UINT32 tid, ADDRINT addr);
-    static ADDRINT PIN_FAST_ANALYSIS_CALL CheckFirstIpGlobal(IALARM* ialarm, UINT32 tid, ADDRINT addr);
-    
+
     // Thread start callback
     static VOID ThreadStart(THREADID tid, CONTEXT *ctxt, INT32 flags, VOID *v);
 
@@ -120,8 +139,7 @@ protected:
     CACHELINE_COUNTER _thread_count[PIN_MAX_THREADS];
     volatile CACHELINE_COUNTER _global_count;
 
-    BOOL _armed[PIN_MAX_THREADS];
-    volatile BOOL _global_armed;
+    volatile BOOL _armed[PIN_MAX_THREADS];
 
     ALARM_MANAGER* _alarm_manager;
 

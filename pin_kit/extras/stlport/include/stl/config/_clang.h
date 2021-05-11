@@ -1,20 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-// Pin - This is a duplication of the _gcc.h file with some minor comments for enabling clang on macOS*.
-
 /* STLport configuration file
  * It is internal STLport header - DO NOT include it directly
  */
@@ -118,7 +101,7 @@
 
 #define _STLP_NORETURN_FUNCTION __attribute__((noreturn))
 
-/* macOS* is a little different with namespaces and cannot instantiate
+/* Mac OS X is a little different with namespaces and cannot instantiate
  * static data members in template classes */
 #if defined (__APPLE__)
 
@@ -192,7 +175,7 @@
 
 /* strict ANSI prohibits "long long" ( gcc) */
 #if defined ( __STRICT_ANSI__ )
-#  undef _STLP_LONG_LONG
+#  undef _STLP_LONG_LONG 
 #endif
 
 #ifndef __EXCEPTIONS

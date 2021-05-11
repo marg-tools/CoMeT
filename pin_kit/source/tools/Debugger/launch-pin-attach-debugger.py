@@ -11,7 +11,6 @@ import re
 import subprocess
 import sys
 import time
-import platform
 
 
 def Main(argv):
@@ -26,15 +25,9 @@ def Main(argv):
     # reading the output file of a subprocess while that subprocess is running.
     #
     if sys.platform == 'cygwin':
-        print("This script must be run with the Windows native Python")
+        print "This script must be run with the Windows native Python"
         return 1
 
-    loader_library_path = ""
-    if (platform.system() == "Linux"):
-        loader_library_path ="LD_LIBRARY_PATH"
-    if (platform.system() == "Darwin"):
-        loader_library_path ="DYLD_LIBRARY_PATH"
-    
     # Parse options.
     #
     parser = optparse.OptionParser()
@@ -45,7 +38,7 @@ def Main(argv):
     parser.add_option("--pindb", dest="pindb", type="string", default="",
         help="Pathname to the PinDB executable.  Required.")
     parser.add_option("--pindb-libpath", dest="pindbLibPath", type="string", default="",
-        help="Additional path(s) to append to " + loader_library_path + " when launching PinDB.  Separate paths with a ':'.")
+        help="Additional path(s) to append to LD_LIBRARY_PATH when launching PinDB.  Separate paths with a ':'.")
     parser.add_option("--tool", dest="tool", type="string", default="",
         help="Pathname to the Pin tool.  Required.")
     parser.add_option("--app", dest="app", type="string", default="",
@@ -58,46 +51,54 @@ def Main(argv):
         help="Pathname to the output file which receives the PinDB output.  Required.")
     parser.add_option("--cpu", dest="cpu", type="string", default="",
         help="Name of the CPU to test [ia32 | intel64].  Required.")
+    parser.add_option("--os", dest="os", type="string", default="",
+        help="Name of the OS to test [linux | windows].  Required.")
     parser.add_option("--timeout", dest="timeout", type="int", default=30,
         help="Time limit (seconds) before deciding that a command is hung.")
 
     (options, args) = parser.parse_args(args=argv)
     if not options.pin:
-        print("Must specify --pin=PIN option")
+        print "Must specify --pin=PIN option"
         return 1
     if not options.pinexe:
-        print("Must specify --pin-exe=PINEXE option")
+        print "Must specify --pin-exe=PINEXE option"
         return 1
     if not options.pindb:
-        print("Must specify --pindb=PINDB option")
+        print "Must specify --pindb=PINDB option"
         return 1
     if not options.tool:
-        print("Must specify --tool=TOOL option")
+        print "Must specify --tool=TOOL option"
         return 1
     if not options.app:
-        print("Must specify --app=APP option")
+        print "Must specify --app=APP option"
         return 1
     if not options.pinout:
-        print("Must specify --pin-out=PINOUT option")
+        print "Must specify --pin-out=PINOUT option"
         return 1
     if not options.pindbin:
-        print("Must specify --pindb-in=PINDBIN option")
+        print "Must specify --pindb-in=PINDBIN option"
         return 1
     if not options.pindbout:
-        print("Must specify --pindb-out=PINDBOUT option")
+        print "Must specify --pindb-out=PINDBOUT option"
         return 1
     if not options.cpu:
-        print("Must specify --cpu=CPU option")
+        print "Must specify --cpu=CPU option"
         return 1
     if options.cpu not in ['ia32', 'intel64']:
-        print("Invalid --cpu=CPU option")
+        print "Invalid --cpu=CPU option"
+        return 1
+    if not options.os:
+        print "Must specify --os=OS option"
+        return 1
+    if options.os not in ['linux', 'windows']:
+        print "Invalid --os=OS option"
         return 1
 
     # Launch Pin.
     #
     cmd = [os.path.normcase(options.pin)]
     cmd.append('-slow_asserts')
-    if (platform.system() == "Windows"):
+    if options.os == 'windows':
         cmd.append('-xyzzy')
         cmd.append('-late_injection')
     cmd.append('-appdebug')
@@ -112,7 +113,7 @@ def Main(argv):
     try:
         subPin = subprocess.Popen(cmd, stdout=outFile)
     except (OSError):
-        print("Unable to launch Pin")
+        print "Unable to launch Pin"
         return 1
 
     # Pin waits for the debugger to attach.  Wait for it to print the
@@ -120,13 +121,13 @@ def Main(argv):
     #
     port = None
     startTime = time.time()
-    rePort = re.compile('\s.*remote :?([0-9]+)$')
+    rePort = re.compile('\s*target remote :([0-9]+)$')
     while not port:
         # Check for timeout.
         #
         now = time.time()
         if (now - startTime) > options.timeout:
-            print("Timed out waiting for port after " + str(options.timeout) + " seconds")
+            print "Timed out waiting for port after " + str(options.timeout) + " seconds"
             KillProcess(subPin)
             return 1
         time.sleep(1)
@@ -147,16 +148,17 @@ def Main(argv):
     cmd.append('--timeout=' + str(options.timeout))
     cmd.append('--gdb-protocol=:' + port)
     cmd.append('--cpu=' + options.cpu)
+    cmd.append('--os=' + options.os)
     cmd.append('--noprompt')
 
     env = None
     if options.pindbLibPath:
         env = os.environ
-        if loader_library_path in env:
-            env[loader_library_path] += ':' + options.pindbLibPath
+        if 'LD_LIBRARY_PATH' in env:
+            env['LD_LIBRARY_PATH'] += ':' + options.pindbLibPath
         else:
-            env[loader_library_path] = options.pindbLibPath
-        print("PinDB runs with this " + loader_library_path + ": " + env[loader_library_path])
+            env['LD_LIBRARY_PATH'] = options.pindbLibPath
+        print "PinDB runs with this LD_LIBRARY_PATH: " + env['LD_LIBRARY_PATH']
 
     inFile = open(os.path.normcase(options.pindbin), 'r')
     outFile = open(os.path.normcase(options.pindbout), 'w')
@@ -165,7 +167,7 @@ def Main(argv):
     try:
         subPinDB = subprocess.Popen(cmd, env=env, stdin=inFile, stdout=outFile)
     except (OSError):
-        print("Unable to launch PinDB")
+        print "Unable to launch PinDB"
         KillProcess(subPin)
         return 1
 
@@ -206,7 +208,7 @@ def PrintCommand(cmd):
     """
 
     mesg = "Launching: " + " ".join(cmd)
-    print(mesg)
+    print mesg
 
 
 if __name__ == "__main__": sys.exit(Main(sys.argv[1:]))

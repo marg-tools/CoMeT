@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 /// @file xed-error-enum.h
 
@@ -18,29 +36,6 @@ END_LEGAL */
 #if !defined(XED_ERROR_ENUM_H)
 # define XED_ERROR_ENUM_H
 #include "xed-common-hdrs.h"
-#define XED_ERROR_NONE_DEFINED 1
-#define XED_ERROR_BUFFER_TOO_SHORT_DEFINED 1
-#define XED_ERROR_GENERAL_ERROR_DEFINED 1
-#define XED_ERROR_INVALID_FOR_CHIP_DEFINED 1
-#define XED_ERROR_BAD_REGISTER_DEFINED 1
-#define XED_ERROR_BAD_LOCK_PREFIX_DEFINED 1
-#define XED_ERROR_BAD_REP_PREFIX_DEFINED 1
-#define XED_ERROR_BAD_LEGACY_PREFIX_DEFINED 1
-#define XED_ERROR_BAD_REX_PREFIX_DEFINED 1
-#define XED_ERROR_BAD_EVEX_UBIT_DEFINED 1
-#define XED_ERROR_BAD_MAP_DEFINED 1
-#define XED_ERROR_BAD_EVEX_V_PRIME_DEFINED 1
-#define XED_ERROR_BAD_EVEX_Z_NO_MASKING_DEFINED 1
-#define XED_ERROR_NO_OUTPUT_POINTER_DEFINED 1
-#define XED_ERROR_NO_AGEN_CALL_BACK_REGISTERED_DEFINED 1
-#define XED_ERROR_BAD_MEMOP_INDEX_DEFINED 1
-#define XED_ERROR_CALLBACK_PROBLEM_DEFINED 1
-#define XED_ERROR_GATHER_REGS_DEFINED 1
-#define XED_ERROR_INSTR_TOO_LONG_DEFINED 1
-#define XED_ERROR_INVALID_MODE_DEFINED 1
-#define XED_ERROR_BAD_EVEX_LL_DEFINED 1
-#define XED_ERROR_BAD_REG_MATCH_DEFINED 1
-#define XED_ERROR_LAST_DEFINED 1
 typedef enum {
   XED_ERROR_NONE, ///< There was no error
   XED_ERROR_BUFFER_TOO_SHORT, ///< There were not enough bytes in the given buffer
@@ -63,7 +58,6 @@ typedef enum {
   XED_ERROR_INSTR_TOO_LONG, ///< Full decode of instruction would exeed 15B.
   XED_ERROR_INVALID_MODE, ///< The instruction was not valid for the specified mode
   XED_ERROR_BAD_EVEX_LL, ///< EVEX.LL must not ==3 unless using embedded rounding
-  XED_ERROR_BAD_REG_MATCH, ///< Source registers must not match the destination register for this instruction.
   XED_ERROR_LAST
 } xed_error_enum_t;
 

@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 
 #ifndef XED_ENCODER_HL_H
@@ -19,11 +37,10 @@ END_LEGAL */
 #include "xed-iclass-enum.h"
 #include "xed-portability.h"
 #include "xed-encode.h"
-#include "xed-util.h"
 
 
 typedef struct {
-    xed_int64_t    displacement; 
+    xed_uint64_t   displacement; 
     xed_uint32_t   displacement_bits;
 } xed_enc_displacement_t; /* fixme bad name */
 
@@ -35,7 +52,7 @@ typedef struct {
 /// @param displacement_bits The width of the displacement in bits. Typically 8 or 32.
 /// @returns #xed_enc_displacement_t
 static XED_INLINE
-xed_enc_displacement_t xed_disp(xed_int64_t   displacement,
+xed_enc_displacement_t xed_disp(xed_uint64_t   displacement,
                                 xed_uint32_t   displacement_bits   ) {
     xed_enc_displacement_t x;
     x.displacement = displacement;
@@ -164,7 +181,7 @@ static XED_INLINE  xed_encoder_operand_t xed_simm0(xed_int32_t v,
     extended.  Later we convert it to the right width_bits for the
     instruction. The maximum width_bits of a signed immediate is currently
     32b. */
-    o.u.imm0 = XED_STATIC_CAST(xed_uint64_t,xed_sign_extend32_64(v));
+    o.u.imm0 = v;
     o.width_bits = width_bits;
     return o;
 }
@@ -190,7 +207,7 @@ static XED_INLINE  xed_encoder_operand_t xed_other(
     xed_encoder_operand_t o;
     o.type = XED_ENCODER_OPERAND_TYPE_OTHER;
     o.u.s.operand_name = operand_name;
-    o.u.s.value = XED_STATIC_CAST(xed_uint32_t,value);
+    o.u.s.value = value;
     o.width_bits = 0;
     return o;
 }
@@ -384,7 +401,7 @@ typedef union {
     xed_uint32_t i;
 }  xed_encoder_prefixes_t;
 
-#define XED_ENCODER_OPERANDS_MAX 8 /* FIXME */
+#define XED_ENCODER_OPERANDS_MAX 5 /* FIXME */
 typedef struct {
     xed_state_t mode;
     xed_iclass_enum_t iclass; /*FIXME: use iform instead? or allow either */

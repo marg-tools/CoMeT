@@ -88,7 +88,6 @@ ELSE
     GBX_REG textequ <RBX>
 	GCX_REG textequ <RCX>
 	GDX_REG textequ <RDX>
-    G8_REG textequ <R8>
 	CL_REG  textequ <CL>
     STACK_PTR textequ <RSP>
     ADDRINT_PTR textequ <QWORD PTR>
@@ -105,9 +104,3 @@ ENDIF
 SCRATCH_REG1 textequ <GAX_REG>
 SCRATCH_REG2 textequ <GCX_REG>
 SCRATCH_REG3 textequ <GDX_REG>
-IFDEF TARGET_IA32
- SCRATCH_REG4 textequ <G8_REG>
-ENDIF
-
-CALLEE_SAVE_REG1 textequ <GBX_REG>
-CALLEE_SAVE_REG2 textequ <GSI_REG>

@@ -65,26 +65,14 @@ endif
 
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS += mmap close_all_files
-    TEST_ROOTS += exit_restartable_syscall ptrace_deny_attach
-    APP_ROOTS += mmap_app close_all_files_app exit_restartable_syscall_app ptrace_deny_attach_app
+    TEST_ROOTS += exit_restartable_syscall
+    APP_ROOTS += mmap_app close_all_files_app exit_restartable_syscall_app
 endif
 
 # Windows
 ifeq ($(TARGET_OS),windows)
     TEST_ROOTS += syscall_tracing_compare
 endif
-
-
-###### Handle exceptions here ######
-
-ifeq ($(TARGET_OS),mac)
-    # See mantis 4671
-    MACOS_VERSION_GE_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.14.0)
-    ifeq ($(MACOS_VERSION_GE_1014), 1)
-        TEST_ROOTS := $(filter-out ptrace_deny_attach, $(TEST_ROOTS))
-    endif
-endif
-
 
 ###### Define the sanity subset ######
 
@@ -191,10 +179,6 @@ syscall_time.test: $(OBJDIR)syscall_time$(PINTOOL_SUFFIX) $(THREAD_APP)
 check_prctl.test: $(OBJDIR)check_prctl_app$(EXE_SUFFIX)
 	$(PIN) -- $(OBJDIR)check_prctl_app$(EXE_SUFFIX)
 
-ptrace_deny_attach.test: $(OBJDIR)ptrace_deny_attach_app$(EXE_SUFFIX)
-	$(PIN) -- $(OBJDIR)ptrace_deny_attach_app$(EXE_SUFFIX) > $(OBJDIR)ptrace_deny_attach.out 2>&1 
-	$(QGREP) "Application Finished" $(OBJDIR)ptrace_deny_attach.out
-	$(RM) $(OBJDIR)ptrace_deny_attach.out
 
 ##############################################################
 #

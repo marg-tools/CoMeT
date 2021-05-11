@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -193,7 +180,7 @@ static inline void OS_SigSetRemove(SIGSET_T* set, int signal)
 * @return     Operation status code.
 *
 * @par Availability:
-*   @b O/S:   Linux & macOS*\n
+*   @b O/S:   Linux & OS X*\n
 *   @b CPU:   All\n
 */
 OS_RETURN_CODE OS_SendSignalToProcess(NATIVE_PID pid, INT signal);
@@ -213,7 +200,7 @@ SIG_SETMASK: The set of blocked signals is set to the argument set.
 * @return     Operation status code.
 *
 * @par Availability:
-*   @b O/S:   Linux & macOS*\n
+*   @b O/S:   Linux & OS X*\n
 *   @b CPU:   All\n
 */
 OS_RETURN_CODE OS_SigProcMask(INT how, const SIGSET_T *set, SIGSET_T *oldset);

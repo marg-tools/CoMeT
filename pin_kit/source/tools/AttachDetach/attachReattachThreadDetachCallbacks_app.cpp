@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -17,8 +36,6 @@
 #include <sys/syscall.h>
 #include <sched.h>
 #include <pthread.h>
-#include <string.h>
-#define MAX_COMMAND_LINE_SIZE 15    // the size for the array of arguments to execv (this value is arbitrary)
 
 #define EXPORT_SYM extern "C"
 
@@ -64,27 +81,21 @@ void * thread_func (void *arg)
 /*
     Expected argv arguments:
     [1] pin executable
-    [2] Pin flags (e.g. -slow_asserts)
-        >> zero or more flags possible
-    [3] "-t"
-    [4] tool
-    [5] output file
-    [6] First imageName
-	[7] Second imageName
+    [2] "slow asserts"
+    [3] tool
+    [4] output file
+    [5] First imageName
+	[6] Second imageName
 */
 int main(int argc, char** argv)
 {
     fprintf(stderr, "Start main\n");
-    if(argc < 7)
+	
+    if(argc!=7)
     {
        fprintf(stderr, "Not enough arguments\n" );
        fflush(stderr);
        exit(RES_INVALID_ARGS);
-    }
-    if (argc > MAX_COMMAND_LINE_SIZE - 3){      // added: -pid attachPid -o NULL
-        fprintf(stderr, "Too many arguments\n" );
-        fflush(stderr);
-        exit(RES_INVALID_ARGS);
     }
 
     loop  = true;
@@ -110,56 +121,47 @@ int main(int argc, char** argv)
     }
 
     if (child)
-    {
-        while(!AfterAttach1())
+    { 
+		while(!AfterAttach1())
         {
             sleep(1);
         }
-        void *handle = dlopen(argv[argc-2], RTLD_LAZY); // argv[argc-2] is First imageName
+        
+		void *handle = dlopen(argv[5], RTLD_LAZY);
         if (!handle)
         {
-            fprintf(stderr, " Failed to load: %s because: %s\n", argv[argc-2], dlerror());
+            fprintf(stderr, " Failed to load: %s because: %s\n", argv[1], dlerror());
             fflush(stderr);
             exit(RES_LOAD_FAILED);
         }
-        while(!AfterAttach2())
+        
+		while(!AfterAttach2())
         {
             sleep(1);
         }
-        handle = dlopen(argv[argc-1], RTLD_LAZY);   // argv[argc-1] is Second imageName
+
+        handle = dlopen(argv[6], RTLD_LAZY);
         if (!handle)
         {
-            fprintf(stderr, " Failed to load: %s because: %s\n", argv[argc-1], dlerror());
+            fprintf(stderr, " Failed to load: %s because: %s\n", argv[2], dlerror());
             fflush(stderr);
             exit(RES_LOAD_FAILED);
         }
+        
         while(1)
         {
             // expected to be stopped by tool.
             sleep(1);
         }
     }
+	
     if ( child == 0 )
     {
         // Inside child
         char attachPid[MAX_SIZE];
         snprintf(attachPid ,MAX_SIZE , "%d", parentPid);
-        char* args[MAX_COMMAND_LINE_SIZE] = {NULL};  // arguments for execv command
-        int args_count = 0;
-        int argv_count = 1;                          // to start from argv[1]...
-        args[args_count++] = argv[argv_count++];     // by convention, first arg is the filename of the executed file (pin)
-        args[args_count++] = (char*)"-pid";
-        args[args_count++] = attachPid;
-        while (strcmp(argv[argv_count], "-t") != 0){   // additional Pin flags (optional)
-            args[args_count++] = argv[argv_count++];
-        }
-        args[args_count++] = argv[argv_count++];     // "-t"
-        args[args_count++] = argv[argv_count++];     // tool
-        args[args_count++] = (char*)"-o";
-        args[args_count++] = argv[argv_count++];     // output file
-        args[args_count++] = NULL;                   // end
-        execv(argv[1], (char * const *)args);        // never returns
-        perror("execv failed while trying to attach Pin to the application\n");
+        execl(argv[1],argv[2],"-pid", attachPid, "-t",  argv[3], "-o", argv[4], NULL);
+        perror("execl failed while trying to attach Pin to the application\n");
         exit(RES_EXEC_FAILED);
     }
     return RES_SUCCESS;

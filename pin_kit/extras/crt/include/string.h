@@ -1,19 +1,4 @@
 /*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-/*
  * Copyright (C) 2008 The Android Open Source Project
  * All rights reserved.
  *
@@ -51,14 +36,11 @@
 
 __BEGIN_DECLS
 
-#define SIZE_MAX_STR (4UL << 10)   /* 4KB */
-
 extern void*  memccpy(void* __restrict, const void* __restrict, int, size_t);
 extern void*  memchr(const void *, int, size_t) __purefunc;
 extern void*  memrchr(const void *, int, size_t) __purefunc;
 extern int    memcmp(const void *, const void *, size_t) __purefunc;
 extern void*  memcpy(void* __restrict, const void* __restrict, size_t);
-extern int    memcpy_s(void*, size_t, const void*, size_t);
 extern void*  memmove(void *, const void *, size_t);
 extern void*  memset(void *, int, size_t);
 extern void*  memmem(const void *, size_t, const void *, size_t) __purefunc;
@@ -71,13 +53,10 @@ extern char* __strrchr_chk(const char *, int, size_t);
 
 extern size_t strlen(const char *) __purefunc;
 extern size_t __strlen_chk(const char *, size_t);
-extern size_t strnlen_s(const char *, size_t);
 extern int    strcmp(const char *, const char *) __purefunc;
 extern char*  stpcpy(char* __restrict, const char* __restrict);
 extern char*  strcpy(char* __restrict, const char* __restrict);
-extern int    strcpy_s(char*, size_t, const char*);
 extern char*  strcat(char* __restrict, const char* __restrict);
-extern int    strncat_s(char* dst, size_t dst_size, const char* src, size_t count);
 
 extern int    strcasecmp(const char *, const char *) __purefunc;
 extern int    strncasecmp(const char *, const char *, size_t) __purefunc;
@@ -88,7 +67,6 @@ extern char*  strdup(const char *);
 extern char *_strlwr(char *);
 
 extern char*  strstr(const char *, const char *) __purefunc;
-extern char*  strnstr(const char *, const char *, size_t) __purefunc;
 extern char*  strcasestr(const char *haystack, const char *needle) __purefunc;
 extern char*  strtok(char* __restrict, const char* __restrict);
 extern char*  strtok_r(char* __restrict, const char* __restrict, char** __restrict);
@@ -106,7 +84,7 @@ extern char*  strndup(const char *, size_t);
 extern int    strncmp(const char *, const char *, size_t) __purefunc;
 extern char*  stpncpy(char* __restrict, const char* __restrict, size_t);
 extern char*  strncpy(char* __restrict, const char* __restrict, size_t);
-extern int    strncpy_s(char*, size_t, const char*, size_t);
+
 extern size_t strlcat(char* __restrict, const char* __restrict, size_t);
 extern size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 

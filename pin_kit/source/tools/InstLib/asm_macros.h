@@ -1,16 +1,35 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
- * This header file consolidate definitions for macOS* and Linux
+ * This header file consolidate definitions for OS X* and Linux
  * running on both ia32 and intel64 architecture.
  */
 
@@ -58,19 +77,12 @@
  *                             restrictions (no need to save before using them and restore after using them)
  * SCRATCH_REG1              - Scratch register eax/rax depending on the architecture
  * SCRATCH_REG2              - Scratch register ecx/rcx depending on the architecture
- * SCRATCH_REG3              - Scratch register edx/rdx depending on the architecture
- * SCRATCH_REG4              - Scratch register rsi (available only in intel64)
- * CALLEE_SAVE_REG1          - Callee-save register ebx/rbx depending on the architecture (need to be pushed
- *                             before used and popped when not used anymore before ret instruction
- * CALLEE_SAVE_REG2          - Callee-save register esx/r12 depending on the architecture (need to be pushed
- *                             before used and popped when not used anymore before ret instruction
+ * SCRATCH_REG2              - Scratch register edx/rdx depending on the architecture
  * RETURN_REG                - The register that holds the return value
  * GAX_REG                   - eax/rax depending on the architecture
  * GBX_REG                   - ebx/rbx depending on the architecture
  * GCX_REG                   - ecx/rcx depending on the architecture
  * GDX_REG                   - edx/rdx depending on the architecture
- * GSI_REG                   - esi/rsi depending on the architecture
- * G12_REG                   - r12 (available only in intel64)
  * STACK_PTR                 - The stack pointer register
  * PIC_VAR(v)                - Reference memory at 'v' in PIC notation (not supported in 32 bit mode)
  * SYSCALL_PARAM1            - The first argument to a system call
@@ -98,7 +110,6 @@
 # define GCX_REG %ecx
 # define CL_REG  %cl
 # define GDX_REG %edx
-# define GSI_REG %esi
 # define STACK_PTR %esp
 # define PIC_VAR(a) a
 # ifdef TARGET_MAC
@@ -132,8 +143,6 @@
 # define GCX_REG %rcx
 # define CL_REG  %cl
 # define GDX_REG %rdx
-# define GSI_REG %rsi
-# define G12_REG %r12
 # define STACK_PTR %rsp
 # define PIC_VAR(a) a(%rip)
 # define SYSCALL_PARAM1 %rdi
@@ -152,13 +161,3 @@
 #define SCRATCH_REG1 GAX_REG
 #define SCRATCH_REG2 GCX_REG
 #define SCRATCH_REG3 GDX_REG
-#if defined(TARGET_IA32E)
-# define SCRATCH_REG4 GSI_REG
-#endif
-
-#define CALLEE_SAVE_REG1 GBX_REG
-# if defined(TARGET_IA32)
-#define CALLEE_SAVE_REG2 GSI_REG
-#elif defined(TARGET_IA32E)
-# define CALLEE_SAVE_REG2 G12_REG
-#endif

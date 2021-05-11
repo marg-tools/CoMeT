@@ -1,33 +1,39 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*! @file
  *
  * This file contains a tool that traces all uses and changes to the FS and GS
  * segments, which are typically used to implement thread-local storage on x86
  * platforms.  Currently, this tool only knows about the segment-related system
  * calls on Linux.
- *
- * This tool also check:
- * - IARG_REG_REFERENCE/IARG_REG_CONST_REFERENCE to a segment register works (segment selector)
- *   and that it is equal to the same segment register when being passed by value.
- * - IARG_REG_VALUE, IARG_REG_CONST_REFERENCE and IARG_CONST_CONTEXT for segment base address
- *   (virtual register REG_SEG_GS_BASE/REG_SEG_FS_BASE) works and that their values are equal.
- *
- * Possible to add these checks:
- * - IARG_REG_REFERENCE/IARG_REG_CONST_REFERENCE and IARG_REG_VALUE for segment for segment register return the correct value where applicable (32 Linux).
- * - IARG_REG_VALUE and IARG_REG_CONST_REFERENCE for segment base address (virtual register REG_SEG_GS_BASE/REG_SEG_FS_BASE) return the correct value
- *   which the thread area (TLS) (Currently TLS address is not tracked in this tool, if we want enable this check we need
- *   to add code to this tool that will track the TLS address)
- * Currently verified these by looking at the logs.
  */
 
 #include "pin.H"
@@ -40,7 +46,6 @@
 #include <iomanip>
 #include <sstream>
 #include <map>
-using std::string;
 
 #if defined(TARGET_LINUX)
 #   include <sys/syscall.h>
@@ -93,11 +98,8 @@ DISASM_CONTAINER *Disassemblies;    // Holds disassemblies for "interesting" ins
 
 static VOID Instruction(INS, VOID *);
 static BOOL WritesSegment(INS, REG *);
-static VOID OnSegReference(UINT32, ADDRINT, ADDRINT*, ADDRINT, THREADID);
-static VOID OnSegGsOrFsReference(UINT32, ADDRINT, ADDRINT*, ADDRINT, ADDRINT*, ADDRINT, THREADID);
-static VOID OnSegWriteBefore(UINT32, UINT16, ADDRINT*, ADDRINT, THREADID);
-static VOID OnSegWriteAfter(UINT32, UINT16, ADDRINT*, ADDRINT*, ADDRINT, THREADID);
-static VOID OnSegWriteAfterContext(CONTEXT*);
+static VOID OnSegReference(UINT32, ADDRINT, ADDRINT, THREADID);
+static VOID OnSegWrite(UINT32, ADDRINT, ADDRINT, THREADID);
 static VOID OnSyscallBefore(ADDRINT, ADDRINT, ADDRINT, ADDRINT, ADDRINT, ADDRINT, ADDRINT, ADDRINT, ADDRINT, THREADID);
 static VOID OnSyscallAfter(ADDRINT, ADDRINT, ADDRINT, ADDRINT, THREADID);
 static std::string Header(THREADID, ADDRINT);
@@ -132,48 +134,28 @@ int main(int argc, char * argv[])
     return 0;
 }
 
+
 static VOID Instruction(INS ins, VOID *v)
 {
-    REG seg;
     if (INS_SegmentPrefix(ins))
     {
-        seg = INS_SegmentRegPrefix(ins);
-        if ( (seg == REG_SEG_GS) || (seg == REG_SEG_FS) )
-        {
-            REG segBaseReg = (seg == REG_SEG_GS)? REG_SEG_GS_BASE : REG_SEG_FS_BASE;
-            // Using IARG_REG_CONST_REFERENCE and not IARG_REG_CONST_REFERENCE for segment here since in 64 bits
-            // you cannot write back to a segment register in user level
-            INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(OnSegGsOrFsReference), IARG_UINT32, seg,
-                IARG_REG_VALUE, seg, IARG_REG_CONST_REFERENCE, seg, IARG_REG_VALUE, segBaseReg, IARG_REG_CONST_REFERENCE, segBaseReg,
-                IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
-        }
-        else
-        {
-            // See above comment about IARG_REG_CONST_REFERENCE
-            INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(OnSegReference), IARG_UINT32, seg,
-                IARG_REG_VALUE, seg, IARG_REG_CONST_REFERENCE, seg, IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
-        }
+        INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(OnSegReference), IARG_UINT32, INS_SegmentRegPrefix(ins),
+            IARG_REG_VALUE, INS_SegmentRegPrefix(ins), IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
         Disassemblies->Add(INS_Address(ins), INS_Disassemble(ins));
     }
 
+    REG seg;
     if (WritesSegment(ins, &seg))
     {
-        INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(OnSegWriteBefore), IARG_UINT32, seg, IARG_REG_VALUE, seg, IARG_REG_CONST_REFERENCE, seg,
-                IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
-
-        INS_InsertCall(ins, IPOINT_AFTER, AFUNPTR(OnSegWriteAfterContext), IARG_CONST_CONTEXT, IARG_END);
-
-        // This is only possible in Linux 32 bits so using IARG_REG_REFERENCE for segment is allowed (although not changing value)
-        INS_InsertCall(ins, IPOINT_AFTER, AFUNPTR(OnSegWriteAfter), IARG_UINT32, seg, IARG_REG_VALUE, seg, IARG_REG_REFERENCE, seg,
-                IARG_REG_CONST_REFERENCE, REG_SEG_GS_BASE, IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
-
+        INS_InsertCall(ins, IPOINT_AFTER, AFUNPTR(OnSegWrite), IARG_UINT32, seg, IARG_REG_VALUE, seg,
+            IARG_INST_PTR, IARG_THREAD_ID, IARG_END);
         Disassemblies->Add(INS_Address(ins), INS_Disassemble(ins));
     }
 
-    // For O/S's (macOS*) that don't support PIN_AddSyscallEntryFunction(),
+    // For O/S's (Mac) that don't support PIN_AddSyscallEntryFunction(),
     // instrument the system call instruction.
     //
-    if (INS_IsSyscall(ins) && INS_IsValidForIpointAfter(ins))
+    if (INS_IsSyscall(ins) && INS_HasFallThrough(ins))
     {
         INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(OnSyscallBefore), IARG_SYSCALL_NUMBER, IARG_SYSARG_VALUE, 0,
             IARG_SYSARG_VALUE, 1, IARG_SYSARG_VALUE, 2, IARG_SYSARG_VALUE, 3, IARG_SYSARG_VALUE, 4,
@@ -219,65 +201,20 @@ static BOOL WritesSegment(INS ins, REG *seg)
     return FALSE;
 }
 
-static VOID OnSegReference(UINT32 ireg, ADDRINT val, ADDRINT* seg_ref, ADDRINT pc, THREADID tid)
+static VOID OnSegReference(UINT32 ireg, ADDRINT val, ADDRINT pc, THREADID tid)
 {
     REG reg = static_cast<REG>(ireg);
     std::ostringstream s;
-    s << Header(tid, pc) << "reference via " << SegName(reg) << " " << SegSelector((UINT16)val);
+    s << Header(tid, pc) << "reference via " << SegName(reg) << " " << SegSelector(val);
     Out << PasteDisassembly(s.str(), Disassemblies->Get(pc)) << std::endl;
-
-    // Verifying segment selector returned by value and by reference match
-    assert((UINT16)val == (UINT16)*seg_ref);
 }
 
-static VOID OnSegGsOrFsReference(UINT32 ireg, ADDRINT val, ADDRINT* seg_ref, ADDRINT segBaseAddr, ADDRINT* segBaseAddrRef, ADDRINT pc, THREADID tid)
-{
-    REG reg = static_cast<REG>(ireg);
-    std::ostringstream s;
-    s << Header(tid, pc) << "reference via " << SegName(reg) << " " << SegSelector((UINT16)val) << " Segment base address (TLS) "<< std::hex << "0x" << segBaseAddr;
-    Out << PasteDisassembly(s.str(), Disassemblies->Get(pc)) << std::endl;
-
-    // Verifying segment selector returned by value and by reference match
-    assert((UINT16)val == (UINT16)*seg_ref);
-
-    // Verifying thread area (TLS) is not 0.
-    assert(segBaseAddr != 0);
-
-    // Verifying GS/FS segment base address selector returned by value and by reference match
-    assert(segBaseAddr == *segBaseAddrRef);
-}
-
-static VOID OnSegWriteBefore(UINT32 ireg, UINT16 val, ADDRINT* seg_ref, ADDRINT pc, THREADID tid)
+static VOID OnSegWrite(UINT32 ireg, ADDRINT val, ADDRINT pc, THREADID tid)
 {
     REG reg = static_cast<REG>(ireg);
     std::ostringstream s;
     s << Header(tid, pc) << "modify " << SegName(reg) << "=" << SegSelector(val);
     Out << PasteDisassembly(s.str(), Disassemblies->Get(pc)) << std::endl;
-
-    // Verifying segment selector returned by value and by reference match
-    assert((UINT16)val == (UINT16)*seg_ref);
-}
-
-static VOID OnSegWriteAfterContext(CONTEXT* ctxt)
-{
-    ADDRINT gsbase = PIN_GetContextReg(ctxt, REG_SEG_GS_BASE);
-
-    // Verifying thread area (TLS) is not 0.
-    assert(gsbase != 0);
-}
-
-static VOID OnSegWriteAfter(UINT32 ireg, UINT16 val, ADDRINT* seg_ref, ADDRINT* segBaseAddrRef, ADDRINT pc, THREADID tid)
-{
-    REG reg = static_cast<REG>(ireg);
-    std::ostringstream s;
-    s << Header(tid, pc) << "modify " << SegName(reg) << "=" << SegSelector(val) << " Segment base address (TLS) "<< std::hex << "0x" << *segBaseAddrRef;
-    Out << PasteDisassembly(s.str(), Disassemblies->Get(pc)) << std::endl;
-
-    // Verifying segment selector returned by value and by reference match
-    assert((UINT16)val == (UINT16)*seg_ref);
-
-    // Verifying thread area (TLS) is not 0.
-    assert(*segBaseAddrRef != 0);
 }
 
 static VOID OnSyscallBefore(ADDRINT num, ADDRINT arg1, ADDRINT arg2, ADDRINT arg3, ADDRINT arg4, ADDRINT arg5,
@@ -445,7 +382,7 @@ static std::string Header(THREADID tid, ADDRINT pc)
 static std::string PasteDisassembly(const std::string &body, const std::string &dis)
 {
     std::ostringstream s;
-    s << std::left << std::setw(110) << body << dis;
+    s << std::left << std::setw(70) << body << dis;
     return s.str();
 }
 

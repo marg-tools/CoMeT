@@ -56,26 +56,6 @@ ifeq ($(TARGET_OS),linux)
     APP_ROOTS += rt-locks-app stress-client-lock-app
 endif
 
-###### Handle exceptions here ######
-
-# by default LXC does not allow rtprio
-ifeq ($(TARGET_LXC),1) 
-    TEST_ROOTS := $(filter-out rt-locks, $(TEST_ROOTS))
-    APP_ROOTS := $(filter-out rt-locks-app, $(APP_ROOTS))
-    TOOL_ROOTS := $(filter-out rt-locks-tool, $(TOOL_ROOTS))
-endif
-
-# See mantis 4622
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_FEDORA),1)
-        ifeq ($(DIST_VER_GE_28),1)
-            TEST_ROOTS := $(filter-out rt-locks, $(TEST_ROOTS))
-            APP_ROOTS := $(filter-out rt-locks-app, $(APP_ROOTS))
-            TOOL_ROOTS := $(filter-out rt-locks-tool, $(TOOL_ROOTS))
-        endif
-    endif
-endif
-
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in

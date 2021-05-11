@@ -36,7 +36,7 @@ TOOL_ROOTS :=
 SA_TOOL_ROOTS :=
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := dltest unloadtest sleep replaceapp simplefoo9 simplefoo10 ipr empty error-app little_malloc \
+APP_ROOTS := dltest unloadtest sleep replaceapp simplefoo9 simplefoo10 app_trace ipr empty error-app little_malloc \
              exception_in_probed_call_cpp_after_app exception_in_probed_call_cpp_app ins_fetch_overrun_app \
              func_nops spawn_internal_thread_probe_app
 
@@ -55,8 +55,8 @@ LIB_ROOTS :=
 ifeq ($(TARGET_OS),linux)
     TEST_TOOL_ROOTS += malloctrace2 symbolnames replace_exit unix_parent_tool proto1 proto2 proto3 proto4 probe2 \
                        probe3 probe5 probe8 probe10 sectest context_probe malloctrace_locktest init remove_probe probe_err1 \
-                       probe_err2 probe_err4 probe_err5 probe_err6 insert1 insert2 insert3 insert4 insert5 \
-                       insert6 insert7 insert8 insert9 insert10 insert11 insert12 load_map spinlock_replsig \
+                       probe_err2 probe_err4 probe_err5 probe_err6 remove_probe2 insert1 insert2 insert3 insert4 insert5 \
+                       insert6 insert7 insert8 insert9 insert10 insert11 insert12 code_range load_map spinlock_replsig \
                        spinlock_repl spinlock_insert sempost_repl svcraw_repl exit_repl relocate_rtn insert_call_probed \
                        error-unix-probe error-unix-jit exception_in_dll_tool probesafetest exception_in_probed_call_after \
                        exception_in_probed_call_sig pthread_exit_tool probe_close exception_in_probe_on_probe \
@@ -86,11 +86,11 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS += malloctrace2 replace_exit symbolnames unix_parent_tool proto1 proto2 proto3 proto4 \
-                       replacesig_empty probe2 probe3 probe5 probe8 probe10 sectest context_probe \
-                       remove_probe probe_err1 probe_err2 probe_err4 probe_err5 probe_err6 insert1 \
+                       replacesig_empty probe2 probe3 probe5 probe8 probe10 sectest context_probe code_range \
+                       remove_probe probe_err1 probe_err2 probe_err4 probe_err5 probe_err6 remove_probe2 insert1 \
                        insert2 insert3 insert4 insert5 insert6 insert7 insert8 insert9 insert10 insert11 insert12 \
                        load_map svcraw_repl exit_repl relocate_rtn insert_call_probed insert_call_probed \
                        probe_close error-unix-probe error-unix-jit exception_in_dll_tool exception_in_probed_call_after \
@@ -115,7 +115,7 @@ endif
 # Windows
 ifeq ($(TARGET_OS),windows)
     TEST_TOOL_ROOTS += proto1win proto3win proto1win-err \
-                       probecdecl tpss insert1win insert2win insert3win insert10 insert11 insert12 \
+                       probecdecl tpss insert1win insert2win insert3win insert10 insert11 insert12 code_range \
                        error-win-probe error-win-jit probe_on_probe2 before_after_defaultcall insertstd \
                        exception_in_probe exception_in_probe_on_probe exception_in_probed_call exception_in_probe_sig \
                        exception_in_probe_on_probe_sig exception_in_probed_call_sig exception_in_probed_call_after \
@@ -139,12 +139,7 @@ endif
 
 # See Mantis #4210
 ifeq ($(TARGET_OS),windows)
-    ifeq ($(MSVCVER_GE_15), 1)
-        TEST_TOOL_ROOTS := $(filter-out malloctrace2win, $(TEST_TOOL_ROOTS))
-    endif
-    # This test always fails in Win7 with MSVC14.
-    # Once resolved with MSVC15, try to enable this one too.
-    ifeq ($(VisualStudioVersion),14.0)
+    ifeq ($(VisualStudioVersion),15.0)
         TEST_TOOL_ROOTS := $(filter-out malloctrace2win, $(TEST_TOOL_ROOTS))
     endif
     # See Mantis 4468
@@ -157,26 +152,9 @@ endif
 
 # These tests fail on libc 2.26 - see Mantis 4440
 ifeq ($(TARGET_OS),linux)
-    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion ge 2.26)
+    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion 2.26)
     ifeq ($(LIBC_VERSION_GE_2_26),1)
         TEST_ROOTS := $(filter-out pthread_atfork pthread_atfork2, $(TEST_ROOTS))
-    endif
-endif
-
-# see mantis 4697
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(ICC),1)
-        TEST_TOOL_ROOTS := $(filter-out iprtool , $(TEST_TOOL_ROOTS))
-    endif
-endif
-
-ifeq ($(TARGET_OS),mac)
-    MACOS_VERSION_GE_1015 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.15.0)
-
-    ifeq ($(MACOS_VERSION_GE_1015), 1)
-        # See mantis 4830
-        TEST_TOOL_ROOTS := $(filter-out malloctrace_locktest, $(TEST_TOOL_ROOTS))
-        TEST_ROOTS := $(filter-out pthread_exit_after_fork, $(TEST_ROOTS))
     endif
 endif
 
@@ -186,23 +164,6 @@ endif
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 
-ifeq ($(TARGET_OS),mac)
-    MACOS_VERSION_GE_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.14.0)
-    MACOS_VERSION_GE_1015 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.15.0)
-
-    ifeq ($(MACOS_VERSION_GE_1014), 1)
-        # See mantis 4680
-        SANITY_SUBSET := $(filter-out malloctrace_locktest, $(SANITY_SUBSET))
-        # See mantis 4751
-        SANITY_SUBSET := $(filter-out pthread_exit_after_fork, $(SANITY_SUBSET))
-    endif
-
-    ifeq ($(MACOS_VERSION_GE_1015), 1)
-        # See mantis 4825
-        SANITY_SUBSET := $(filter-out pthread_exit_tool_mac, $(SANITY_SUBSET))
-    endif
-
-endif
 
 ##############################################################
 #
@@ -382,7 +343,7 @@ probecdecl.test: $(OBJDIR)probecdecl$(PINTOOL_SUFFIX) $(TESTAPP)
 	$(PIN) -t $(OBJDIR)probecdecl$(PINTOOL_SUFFIX) \
 	  -- $(TESTAPP) makefile $(OBJDIR)probecdecl.makefile.copy > $(OBJDIR)probecdecl.out 2>&1
 	$(DIFF) makefile $(OBJDIR)probecdecl.makefile.copy
-	$(EGREP) "Probe|Replacement not safe" probecdecl.outfile
+	$(QGREP) "Probe" probecdecl.outfile
 	$(RM) $(OBJDIR)probecdecl.makefile.copy $(OBJDIR)probecdecl.out probecdecl.outfile
 
 probeheapalloc.test: $(OBJDIR)probeheapalloc$(PINTOOL_SUFFIX) $(TESTAPP)
@@ -432,6 +393,11 @@ before_after_defaultcall.test: $(OBJDIR)before_after_defaultcall$(PINTOOL_SUFFIX
 	$(QGREP) "SUCCESS" $(OBJDIR)before_after_defaultcall.out
 	$(RM) $(OBJDIR)before_after_defaultcall.out
 
+code_range.test: $(OBJDIR)code_range$(PINTOOL_SUFFIX) $(OBJDIR)app_trace$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)code_range$(PINTOOL_SUFFIX) -- $(OBJDIR)app_trace$(EXE_SUFFIX) > $(OBJDIR)code_range.out 2>&1
+	$(QGREP) "Success" $(OBJDIR)code_range.out
+	$(RM) $(OBJDIR)code_range.out
+
 proto1.test: $(OBJDIR)proto1$(PINTOOL_SUFFIX) $(TESTAPP)
 	$(PIN) -t $(OBJDIR)proto1$(PINTOOL_SUFFIX) -- $(TESTAPP) makefile $(OBJDIR)proto1.makefile.copy \
 	  > $(OBJDIR)proto1.out 2>&1
@@ -440,7 +406,7 @@ proto1.test: $(OBJDIR)proto1$(PINTOOL_SUFFIX) $(TESTAPP)
 
 proto1win.test: $(OBJDIR)proto1win$(PINTOOL_SUFFIX) $(OBJDIR)dltest$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
 	$(PIN) -t $(OBJDIR)proto1win$(PINTOOL_SUFFIX) -- $(OBJDIR)dltest$(EXE_SUFFIX) > $(OBJDIR)proto1win.out 2>&1
-	$(EGREP) "Probe_Malloc|Replacement not safe" $(OBJDIR)proto1win.out
+	$(QGREP) "Probe_Malloc" $(OBJDIR)proto1win.out
 	$(RM) $(OBJDIR)proto1win.out
 
 #this is a negative test
@@ -490,10 +456,10 @@ proto3.test: $(OBJDIR)proto3$(PINTOOL_SUFFIX) $(TESTAPP)
 
 proto3win.test: $(OBJDIR)proto3win$(PINTOOL_SUFFIX) $(OBJDIR)dltest$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
 	$(PIN) -probe -t $(OBJDIR)proto3win$(PINTOOL_SUFFIX) -- $(OBJDIR)dltest$(EXE_SUFFIX) > $(OBJDIR)proto3win.out 2>&1
-	$(EGREP) "Probe_Malloc|Replacement not safe" $(OBJDIR)proto3win.out
+	$(QGREP) "Probe_Malloc" $(OBJDIR)proto3win.out
 	$(RM) $(OBJDIR)proto3win.out
 	$(PIN) -t $(OBJDIR)proto3win$(PINTOOL_SUFFIX) -- $(OBJDIR)dltest$(EXE_SUFFIX) > $(OBJDIR)proto3win.out 2>&1
-	$(EGREP) "Jit_Malloc|Replacement not safe" $(OBJDIR)proto3win.out
+	$(QGREP) "Jit_Malloc" $(OBJDIR)proto3win.out
 	$(RM) $(OBJDIR)proto3win.out
 
 proto4.test: $(OBJDIR)proto4$(PINTOOL_SUFFIX) $(OBJDIR)little_malloc$(EXE_SUFFIX)
@@ -696,6 +662,13 @@ remove_probe.test: $(OBJDIR)remove_probe$(PINTOOL_SUFFIX) $(OBJDIR)unloadtest$(E
 	$(QGREP) Removing $(OBJDIR)remove_probe_pin.log
 	$(RM) $(OBJDIR)remove_probe_pin.log $(OBJDIR)remove_probe_tool.log $(OBJDIR)remove_probe.out
 
+remove_probe2.test: $(OBJDIR)remove_probe2$(PINTOOL_SUFFIX) $(OBJDIR)unloadtest$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
+	$(SET_DLL_PATH) $(PIN) -xyzzy -mesgon log_probe -logfile $(OBJDIR)remove_probe2_pin.log \
+	  -t $(OBJDIR)remove_probe2$(PINTOOL_SUFFIX) -xyzzy -mesgon log_probe -logfile $(OBJDIR)remove_probe2_tool.log \
+	    -- $(OBJDIR)unloadtest$(EXE_SUFFIX) > $(OBJDIR)remove_probe2.out 2>&1
+	$(QGREP) Removing $(OBJDIR)remove_probe2_pin.log
+	$(RM) $(OBJDIR)remove_probe2_pin.log $(OBJDIR)remove_probe2_tool.log $(OBJDIR)remove_probe2.out
+
 tpss.test: $(OBJDIR)tpss$(PINTOOL_SUFFIX) $(OBJDIR)dltest$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
 	$(PIN) -t $(OBJDIR)tpss$(PINTOOL_SUFFIX) -- $(OBJDIR)dltest$(EXE_SUFFIX) > $(OBJDIR)tpss.out 2>&1
 	$(RM) $(OBJDIR)tpss.out
@@ -848,9 +821,9 @@ pthread_exit_tool.test: $(OBJDIR)pthread_exit_tool$(PINTOOL_SUFFIX) $(OBJDIR)pth
 	$(RM) $(OBJDIR)/pthread_exit_cpp_pin.log
 	$(RM) -f $(OBJDIR)pthread_exit_cpp_tool.log # this file might not be generated so we use the -f flag
 
-# Equivilent to the test pthread_exit_tool for macOS*
+# Equivilent to the test pthread_exit_tool for OS X*
 # The only different between the tests is that it doesn't check that pthread_exit() unwound the stack.
-# The feature of stack unwinding on thread exit is not implemented in macOS*.
+# The feature of stack unwinding on thread exit is not implemented in OS X*.
 pthread_exit_tool_mac.test: $(OBJDIR)pthread_exit_tool$(PINTOOL_SUFFIX) $(OBJDIR)pthread_exit_c_app$(EXE_SUFFIX) $(OBJDIR)pthread_exit_cpp_app$(EXE_SUFFIX)
 	$(PIN) -xyzzy -mesgon log_unwind -logfile $(OBJDIR)pthread_exit_c_pin.log \
 	  -t $(OBJDIR)pthread_exit_tool$(PINTOOL_SUFFIX) -xyzzy -mesgon log_unwind -logfile $(OBJDIR)pthread_exit_c_tool.log \
@@ -1098,6 +1071,9 @@ $(OBJDIR)spawn_internal_thread_probe_app$(EXE_SUFFIX): spawn_internal_thread_pro
 $(OBJDIR)load_map_app$(EXE_SUFFIX): load_map_app.cpp $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX)
 	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
 
+$(OBJDIR)app_trace$(EXE_SUFFIX): app_trace.c
+	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
 # The ia32 version of shortBBapp is built with the default rule.
 ifeq ($(TARGET),intel64)
 $(OBJDIR)shortBBapp$(EXE_SUFFIX): shortBB64app.c $(OBJDIR)shortBB64foo$(OBJ_SUFFIX)
@@ -1203,9 +1179,6 @@ $(OBJDIR)redzone_app$(EXE_SUFFIX): redzone_app.c $(OBJDIR)redzone_app_asm$(OBJ_S
 $(OBJDIR)func_nops$(EXE_SUFFIX): func_nops.c $(OBJDIR)func_nops_asm$(OBJ_SUFFIX)
 	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
 
-$(OBJDIR)svcraw_app$(EXE_SUFFIX): svcraw_app.cpp
-	$(APP_CXX) $(APP_CXXFLAGS) $(RPC_INCLUDES) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS) $(RPC_LIBS)
-
 ###### Special objects' build rules ######
 
 $(OBJDIR)unix_parent_tool$(OBJ_SUFFIX): unix_parent_tool.cpp arglist.h
@@ -1216,10 +1189,10 @@ $(OBJDIR)arglist$(OBJ_SUFFIX): arglist.cpp arglist.h
 	$(CXX) $(TOOL_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_OBJ)$@ $<
 
 $(OBJDIR)tpss_lin_libc$(OBJ_SUFFIX): tpss_lin_libc.c
-	$(APP_CC) $(APP_CXXFLAGS) $(RPC_INCLUDES) $(DLL_CXXFLAGS) $(RPC_LIBS) $(COMP_OBJ)$@ $<
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_OBJ)$@ $<
 
 $(OBJDIR)tpss_lin_libpthread$(OBJ_SUFFIX): tpss_lin_libpthread.c
-	$(APP_CC) $(APP_CXXFLAGS) $(RPC_INCLUDES) $(DLL_CXXFLAGS) $(RPC_LIBS) $(COMP_OBJ)$@ $<
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_OBJ)$@ $<
 
 $(OBJDIR)tpss_lin_librt$(OBJ_SUFFIX): tpss_lin_librt.c
 	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_OBJ)$@ $<

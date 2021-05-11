@@ -62,7 +62,7 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS += follow_child
     TEST_ROOTS += marker_test int3_test multi_start_stop_test mt3_test control_test
@@ -124,14 +124,14 @@ control_test.test: $(OBJDIR)mt3-test$(EXE_SUFFIX) $(OBJDIR)control$(PINTOOL_SUFF
 	$(RM) $(OBJDIR)mt3_control_test.out
 
 filter_lib.test: $(OBJDIR)filter_app$(EXE_SUFFIX) $(OBJDIR)filter$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX)
-	$(PIN) -t $(OBJDIR)filter$(PINTOOL_SUFFIX) -filter_no_shared_libs -o $(OBJDIR)filter_lib.out \
+	$(SET_DLL_PATH) $(PIN) -t $(OBJDIR)filter$(PINTOOL_SUFFIX) -filter_no_shared_libs -o $(OBJDIR)filter_lib.out \
 	  -- $(OBJDIR)filter_app$(EXE_SUFFIX)
 	$(QGREP) 'main' $(OBJDIR)filter_lib.out
 	test `$(CGREP) '$(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX)' $(OBJDIR)filter_lib.out` -eq 0
 	$(RM) $(OBJDIR)filter_lib.out
 
 filter_rtn.test: $(OBJDIR)filter_app$(EXE_SUFFIX) $(OBJDIR)filter$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX)
-	$(PIN) -t $(OBJDIR)filter$(PINTOOL_SUFFIX) -o $(OBJDIR)filter_rtn.out \
+	$(SET_DLL_PATH) $(PIN) -t $(OBJDIR)filter$(PINTOOL_SUFFIX) -o $(OBJDIR)filter_rtn.out \
 	  -filter_rtn $(GLOBALFUN_PREFIX)one -filter_rtn $(GLOBALFUN_PREFIX)two -- $(OBJDIR)filter_app$(EXE_SUFFIX)
 	test `$(CGREP) 'main' $(OBJDIR)filter_rtn.out` -eq 0
 	$(QGREP) 'two' $(OBJDIR)filter_rtn.out

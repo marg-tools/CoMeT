@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*! @file
  *  This file contains a tool that generates instructions traces with values.
  *  It is designed to help debugging.
@@ -525,7 +544,7 @@ VOID CallTrace(TRACE trace, INS ins)
     if (!KnobTraceCalls)
         return;
 
-    if (INS_IsCall(ins) && !INS_IsDirectControlFlow(ins))
+    if (INS_IsCall(ins) && !INS_IsDirectBranchOrCall(ins))
     {
         // Indirect call
         string s = "Call " + FormatAddress(INS_Address(ins), TRACE_Rtn(trace));
@@ -535,11 +554,11 @@ VOID CallTrace(TRACE trace, INS ins)
                        IARG_PTR, new string(s), IARG_BRANCH_TARGET_ADDR,
                        IARG_FUNCARG_CALLSITE_VALUE, 0, IARG_FUNCARG_CALLSITE_VALUE, 1, IARG_END);
     }
-    else if (INS_IsDirectControlFlow(ins))
+    else if (INS_IsDirectBranchOrCall(ins))
     {
         // Is this a tail call?
         RTN sourceRtn = TRACE_Rtn(trace);
-        RTN destRtn = RTN_FindByAddress(INS_DirectControlFlowTargetAddress(ins));
+        RTN destRtn = RTN_FindByAddress(INS_DirectBranchOrCallTargetAddress(ins));
 
         if (INS_IsCall(ins)         // conventional call
             || sourceRtn != destRtn // tail call
@@ -569,7 +588,7 @@ VOID CallTrace(TRACE trace, INS ins)
             s += FormatAddress(INS_Address(ins), TRACE_Rtn(trace));
             s += " -> ";
 
-            ADDRINT target = INS_DirectControlFlowTargetAddress(ins);
+            ADDRINT target = INS_DirectBranchOrCallTargetAddress(ins);
 
             s += FormatAddress(target, RTN_FindByAddress(target));
 
@@ -641,20 +660,20 @@ VOID InstructionTrace(TRACE trace, INS ins)
             xmm_dst = x;
     }
 
-    if (INS_IsValidForIpointAfter(ins))
+    if (INS_HasFallThrough(ins))
     {
         AddEmit(ins, IPOINT_AFTER, traceString, regCount, regs);
     }
-    if (INS_IsValidForIpointTakenBranch(ins))
+    if (INS_IsBranchOrCall(ins))
     {
         AddEmit(ins, IPOINT_TAKEN_BRANCH, traceString, regCount, regs);
     }
 
     if (xmm_dst != REG_INVALID())
     {
-        if (INS_IsValidForIpointAfter(ins))
+        if (INS_HasFallThrough(ins))
             AddXMMEmit(ins, IPOINT_AFTER, xmm_dst);
-        if (INS_IsValidForIpointTakenBranch(ins))
+        if (INS_IsBranchOrCall(ins))
             AddXMMEmit(ins, IPOINT_TAKEN_BRANCH, xmm_dst);
     }
 }
@@ -668,11 +687,11 @@ VOID MemoryTrace(INS ins)
     {
         INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(CaptureWriteEa), IARG_THREAD_ID, IARG_MEMORYWRITE_EA, IARG_END);
 
-        if (INS_IsValidForIpointAfter(ins))
+        if (INS_HasFallThrough(ins))
         {
             INS_InsertPredicatedCall(ins, IPOINT_AFTER, AFUNPTR(EmitWrite), IARG_THREAD_ID, IARG_MEMORYWRITE_SIZE, IARG_END);
         }
-        if (INS_IsValidForIpointTakenBranch(ins))
+        if (INS_IsBranchOrCall(ins))
         {
             INS_InsertPredicatedCall(ins, IPOINT_TAKEN_BRANCH, AFUNPTR(EmitWrite), IARG_THREAD_ID, IARG_MEMORYWRITE_SIZE, IARG_END);
         }

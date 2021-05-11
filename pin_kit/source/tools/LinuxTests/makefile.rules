@@ -44,23 +44,7 @@ ifeq ($(TARGET_OS),linux)
     TEST_TOOL_ROOTS += plt_syms unmap_relro
     APP_ROOTS += plt_syms_app unmap_relro_app
     ifeq ($(TARGET),intel64)
-        APP_ROOTS += vsyscall_area_app
-        TOOL_ROOTS += vsyscall_area_tool
-        TEST_TOOL_ROOTS += check_low_high_image
-        TEST_ROOTS += linux32_personality vsyscall_area
-    endif
-endif
-
-###### Handle exceptions here ######
-
-# see mantis 4822
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_UBUNTU),1)
-        DIST_VER_GE_1910 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 19.10)
-        ifeq ($(DIST_VER_GE_1910),1)
-            TEST_TOOL_ROOTS := $(filter-out plt_syms, $(TEST_TOOL_ROOTS))
-            APP_ROOTS := $(filter-out plt_syms_app, $(APP_ROOTS))
-        endif
+        TEST_ROOTS += linux32_personality
     endif
 endif
 
@@ -69,7 +53,6 @@ endif
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
-
 
 
 ##############################################################
@@ -92,23 +75,13 @@ plt_syms.test: $(OBJDIR)plt_syms_app$(EXE_SUFFIX) $(OBJDIR)plt_syms$(PINTOOL_SUF
 	$(QGREP) "calling write@plt" $(OBJDIR)plt_syms.out
 	$(RM) $(OBJDIR)plt_syms.out
 	
+#This test checks the fix to Mantis #4176
 unmap_relro.test: $(OBJDIR)unmap_relro$(PINTOOL_SUFFIX) $(OBJDIR)unmap_relro_app$(EXE_SUFFIX)
 	$(PIN) -t $(OBJDIR)unmap_relro$(PINTOOL_SUFFIX) -- $(OBJDIR)unmap_relro_app$(EXE_SUFFIX) > $(OBJDIR)unmap_relro.out 2>&1
 	$(QGREP) 'Moving \[' $(OBJDIR)unmap_relro.out
 	$(QGREP) "Test passed successfully" $(OBJDIR)unmap_relro.out
 	$(RM) $(OBJDIR)unmap_relro.out
 
-check_low_high_image.test: $(OBJDIR)check_low_high_image$(PINTOOL_SUFFIX) $(TESTAPP)
-	$(PIN) -t $< -- $(TESTAPP) makefile $(OBJDIR)makefile.check_low_high_image.copy > $(OBJDIR)check_low_high_image.out 2>&1
-	$(BASHTEST) `$(CGREP) "ERROR" $(OBJDIR)check_low_high_image.out` -eq "0"
-	$(RM) $(OBJDIR)check_low_high_image.out $(OBJDIR)makefile.check_low_high_image.copy
-
-# Application branch into vsyscall area (using call instruction). Checks that if Pin runs that branch natively (kernel >= 5.3)
-# then that vsyscall area is not being instrumented. 
-vsyscall_area.test: $(OBJDIR)vsyscall_area_tool$(PINTOOL_SUFFIX) $(OBJDIR)vsyscall_area_app$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)vsyscall_area_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)vsyscall_area_tool.log \
-	    -- $(OBJDIR)vsyscall_area_app$(EXE_SUFFIX) > $(OBJDIR)vsyscall_area.out
-	$(RM) $(OBJDIR)vsyscall_area_tool.log $(OBJDIR)vsyscall_area.out
 
 ##############################################################
 #
@@ -121,3 +94,4 @@ vsyscall_area.test: $(OBJDIR)vsyscall_area_tool$(PINTOOL_SUFFIX) $(OBJDIR)vsysca
 
 $(OBJDIR)unmap_relro_app$(EXE_SUFFIX): unmap_relro_app.cpp
 	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) -Wl,-z,relro $(APP_LIBS)
+

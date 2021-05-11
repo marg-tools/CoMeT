@@ -1,12 +1,33 @@
-; Copyright 2002-2019 Intel Corporation.
+; BEGIN_LEGAL 
+; Intel Open Source License 
 ; 
-; This software is provided to you as Sample Source Code as defined in the accompanying
-; End User License Agreement for the Intel(R) Software Development Products ("Agreement")
-; section 1.L.
+; Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+;  
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions are
+; met:
 ; 
-; This software and the related documents are provided as is, with no express or implied
-; warranties, other than those that are expressly stated in the License.
-
+; Redistributions of source code must retain the above copyright notice,
+; this list of conditions and the following disclaimer.  Redistributions
+; in binary form must reproduce the above copyright notice, this list of
+; conditions and the following disclaimer in the documentation and/or
+; other materials provided with the distribution.  Neither the name of
+; the Intel Corporation nor the names of its contributors may be used to
+; endorse or promote products derived from this software without
+; specific prior written permission.
+;  
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+; ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+; ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+; END_LEGAL
 PUBLIC ChangeRegsWrapper
 PUBLIC ChangeRegs
 PUBLIC SaveRegsToMem
@@ -22,8 +43,8 @@ extern ymmval:ymmword
 extern aymmval:ymmword
 ENDIF
 IFDEF CONTEXT_USING_AVX512F
-extern zmmval:ymmword    ;  We don't care much about the size we just need reference to the variable.
-extern azmmval:ymmword   ;  since there is no support yet for zmmword this is good enough  
+extern zmmval:zmmword
+extern azmmval:zmmword
 extern opmaskval:qword
 extern aopmaskval:qword
 ENDIF
@@ -57,11 +78,7 @@ ChangeRegsWrapper PROC
 
 IFDEF CONTEXT_USING_AVX512F
     ; Save the necessary mask registers
-    ;kmovw   eax, k3
-	BYTE 0c5h
-	BYTE 0f8h
-	BYTE 093h
-	BYTE 0c3h
+    kmovw   eax, k3
     push    rax
 ENDIF
 
@@ -102,11 +119,7 @@ ENDIF
 IFDEF CONTEXT_USING_AVX512F
     ; Restore the mask registers
     pop     rax
-    ;kmovw   k3, eax
-	BYTE 0c5h
-	BYTE 0f8h
-	BYTE 092h
-	BYTE 0d8h
+    kmovw   k3, eax
 ENDIF
 
     ; Restore the GPRs
@@ -134,33 +147,9 @@ IFDEF CONTEXT_USING_AVX
 ENDIF
 IFDEF CONTEXT_USING_AVX512F
     ; TEST: load the new value to zmm5
-	; instead of:
-	;   simple vmovdqu64 zmm5, zmmword ptr zmmval
-	; do:
-	;   lea rax, zmmval
-	;   vmovdqu64 zmm5,[rax]
-	; encode the avx512 instruction in bytes
-	; since we cannot insert relocation as assembler can we need this split of lea followed by move
-	push rax
-	lea rax, zmmval
-	BYTE 062h
-	BYTE 0f1h
-	BYTE 0feh
-	BYTE 048h
-	BYTE 06fh
-	BYTE 028h
+    vmovdqu64 zmm5, zmmword ptr zmmval
     ; TEST: load the new value to k3
-    ; instead of:
-    ;    kmovw   k3, opmaskval
-	; do:
-	;    lea rax opmaskval
-	;    kmovw k3, [rax] (encoded in bytes)
-	lea rax, opmaskval
-	BYTE 0c5h
-	BYTE 0f8h
-	BYTE 090h
-	BYTE 018h
-	pop rax
+    kmovw   k3, opmaskval
 ENDIF
     ret
 ChangeRegs ENDP
@@ -189,32 +178,9 @@ IFDEF CONTEXT_USING_AVX
 ENDIF
 IFDEF CONTEXT_USING_AVX512F
     ; TEST: store the new value of zmm5
-    ; instead of simple:
-    ;    vmovdqu64 zmmword ptr azmmval, zmm5
-	; do:
-	;    lea rax, azmmval
-	;    vmovdqu64 [rax], zmm5
-	; encode the avx512 instruction in bytes
-	push rax
-	lea rax, azmmval
-	BYTE 062h
-	BYTE 0f1h
-	BYTE 0feh
-	BYTE 048h
-	BYTE 07fh
-	BYTE 028h
+    vmovdqu64 zmmword ptr azmmval, zmm5
     ; TEST: store the new value of k3
-    ; instead of:
-    ;    kmovw   k3, opmaskval
-	; do:
-	;    lea rax aopmaskval
-	;    kmovw   [rax], k3 (encoded in bytes)
-	lea rax, aopmaskval 
-	BYTE 0c5h
-	BYTE 0f8h
-	BYTE 091h
-	BYTE 018h
-	pop rax
+    kmovw   aopmaskval, k3
 ENDIF
     ret
 SaveRegsToMem ENDP

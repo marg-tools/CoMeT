@@ -581,7 +581,7 @@ class pointer_to_unary_function : public unary_function<_Arg, _Result> {
 protected:
   _Result (*_M_ptr)(_Arg);
 public:
-  pointer_to_unary_function() : _M_ptr(NULL) {}
+  pointer_to_unary_function() {}
   explicit pointer_to_unary_function(_Result (*__x)(_Arg)) : _M_ptr(__x) {}
   _Result operator()(_Arg __x) const { return _M_ptr(__x); }
 };
@@ -592,7 +592,7 @@ class pointer_to_binary_function :
 protected:
     _Result (*_M_ptr)(_Arg1, _Arg2);
 public:
-    pointer_to_binary_function() : _M_ptr(NULL) {}
+    pointer_to_binary_function() {}
     explicit pointer_to_binary_function(_Result (*__x)(_Arg1, _Arg2))
       : _M_ptr(__x) {}
     _Result operator()(_Arg1 __x, _Arg2 __y) const {

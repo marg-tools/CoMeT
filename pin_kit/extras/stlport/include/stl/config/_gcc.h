@@ -1,18 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
 /* STLport configuration file
  * It is internal STLport header - DO NOT include it directly
  */
@@ -116,11 +101,11 @@
 
 #define _STLP_NORETURN_FUNCTION __attribute__((noreturn))
 
-/* macOS* is a little different with namespaces and cannot instantiate
+/* Mac OS X is a little different with namespaces and cannot instantiate
  * static data members in template classes */
 #if defined (__APPLE__)
 #  if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 3)))
-/* macOS* is missing a required typedef and standard macro */
+/* Mac OS X is missing a required typedef and standard macro */
 typedef unsigned int wint_t;
 #  endif
 
@@ -128,7 +113,7 @@ typedef unsigned int wint_t;
 
 #  define _STLP_NO_LONG_DOUBLE
 
-/* macOS* needs all "::" scope references to be "std::" */
+/* Mac OS X needs all "::" scope references to be "std::" */
 #  define _STLP_USE_NEW_C_HEADERS
 
 #  define _STLP_NO_VENDOR_STDLIB_L
@@ -197,7 +182,7 @@ typedef unsigned int wint_t;
 
 /* strict ANSI prohibits "long long" ( gcc) */
 #if defined ( __STRICT_ANSI__ )
-#  undef _STLP_LONG_LONG
+#  undef _STLP_LONG_LONG 
 #endif
 
 #ifndef __EXCEPTIONS

@@ -60,19 +60,18 @@ ifeq ($(TARGET_OS),linux)
                       launchReattachThreadDetachCallbacks attachReattachThreadDetachCallbacks \
                       zombie_main_thread_command_line_attach zombie_main_thread_api_attach attachReattachThreadDetachCallbacks_jit \
                       zombie_secondary_thread_command_line_attach zombie_secondary_thread_api_attach tool_relative_path attach_removed_app \
-                      check_blocking_real_time_signals detach_check_extended_state1 detach_check_extended_state2
+                      check_blocking_real_time_signals
         TOOL_ROOTS += jit_tool jit_detach_tool jit_instr_detach jit_anls_detach detach_check_tool simple_tool probe_tool \
                       short_func_tool detach_probed_tool reattach_probed_tool threadOrder_tool reattachZombie_tool \
-                      reattachThreadDetachCallbacks_tool check_blocking_real_time_signals_tool detach_after_addss
+                      reattachThreadDetachCallbacks_tool check_blocking_real_time_signals_tool
         APP_ROOTS += mt_attach verify_sigmask short_func_app mt_blocked mt_detach mt_thread tls_app_linux threadOrder \
                      verify_fpstate_app attach_in_sighandler_app detach_in_sighandler_app mt_attach_and_execv pause_msg_app \
-                     detach_probed_app detach_probed_wait_child_app detach_syscall_app attach_app mt_fork_app \
+                     detach_probed_app hello_world detach_probed_wait_child_app detach_syscall_app attach_app mt_fork_app \
                      launchReattachThreadDetachCallbacks_app attachReattachThreadDetachCallbacks_app my_exe read_write_app \
                      reattach_probed_app reattach_verify_sigmask_app change_mask_app secondary_attach_app main_attach_app \
                      secondary_command_line_app main_command_line_app chdir_app attach_removed_app check_blocking_real_time_signals_app \
-                     ld_linux_attach_app add_floats
+                     ld_linux_attach_app
         OBJECT_ROOTS += fp_save_restore zombie_utils zombie_utils_tool
-        
     endif
     TEST_ROOTS += reattach_jit reattach_jit_fork reattach_jit_read_write reattach_jit_verify_sigmask \
                   launchReattachThreadDetachCallbacks_jit
@@ -80,19 +79,9 @@ ifeq ($(TARGET_OS),linux)
     APP_ROOTS +=  reattach_jit_app launchReattachThreadDetachCallbacks_app
     OBJECT_ROOTS += my_dll
     DLL_ROOTS += my_dll my_dll_1
-
-	# True if gcc version is lower than 4.2 
-    SSE4_NOT_SUPPORTED := $(shell $(TOOLS_ROOT)/Utils/testGccVersion $(CXXPATH) 4.2)
-    ifeq ($(SSE4_NOT_SUPPORTED),0)
-        # gcc version euqal or greater than 4.2
-        TEST_ROOTS += detach_check_extended_state3
-        OBJECT_ROOTS += check_xmms_asm
-        APP_ROOTS += check_xmms_app
-        TOOL_ROOTS += check_xmms_tool
-    endif
 endif
 
-# macOS*
+# OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS += change_mask
     TEST_ROOTS += attach_thread_count_jit attach_jit attach_and_create_thread attach_on_select detach anls_detach \
@@ -101,31 +90,29 @@ ifeq ($(TARGET_OS),mac)
                   attachReattachThreadDetachCallbacks attach_removed_app_mac verify_sigmask_jit attach_and_execv \
                   blocked_threads detach_probed_wait_child reattach_verify_sigmask reattach_read_write pause_msg \
                   pause_msg1 thread_order attach_denied tls_check_detach tls_check_detach_probe \
-                  tls_check_attach_detach tls_check_attach_detach_probe detach_check_sigmask detach_check_extended_state1 \
-                  detach_check_extended_state2 detach_check_extended_state3
+                  tls_check_attach_detach tls_check_attach_detach_probe detach_check_sigmask
     TOOL_ROOTS += jit_tool probe_tool jit_detach_tool jit_anls_detach detach_probed_tool reattach_probed_tool \
-                  reattachThreadDetachCallbacks_tool simple_tool threadOrder_tool detach_check_tool check_xmms_tool detach_after_addss
+                  reattachThreadDetachCallbacks_tool simple_tool threadOrder_tool detach_check_tool
     APP_ROOTS += mt_attach mt_thread attach_app mt_detach detach_probed_app reattach_probed_app \
                  verify_fpstate_app attach_in_sighandler_app mt_fork_app my_exe chdir_app change_mask_app\
                  launchReattachThreadDetachCallbacks_app attachReattachThreadDetachCallbacks_app \
                  attach_removed_app verify_sigmask mt_attach_and_execv mt_blocked detach_probed_wait_child_app \
-                 reattach_verify_sigmask_app read_write_app pause_msg_app threadOrder tls_app_mac tls_attach_detach_app_mac \
-                 detach_check_sigmask_app check_xmms_app add_floats
+                 reattach_verify_sigmask_app read_write_app pause_msg_app hello_world threadOrder tls_app_mac tls_attach_detach_app_mac \
+                 detach_check_sigmask_app
     DLL_ROOTS += my_dll my_dll_1
-    OBJECT_ROOTS += fp_save_restore my_dll check_xmms_asm
+    OBJECT_ROOTS += fp_save_restore my_dll
 endif
 
 # Windows
 ifeq ($(TARGET_OS),windows)
     TEST_TOOL_ROOTS += w_attach_tool1 w_attach_tool2 w_attach_tool3 w_attach_tool4 w_attach_tool5 w_simple_attach_tool read_stdin
     TEST_ROOTS += w_attach_tool1_ror w_attach_tool1_detach_reattach w_attach_tool1_service callbacks_before_jit callbacks_before_probe \
-                  w_attach_tool2_detach_reattach_stress detach_check_extended_state1 detach_check_extended_state2 \
-                  detach_check_extended_state3
-    TOOL_ROOTS += w_attach_mt_thread_tool detach_after_addss check_xmms_tool
+                  w_attach_tool2_detach_reattach_stress
+    TOOL_ROOTS += w_attach_mt_thread_tool
     APP_ROOTS += w_app1 w_app2 w_app3 w_app4 w_app_launcher w_app_launcher2 w_service_app1 w_pin_service_launcher \
-                 w_simple_app read_stdin_app w_attach_mt_thread_app add_floats check_xmms_app
+                 w_simple_app read_stdin_app w_attach_mt_thread_app
     DLL_ROOTS += my_dll my_dll_1
-    OBJECT_ROOTS += my_dll check_xmms_asm
+    OBJECT_ROOTS += my_dll
 endif
 
 ###### Handle exceptions here ######
@@ -137,67 +124,19 @@ ifeq ($(TARGET_OS),linux)
     TEST_ROOTS := $(filter-out reattach_probed, $(TEST_ROOTS))
 endif
 
+# attach_on_select - Due to bug in OS X* older than Mavericks this test crashes the machine causing it to restart
 ifeq ($(TARGET_OS),mac)
-    # attach_on_select - Due to bug in macOS* older than Mavericks this test crashes the machine causing it to restart
     MAVERICKS_OR_OLDER := $(shell /usr/bin/sw_vers | $(GREP) ProductVersion: | $(AWK) '{split($$2, a, "."); print (a[2] <= 9)}')
     ifeq ($(MAVERICKS_OR_OLDER),1)
         TEST_ROOTS := $(filter-out attach_on_select, $(TEST_ROOTS))
     endif
-    
-    # See mantis 4674
-    MACOS_VERSION_GE_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.14.0)
-    ifeq ($(MACOS_VERSION_GE_1014), 1)
-        TEST_ROOTS := $(filter-out attach_jit attach_mt_fini attach_on_select attach_twice verify_sigmask_jit, $(TEST_ROOTS))
-    endif
 endif
 
 # TODO: These tests fail - fix and remove the following:
-# See Mantis 2688
+# See Mantises: 2688, 2196
 ifeq ($(TARGET_OS),windows)
-    TEST_TOOL_ROOTS := $(filter-out w_attach_tool2, $(TEST_TOOL_ROOTS))
+    TEST_TOOL_ROOTS := $(filter-out w_attach_tool2 w_attach_tool4, $(TEST_TOOL_ROOTS))
     TEST_ROOTS := $(filter-out w_attach_tool2_detach_reattach_stress, $(TEST_ROOTS))
-endif
-
-MACHINE_SUPPORTS_AVX_INSTRUCTIONS := $(shell $(CHECKAVX))
-
-ifeq ($(MACHINE_SUPPORTS_AVX_INSTRUCTIONS),No)
-    # detach_check_extended_state3 uses SSE 4.1 (PINSR*). For simplicity filtering out on machines with no AVX support. 
-    TEST_ROOTS := $(filter-out detach_check_extended_state3, $(TEST_ROOTS))
-    TOOL_ROOTS := $(filter-out check_xmms_tool, $(TOOL_ROOTS))
-    APP_ROOTS := $(filter-out check_xmms_app, $(APP_ROOTS))
-endif
-
-# see mantis 4778
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_FEDORA),1)
-        DIST_VER_GE_30 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 30)
-        ifeq ($(DIST_VER_GE_30),1)
-            TEST_ROOTS := $(filter-out detach_in_sighandler detach_in_sighandler1, $(TEST_ROOTS))
-            APP_ROOTS := $(filter-out detach_in_sighandler_app, $(APP_ROOTS))
-        endif
-    endif
-endif
-
-# see mantis 4820
-ifeq ($(TARGET),ia32)
-    ifeq ($(TARGET_OS),linux)
-        ifeq ($(DIST_NAME_UBUNTU),1)
-            KERNEL_VER_GE_530 := $(shell $(TOOLS_ROOT)/Utils/testLinuxKernelVersion ge 5.3.0)
-            ifeq ($(KERNEL_VER_GE_530),1)
-                TEST_ROOTS := $(filter-out detach_in_sighandler detach_in_sighandler1, $(TEST_ROOTS))
-                APP_ROOTS := $(filter-out detach_in_sighandler_app, $(APP_ROOTS))
-            endif
-        endif
-    endif
-endif
-
-# see mantis 4696
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(ICC),1)
-        TEST_ROOTS := $(filter-out detach detach_in_sighandler detach_in_sighandler1, $(TEST_ROOTS))
-        TOOL_ROOTS := $(filter-out jit_detach_tool , $(TOOL_ROOTS))
-        APP_ROOTS := $(filter-out detach_in_sighandler_app mt_detach, $(APP_ROOTS))
-    endif
 endif
 
 ###### Define the sanity subset ######
@@ -206,48 +145,8 @@ endif
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 
-
-ifeq ($(TARGET_OS),linux)
-    # See Mantis 4604 (reattach_jit_verify_sigmask) 4628 (reattach_read_write)
-    SANITY_SUBSET := $(filter-out reattach_jit_verify_sigmask reattach_read_write, $(SANITY_SUBSET))
-    # See Mantis 3420.
-    SANITY_SUBSET := $(filter-out reattach_verify_sigmask, $(SANITY_SUBSET))
-    # See Mantis 4682.
-    SANITY_SUBSET := $(filter-out reattach_jit_read_write, $(SANITY_SUBSET))
-
-    ifeq ($(TARGET),intel64)
-    	# See Mantis 4480.
-    	SANITY_SUBSET := $(filter-out reattach_fork, $(SANITY_SUBSET))
-    endif
-endif
-
-ifeq ($(TARGET_OS),mac)
-    # See Mantis 4480.
-    SANITY_SUBSET := $(filter-out reattach_fork, $(SANITY_SUBSET))
-    # See Mantis 4829.
-    SANITY_SUBSET := $(filter-out reattach_probed, $(SANITY_SUBSET))
-
-    MACOS_VERSION_GE_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.14.0)
-
-    ifeq ($(MACOS_VERSION_GE_1014), 1)
-        # See mantis 4752
-        SANITY_SUBSET := $(filter-out reattach_verify_sigmask, $(SANITY_SUBSET))
-        ifeq ($(TARGET),intel64)
-            # See mantis 4828
-            SANITY_SUBSET := $(filter-out change_mask, $(SANITY_SUBSET))
-        endif
-    endif
-endif
-
-# see mantis 4806
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_FEDORA),1)
-        DIST_VER_GE_31 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 31)
-        ifeq ($(DIST_VER_GE_31),1)
-            SANITY_SUBSET := $(filter-out reattach_jit reattach_jit_fork reattach_jit_app, $(SANITY_SUBSET))
-        endif
-    endif
-endif
+# See Mantis 3420.
+SANITY_SUBSET := $(filter-out reattach_verify_sigmask, $(SANITY_SUBSET))
 
 
 ##############################################################
@@ -362,7 +261,7 @@ launchReattachThreadDetachCallbacks.test: $(OBJDIR)launchReattachThreadDetachCal
 
 attachReattachThreadDetachCallbacks.test: $(OBJDIR)attachReattachThreadDetachCallbacks_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)reattachThreadDetachCallbacks_tool$(PINTOOL_SUFFIX)
 	$(SET_DLL_PATH) $(OBJDIR)attachReattachThreadDetachCallbacks_app$(EXE_SUFFIX) $(PIN) \
-	  -t $(OBJDIR)reattachThreadDetachCallbacks_tool$(PINTOOL_SUFFIX) $(OBJDIR)attachReattachThreadDetachCallbacks.out \
+	  $(OBJDIR)reattachThreadDetachCallbacks_tool$(PINTOOL_SUFFIX) $(OBJDIR)attachReattachThreadDetachCallbacks.out \
 	    $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX)
 	$(QGREP) PASSED $(OBJDIR)attachReattachThreadDetachCallbacks.out
 	$(CGREP) "Thread detach  notification at session 1" $(OBJDIR)attachReattachThreadDetachCallbacks.out | $(QGREP) 21
@@ -382,7 +281,7 @@ launchReattachThreadDetachCallbacks_jit.test: $(OBJDIR)launchReattachThreadDetac
 
 attachReattachThreadDetachCallbacks_jit.test: $(OBJDIR)attachReattachThreadDetachCallbacks_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)reattachThreadDetachCallbacks_jit_tool$(PINTOOL_SUFFIX)
 	$(SET_DLL_PATH) $(OBJDIR)attachReattachThreadDetachCallbacks_app$(EXE_SUFFIX) $(PIN) \
-	  -t $(OBJDIR)reattachThreadDetachCallbacks_jit_tool$(PINTOOL_SUFFIX) $(OBJDIR)attachReattachThreadDetachCallbacks_jit.out \
+	  $(OBJDIR)reattachThreadDetachCallbacks_jit_tool$(PINTOOL_SUFFIX) $(OBJDIR)attachReattachThreadDetachCallbacks_jit.out \
 	    $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX)
 	$(QGREP) PASSED $(OBJDIR)attachReattachThreadDetachCallbacks_jit.out
 	$(CGREP) "Thread detach  notification at session 1" $(OBJDIR)attachReattachThreadDetachCallbacks_jit.out | $(QGREP) 21
@@ -627,14 +526,15 @@ pause_msg.test: $(OBJDIR)jit_tool$(PINTOOL_SUFFIX) $(OBJDIR)pause_msg_app$(EXE_S
 	$(RM) $(OBJDIR)pause_msg.out $(OBJDIR)pause_msg.log
 
 # use hello_world as simple application that writes somthing to standard output (the test makes sure pause msg is not overwritten)
-pause_msg1.test: $(OBJDIR)simple_tool$(PINTOOL_SUFFIX)  $(HELLO_APP)
-	$(PIN) -pause_tool 1 -t $< -- $(HELLO_APP) > $(OBJDIR)pause_msg1.out 2>&1
+pause_msg1.test: $(OBJDIR)hello_world$(EXE_SUFFIX) $(OBJDIR)simple_tool$(PINTOOL_SUFFIX)
+	$(PIN) -pause_tool 1 -t $(OBJDIR)simple_tool$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)hello_world$(EXE_SUFFIX) > $(OBJDIR)pause_msg1.out 2>&1
 	$(QGREP) "Pausing for 1 seconds to attach" $(OBJDIR)pause_msg1.out
 	$(QGREP) "Resuming" $(OBJDIR)pause_msg1.out
 	$(RM) $(OBJDIR)pause_msg1.out
 
 thread_order.test: $(OBJDIR)threadOrder$(EXE_SUFFIX) $(OBJDIR)threadOrder_tool$(PINTOOL_SUFFIX)
-	$(OBJDIR)threadOrder$(EXE_SUFFIX) $(PIN) -t $(OBJDIR)threadOrder_tool$(PINTOOL_SUFFIX)
+	$(OBJDIR)threadOrder$(EXE_SUFFIX) $(PIN) $(OBJDIR)threadOrder_tool$(PINTOOL_SUFFIX)
 	$(CMP) threadOrder_master.out threadOrder_generated.out
 	$(RM) threadOrder_master.out threadOrder_generated.out
 
@@ -644,14 +544,14 @@ attach_denied.test:
 	$(RM) $(OBJDIR)attach_denied.out
 
 zombie_main_thread_command_line_attach.test: $(OBJDIR)main_command_line_app$(EXE_SUFFIX) $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX)
-	$(OBJDIR)main_command_line_app$(EXE_SUFFIX) $(PIN) -t $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX) \
+	$(OBJDIR)main_command_line_app$(EXE_SUFFIX) $(PIN) $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX) \
 	  $(OBJDIR)zombie_main_thread_command_line_attach.out > $(OBJDIR)zombie_main_thread_command_line_attach.out
 	$(QGREP) "The main thread of the application is a zombie thread. Pin can't attach to an application which its main thread is a zombie thread" \
 	  $(OBJDIR)zombie_main_thread_command_line_attach.out
 	$(RM) $(OBJDIR)zombie_main_thread_command_line_attach.out
 
 zombie_main_thread_api_attach.test: $(OBJDIR)main_attach_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX)
-	-$(OBJDIR)main_attach_app$(EXE_SUFFIX) $(PIN) -t $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX) \
+	-$(OBJDIR)main_attach_app$(EXE_SUFFIX) $(PIN) $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX) \
 	  $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)zombie_main_thread_api_attach.out > $(OBJDIR)zombie_main_thread_api_attach.out
 	@# Sleep for 3 seconds in order to prevent a scenario where the grep command is executed before the error
 	@# message is written into the log file.
@@ -661,14 +561,14 @@ zombie_main_thread_api_attach.test: $(OBJDIR)main_attach_app$(EXE_SUFFIX) $(OBJD
 	$(RM) $(OBJDIR)zombie_main_thread_api_attach.out
 
 zombie_secondary_thread_api_attach.test: $(OBJDIR)secondary_attach_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX)
-	$(OBJDIR)secondary_attach_app$(EXE_SUFFIX) $(PIN) -t $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX) \
+	$(OBJDIR)secondary_attach_app$(EXE_SUFFIX) $(PIN) $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX) \
 	  $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)zombie_secondary_thread_api_attach.out \
 	    > $(OBJDIR)zombie_secondary_thread_api_attach.out
 	$(QGREP) PASSED $(OBJDIR)zombie_secondary_thread_api_attach.out
 	$(RM) $(OBJDIR)zombie_secondary_thread_api_attach.out
 
 zombie_secondary_thread_command_line_attach.test: $(OBJDIR)secondary_command_line_app$(EXE_SUFFIX) $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX)
-	$(OBJDIR)secondary_command_line_app$(EXE_SUFFIX) $(PIN) -t $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX) \
+	$(OBJDIR)secondary_command_line_app$(EXE_SUFFIX) $(PIN) $(OBJDIR)reattach_probed_tool$(PINTOOL_SUFFIX) \
 	  $(OBJDIR)zombie_secondary_thread_command_line_attach.out > $(OBJDIR)zombie_secondary_thread_command_line_attach.out
 	$(QGREP) PASSED $(OBJDIR)zombie_secondary_thread_command_line_attach.out
 	$(RM) $(OBJDIR)zombie_secondary_thread_command_line_attach.out
@@ -731,32 +631,6 @@ endif
 	$(DIFF) $(OBJDIR)ld_linux_attach.out $(OBJDIR)ldd.out
 	$(RM) $(OBJDIR)ld_linux_attach.out $(OBJDIR)ldd.out
 
-# Check extended state is restored correctly after detach which occurred inside analysis function which was called after a 
-# native instruction which did some operation on XMM register
-detach_check_extended_state1.test: $(OBJDIR)detach_after_addss$(PINTOOL_SUFFIX) $(OBJDIR)add_floats$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)detach_after_addss$(PINTOOL_SUFFIX) -o $(OBJDIR)detach_check_extended_state1_tool.out -- $(OBJDIR)add_floats$(EXE_SUFFIX) > $(OBJDIR)detach_check_extended_state1.out 2>&1
-	if $(GREP) "addss" $(OBJDIR)detach_check_extended_state1_tool.out ; then \
-	  $(GREP) "ret 1: 3.000000" $(OBJDIR)detach_check_extended_state1.out;   \
-	fi
-	$(RM) $(OBJDIR)detach_check_extended_state1_tool.out
-
-# Check extended state is restored correctly after detach which occurred inside analysis function which was called after a 
-# native instruction which did some operation on XMM register, also in this case we manipultae the appiclation XMM register,
-# so we expect that the up-to-date value will lay in the XMM register after detach 
-detach_check_extended_state2.test: $(OBJDIR)detach_after_addss$(PINTOOL_SUFFIX) $(OBJDIR)add_floats$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)detach_after_addss$(PINTOOL_SUFFIX) -o $(OBJDIR)detach_check_extended_state2_tool.out -change_bit 1 -- $(OBJDIR)add_floats$(EXE_SUFFIX) > $(OBJDIR)detach_check_extended_state2.out 2>&1
-	if $(GREP) "addss" $(OBJDIR)detach_check_extended_state2_tool.out ; then \
-	  $(GREP) "ret 1: 3.000977" $(OBJDIR)detach_check_extended_state2.out;   \
-	fi
-	$(RM) $(OBJDIR)detach_check_extended_state2_tool.out $(OBJDIR)detach_check_extended_state2.out
-
-# Check extended state is restored correctly after detach which occurred inside analysis function which scramabled XMM
-# registers but not the the native XMM registers (shouldn't effect application)
-# detach_check_extended_state3 uses SSE 4.1 (PINSR*). This test is filtered out on sanity & nightly on machines with 
-# no AVX support (although it can be run on machines that support SSE 4.1) .
-detach_check_extended_state3.test: $(OBJDIR)check_xmms_tool$(PINTOOL_SUFFIX) $(OBJDIR)check_xmms_app$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)check_xmms_tool$(PINTOOL_SUFFIX) -- $(OBJDIR)check_xmms_app$(EXE_SUFFIX)
-
 
 ##############################################################
 #
@@ -771,10 +645,6 @@ detach_check_extended_state3.test: $(OBJDIR)check_xmms_tool$(PINTOOL_SUFFIX) $(O
 
 $(OBJDIR)reattachZombie_tool$(PINTOOL_SUFFIX): $(OBJDIR)reattachZombie_tool$(OBJ_SUFFIX) $(OBJDIR)zombie_utils_tool$(OBJ_SUFFIX)
 	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
-
-$(OBJDIR)check_xmms_tool$(PINTOOL_SUFFIX): $(OBJDIR)check_xmms_tool$(OBJ_SUFFIX) $(OBJDIR)check_xmms_asm$(OBJ_SUFFIX)
-	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
-
 
 ###### Special applications' build rules ######
 
@@ -884,6 +754,9 @@ $(OBJDIR)detach_in_sighandler_app$(EXE_SUFFIX): detach_in_sighandler_app.cpp $(O
 $(OBJDIR)pause_msg_app$(EXE_SUFFIX): pause_msg_app.cpp
 	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
 
+$(OBJDIR)hello_world$(EXE_SUFFIX): hello_world.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
 $(OBJDIR)threadOrder$(EXE_SUFFIX): threadOrder.cpp
 	$(APP_CXX) $(APP_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
 
@@ -914,9 +787,6 @@ $(OBJDIR)reattach_jit_app$(EXE_SUFFIX): reattach_jit_app.cpp $(THREADLIB)
 $(OBJDIR)detach_check_sigmask_app$(EXE_SUFFIX): detach_check_sigmask_app.cpp $(THREADLIB)
 	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
 
-$(OBJDIR)check_xmms_app$(EXE_SUFFIX): check_xmms_app.c $(OBJDIR)check_xmms_asm$(OBJ_SUFFIX)
-	$(APP_CC) $(APP_CXXFLAGS) $(DBG_INFO_CXX_ALWAYS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(DBG_INFO_LD_ALWAYS)
-
 ###### Special objects' build rules ######
 
 $(OBJDIR)zombie_utils$(OBJ_SUFFIX): zombie_utils.cpp zombie_utils.h
@@ -927,9 +797,6 @@ $(OBJDIR)zombie_utils_tool$(OBJ_SUFFIX): zombie_utils.cpp zombie_utils.h
 
 $(OBJDIR)my_dll$(OBJ_SUFFIX): my_dll.c
 	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_OBJ)$@ $<
-
-$(OBJDIR)add_floats$(EXE_SUFFIX): add_floats.c
-	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
 
 ###### Special dlls' build rules ######
 

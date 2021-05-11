@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 /// @file xed-operand-element-xtype-enum.h
 
@@ -18,33 +36,9 @@ END_LEGAL */
 #if !defined(XED_OPERAND_ELEMENT_XTYPE_ENUM_H)
 # define XED_OPERAND_ELEMENT_XTYPE_ENUM_H
 #include "xed-common-hdrs.h"
-#define XED_OPERAND_XTYPE_INVALID_DEFINED 1
-#define XED_OPERAND_XTYPE_B80_DEFINED 1
-#define XED_OPERAND_XTYPE_BF16_DEFINED 1
-#define XED_OPERAND_XTYPE_F16_DEFINED 1
-#define XED_OPERAND_XTYPE_F32_DEFINED 1
-#define XED_OPERAND_XTYPE_F64_DEFINED 1
-#define XED_OPERAND_XTYPE_F80_DEFINED 1
-#define XED_OPERAND_XTYPE_I1_DEFINED 1
-#define XED_OPERAND_XTYPE_I16_DEFINED 1
-#define XED_OPERAND_XTYPE_I32_DEFINED 1
-#define XED_OPERAND_XTYPE_I64_DEFINED 1
-#define XED_OPERAND_XTYPE_I8_DEFINED 1
-#define XED_OPERAND_XTYPE_INT_DEFINED 1
-#define XED_OPERAND_XTYPE_STRUCT_DEFINED 1
-#define XED_OPERAND_XTYPE_U128_DEFINED 1
-#define XED_OPERAND_XTYPE_U16_DEFINED 1
-#define XED_OPERAND_XTYPE_U256_DEFINED 1
-#define XED_OPERAND_XTYPE_U32_DEFINED 1
-#define XED_OPERAND_XTYPE_U64_DEFINED 1
-#define XED_OPERAND_XTYPE_U8_DEFINED 1
-#define XED_OPERAND_XTYPE_UINT_DEFINED 1
-#define XED_OPERAND_XTYPE_VAR_DEFINED 1
-#define XED_OPERAND_XTYPE_LAST_DEFINED 1
 typedef enum {
   XED_OPERAND_XTYPE_INVALID,
   XED_OPERAND_XTYPE_B80,
-  XED_OPERAND_XTYPE_BF16,
   XED_OPERAND_XTYPE_F16,
   XED_OPERAND_XTYPE_F32,
   XED_OPERAND_XTYPE_F64,

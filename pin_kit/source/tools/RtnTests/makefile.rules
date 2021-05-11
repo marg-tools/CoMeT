@@ -73,7 +73,7 @@ endif
 # See mantis 4439
 # Disabled for libc 2.26
 ifeq ($(TARGET_OS),linux)
-    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion ge 2.26)
+    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion 2.26)
     ifeq ($(LIBC_VERSION_GE_2_26),1)
         TEST_ROOTS := $(filter-out ifuncInstrumentationStrcmp, $(TEST_ROOTS))
     endif

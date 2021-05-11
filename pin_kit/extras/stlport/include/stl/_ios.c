@@ -88,7 +88,7 @@ locale basic_ios<_CharT, _Traits>::imbue(const locale& __loc) {
 
 template <class _CharT, class _Traits>
 basic_ios<_CharT, _Traits>::basic_ios()
-  : ios_base(), _M_cached_ctype(0),
+  : ios_base(),
     _M_fill(_STLP_NULL_CHAR_INIT(_CharT)), _M_streambuf(0), _M_tied_ostream(0)
 {}
 

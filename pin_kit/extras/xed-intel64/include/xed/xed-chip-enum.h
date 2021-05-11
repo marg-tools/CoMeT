@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 /// @file xed-chip-enum.h
 
@@ -18,71 +36,6 @@ END_LEGAL */
 #if !defined(XED_CHIP_ENUM_H)
 # define XED_CHIP_ENUM_H
 #include "xed-common-hdrs.h"
-#define XED_CHIP_INVALID_DEFINED 1
-#define XED_CHIP_I86_DEFINED 1
-#define XED_CHIP_I86FP_DEFINED 1
-#define XED_CHIP_I186_DEFINED 1
-#define XED_CHIP_I186FP_DEFINED 1
-#define XED_CHIP_I286REAL_DEFINED 1
-#define XED_CHIP_I286_DEFINED 1
-#define XED_CHIP_I2186FP_DEFINED 1
-#define XED_CHIP_I386REAL_DEFINED 1
-#define XED_CHIP_I386_DEFINED 1
-#define XED_CHIP_I386FP_DEFINED 1
-#define XED_CHIP_I486REAL_DEFINED 1
-#define XED_CHIP_I486_DEFINED 1
-#define XED_CHIP_PENTIUMREAL_DEFINED 1
-#define XED_CHIP_PENTIUM_DEFINED 1
-#define XED_CHIP_QUARK_DEFINED 1
-#define XED_CHIP_PENTIUMMMXREAL_DEFINED 1
-#define XED_CHIP_PENTIUMMMX_DEFINED 1
-#define XED_CHIP_ALLREAL_DEFINED 1
-#define XED_CHIP_PENTIUMPRO_DEFINED 1
-#define XED_CHIP_PENTIUM2_DEFINED 1
-#define XED_CHIP_PENTIUM3_DEFINED 1
-#define XED_CHIP_PENTIUM4_DEFINED 1
-#define XED_CHIP_P4PRESCOTT_DEFINED 1
-#define XED_CHIP_P4PRESCOTT_NOLAHF_DEFINED 1
-#define XED_CHIP_P4PRESCOTT_VTX_DEFINED 1
-#define XED_CHIP_MEROM_DEFINED 1
-#define XED_CHIP_PENRYN_DEFINED 1
-#define XED_CHIP_PENRYN_E_DEFINED 1
-#define XED_CHIP_NEHALEM_DEFINED 1
-#define XED_CHIP_WESTMERE_DEFINED 1
-#define XED_CHIP_BONNELL_DEFINED 1
-#define XED_CHIP_SALTWELL_DEFINED 1
-#define XED_CHIP_SILVERMONT_DEFINED 1
-#define XED_CHIP_VIA_DEFINED 1
-#define XED_CHIP_AMD_K10_DEFINED 1
-#define XED_CHIP_AMD_BULLDOZER_DEFINED 1
-#define XED_CHIP_AMD_PILEDRIVER_DEFINED 1
-#define XED_CHIP_AMD_ZEN_DEFINED 1
-#define XED_CHIP_AMD_ZENPLUS_DEFINED 1
-#define XED_CHIP_AMD_ZEN2_DEFINED 1
-#define XED_CHIP_AMD_FUTURE_DEFINED 1
-#define XED_CHIP_GOLDMONT_DEFINED 1
-#define XED_CHIP_GOLDMONT_PLUS_DEFINED 1
-#define XED_CHIP_TREMONT_DEFINED 1
-#define XED_CHIP_SNOW_RIDGE_DEFINED 1
-#define XED_CHIP_SANDYBRIDGE_DEFINED 1
-#define XED_CHIP_IVYBRIDGE_DEFINED 1
-#define XED_CHIP_HASWELL_DEFINED 1
-#define XED_CHIP_BROADWELL_DEFINED 1
-#define XED_CHIP_SKYLAKE_DEFINED 1
-#define XED_CHIP_COMET_LAKE_DEFINED 1
-#define XED_CHIP_SKYLAKE_SERVER_DEFINED 1
-#define XED_CHIP_CASCADE_LAKE_DEFINED 1
-#define XED_CHIP_COOPER_LAKE_DEFINED 1
-#define XED_CHIP_KNL_DEFINED 1
-#define XED_CHIP_KNM_DEFINED 1
-#define XED_CHIP_CANNONLAKE_DEFINED 1
-#define XED_CHIP_ICE_LAKE_DEFINED 1
-#define XED_CHIP_ICE_LAKE_SERVER_DEFINED 1
-#define XED_CHIP_TIGER_LAKE_DEFINED 1
-#define XED_CHIP_SAPPHIRE_RAPIDS_DEFINED 1
-#define XED_CHIP_FUTURE_DEFINED 1
-#define XED_CHIP_ALL_DEFINED 1
-#define XED_CHIP_LAST_DEFINED 1
 typedef enum {
   XED_CHIP_INVALID,
   XED_CHIP_I86,
@@ -110,7 +63,7 @@ typedef enum {
   XED_CHIP_P4PRESCOTT,
   XED_CHIP_P4PRESCOTT_NOLAHF,
   XED_CHIP_P4PRESCOTT_VTX,
-  XED_CHIP_MEROM,
+  XED_CHIP_CORE2,
   XED_CHIP_PENRYN,
   XED_CHIP_PENRYN_E,
   XED_CHIP_NEHALEM,
@@ -118,34 +71,20 @@ typedef enum {
   XED_CHIP_BONNELL,
   XED_CHIP_SALTWELL,
   XED_CHIP_SILVERMONT,
-  XED_CHIP_VIA,
-  XED_CHIP_AMD_K10,
-  XED_CHIP_AMD_BULLDOZER,
-  XED_CHIP_AMD_PILEDRIVER,
-  XED_CHIP_AMD_ZEN,
-  XED_CHIP_AMD_ZENPLUS,
-  XED_CHIP_AMD_ZEN2,
-  XED_CHIP_AMD_FUTURE,
+  XED_CHIP_AMD,
   XED_CHIP_GOLDMONT,
   XED_CHIP_GOLDMONT_PLUS,
-  XED_CHIP_TREMONT,
-  XED_CHIP_SNOW_RIDGE,
   XED_CHIP_SANDYBRIDGE,
   XED_CHIP_IVYBRIDGE,
   XED_CHIP_HASWELL,
   XED_CHIP_BROADWELL,
   XED_CHIP_SKYLAKE,
-  XED_CHIP_COMET_LAKE,
   XED_CHIP_SKYLAKE_SERVER,
-  XED_CHIP_CASCADE_LAKE,
-  XED_CHIP_COOPER_LAKE,
   XED_CHIP_KNL,
   XED_CHIP_KNM,
   XED_CHIP_CANNONLAKE,
-  XED_CHIP_ICE_LAKE,
-  XED_CHIP_ICE_LAKE_SERVER,
-  XED_CHIP_TIGER_LAKE,
-  XED_CHIP_SAPPHIRE_RAPIDS,
+  XED_CHIP_ICELAKE,
+  XED_CHIP_ICELAKE_SERVER,
   XED_CHIP_FUTURE,
   XED_CHIP_ALL,
   XED_CHIP_LAST

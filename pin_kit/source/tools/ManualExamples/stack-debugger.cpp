@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
  * This is an example tool that adds extended debugger commands.  See the
  * Pin User Manual section "Debugging the Application while Running Under Pin"
@@ -28,9 +47,6 @@
 #include <cctype>
 #include <map>
 #include "pin.H"
-using std::cerr;
-using std::string;
-using std::endl;
 
 
 // Command line switches for this tool.
@@ -99,8 +115,6 @@ INT32 Usage()
 
 int main(int argc, char *argv[])
 {
-    PIN_InitSymbols();
-
     if (PIN_Init(argc, argv)) return Usage();
 
     if (PIN_GetDebugStatus() == DEBUG_STATUS_DISABLED)
@@ -274,18 +288,7 @@ static VOID Instruction(INS ins, VOID *)
     {
         if (INS_IsSysenter(ins)) return; // no need to instrument system calls
 
-        IPOINT where = IPOINT_AFTER;
-        if (!INS_IsValidForIpointAfter(ins))
-        {
-            if (INS_IsValidForIpointTakenBranch(ins))
-            {
-                where = IPOINT_TAKEN_BRANCH;
-            }
-            else
-            {
-                return;
-            }
-        }
+        const IPOINT where = INS_HasFallThrough(ins) ? IPOINT_AFTER : IPOINT_TAKEN_BRANCH;
         INS_InsertIfCall(ins, where, (AFUNPTR)OnStackChangeIf, IARG_REG_VALUE, REG_STACK_PTR, IARG_REG_VALUE, RegTinfo, IARG_END);
 
         // We use IARG_CONST_CONTEXT here instead of IARG_CONTEXT because it is faster.
@@ -370,13 +373,8 @@ static void ConnectDebugger()
         return;
 
     *Output << "Triggered stack-limit breakpoint.\n";
-#if defined(TARGET_MAC)
-    *Output << "Start LLDB and enter this command:\n";
-    *Output << "  gdb-remote " << std::dec << info._tcpServer._tcpPort << "\n";
-#else
     *Output << "Start GDB and enter this command:\n";
     *Output << "  target remote :" << std::dec << info._tcpServer._tcpPort << "\n";
-#endif
     *Output << std::flush;
 
     if (PIN_WaitForDebuggerToConnect(1000*KnobTimeout.Value()))

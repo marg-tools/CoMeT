@@ -1,18 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
 /*	$OpenBSD: stdio.h,v 1.35 2006/01/13 18:10:09 miod Exp $	*/
 /*	$NetBSD: stdio.h,v 1.18 1996/04/25 18:29:21 jtc Exp $	*/
 
@@ -117,20 +102,21 @@ struct __sbuf {
  * std() initializer in findfp.c.
  */
 typedef	struct __sFILE {
-	unsigned char *_p;  /* current position in (some) buffer */
-	int _r;             /* read space left for getc() */
-	int _w;             /* write space left for putc() */
-	short _flags;       /* flags, below; this FILE is free if 0 */
-	short _file;        /* fileno, -1 if not valid. */
-                        /* In Unix it is file descriptor. */
-                        /* In Windows it is index to the file HANDLE in a fd2HANDLE table, */
-                        /* used the same way as in Unix, as if it was a regular Unix's fd. */
+	unsigned char *_p;	/* current position in (some) buffer */
+	int	_r;		/* read space left for getc() */
+	int	_w;		/* write space left for putc() */
+	short	_flags;		/* flags, below; this FILE is free if 0 */
+	NATIVE_FD _file;		/* fileno, if Unix descriptor, else -1 */
 
-	struct	__sbuf _bf; /* the buffer (at least 1 byte, if !NULL) */
-	int	_lbfsize;       /* 0 or -_bf._size, for inline putc */
+
+	// file descriptor in Unix, index to the file HANDLE in a fd2HANDLE table
+	// in Windows (used the same way as in Unix, as if it was a regular Unix's fd)
+	int _fileFd;
+	struct	__sbuf _bf;	/* the buffer (at least 1 byte, if !NULL) */
+	int	_lbfsize;	/* 0 or -_bf._size, for inline putc */
 
 	/* operations */
-	void	*_cookie;   /* cookie passed to io functions */
+	void	*_cookie;	/* cookie passed to io functions */
 	int	(*_close)(void *);
 	int	(*_read)(void *, char *, int);
 	fpos_t	(*_seek)(void *, fpos_t, int);
@@ -139,19 +125,19 @@ typedef	struct __sFILE {
 	/* extension data, to avoid further ABI breakage */
 	struct	__sbuf _ext;
 	/* data for long sequences of ungetc() */
-	unsigned char *_up; /* saved _p when _p is doing ungetc data */
-	int	_ur;            /* saved _r when _r is counting ungetc data */
+	unsigned char *_up;	/* saved _p when _p is doing ungetc data */
+	int	_ur;		/* saved _r when _r is counting ungetc data */
 
 	/* tricks to meet minimum requirements even when malloc() fails */
-	unsigned char _ubuf[3]; /* guarantee an ungetc() buffer */
-	unsigned char _nbuf[1]; /* guarantee a getc() buffer */
+	unsigned char _ubuf[3];	/* guarantee an ungetc() buffer */
+	unsigned char _nbuf[1];	/* guarantee a getc() buffer */
 
 	/* separate buffer for fgetln() when line crosses buffer boundary */
-	struct	__sbuf _lb; /* buffer for fgetln() */
+	struct	__sbuf _lb;	/* buffer for fgetln() */
 
 	/* Unix stdio files get aligned to block boundaries on fseek() */
-	int	_blksize;       /* stat.st_blksize (may be != _bf._size) */
-	fpos_t	_offset;    /* current lseek offset */
+	int	_blksize;	/* stat.st_blksize (may be != _bf._size) */
+	fpos_t	_offset;	/* current lseek offset */
 } FILE;
 
 __BEGIN_DECLS
@@ -269,8 +255,6 @@ void	 setbuf(FILE * __restrict, char * __restrict);
 int	 setvbuf(FILE * __restrict, char * __restrict, int, size_t);
 int	 sscanf(const char * __restrict, const char * __restrict, ...)
 		__scanflike(2, 3);
-int  sscanf_s(const char * __restrict, const char * __restrict, ...)
-        __scanflike(2, 3);
 FILE	*tmpfile(void);
 int	 ungetc(int, FILE *);
 int	 vfprintf(FILE * __restrict, const char * __restrict, __va_list)
@@ -308,16 +292,12 @@ off_t	 ftello(FILE *);
 #if __ISO_C_VISIBLE >= 1999 || __BSD_VISIBLE
 int	 snprintf(char * __restrict, size_t, const char * __restrict, ...)
 		__printflike(3, 4);
-int  snprintf_s(char * __restrict, size_t, const char * __restrict, ...)
-        __printflike(3, 4);
 int	 vfscanf(FILE * __restrict, const char * __restrict, __va_list)
 		__scanflike(2, 0);
 int	 vscanf(const char *, __va_list)
 		__scanflike(1, 0);
 int	 vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list)
 		__printflike(3, 0);
-int  vsnprintf_s(char * __restrict, size_t, const char * __restrict, __va_list)
-        __printflike(3, 0);
 int	 vsscanf(const char * __restrict, const char * __restrict, __va_list)
 		__scanflike(2, 0);
 #endif /* __ISO_C_VISIBLE >= 1999 || __BSD_VISIBLE */
@@ -332,7 +312,7 @@ __END_DECLS
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
 __BEGIN_DECLS
-FILE	*fdopen(int, const char *);
+FILE	*fdopen(NATIVE_FD, const char *);
 int    fileno(FILE *);
 
 #if (__POSIX_VISIBLE >= 199209)

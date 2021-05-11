@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -15,12 +15,6 @@
 #define LOG_FETCH_RTN_INS(s) if(ClientInt()->_VmLog) ClientInt()->_VmLog("FETCH_RTN_INS", s);
 #define LOG_UNWIND(s)        if(ClientInt()->_VmLog) ClientInt()->_VmLog("UNWIND", s);
 #define LOG_BUFFER(s)        if(ClientInt()->_VmLog) ClientInt()->_VmLog("BUFFER", s);
-#define LOG_JIT_PROFILING(s) if(ClientInt()->_VmLog) ClientInt()->_VmLog("VTUNE_JIT_API", s);
-// When LOG()/WARNING() is called from Pin client library it will be printed to pintool.log
-// If one wants to print a general log/warning message into pin.log, 
-// then LOG_VMLOG()/LOG_VMWARNING() macro should be used.
-#define LOG_VMLOG(s)          if(ClientInt()->_VmLog) ClientInt()->_VmLog("LOG", s);
-#define LOG_VMWARNING(s)      if(ClientInt()->_VmLog) ClientInt()->_VmLog("WARNING", s);
 #endif
 class TRACE_CLASS;
 
@@ -114,6 +108,9 @@ typedef BOOL (*INTERCEPT_SIGNAL_CALLBACK)(THREADID tid, INT32 sig, CONTEXT *ctxt
     BOOL hasHandler, const EXCEPTION_INFO *pExceptInfo, VOID *v);
 
                                                                   /* DO NOT EDIT */
+typedef VOID (*PROBES_INSERTED_CALLBACK)(IMG img, VOID *v);
+
+                                                                  /* DO NOT EDIT */
 typedef VOID * (*TRACE_BUFFER_CALLBACK)(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt,
                            VOID *buf, UINT64 numElements, VOID *v);
 
@@ -133,24 +130,6 @@ enum REPLAY_MODE
     REPLAY_MODE_IMAGEOPS        = 0x01,   ///< Replayer will handle image ops
     REPLAY_MODE_ALL             = REPLAY_MODE_IMAGEOPS
 };
-
-                                                                  /* DO NOT EDIT */
-extern MESSAGE_TYPE MessageTypeLogProbe;
-
-                                                                  /* DO NOT EDIT */
-extern MESSAGE_TYPE MessageTypeLogBuffer;
-
-                                                                  /* DO NOT EDIT */
-extern MESSAGE_TYPE MessageTypeLogUnwind;
-
-                                                                  /* DO NOT EDIT */
-extern MESSAGE_TYPE MessageTypeLogFetchRtnIns;
-
-                                                                  /* DO NOT EDIT */
-extern VOID PIN_SetReplayMode(UINT32 flags);
-
-                                                                  /* DO NOT EDIT */
-extern BOOL PIN_SpawnApplicationThread(const CONTEXT * ctxt);
 
                                                                   /* DO NOT EDIT */
 extern VOID PIN_LockClient();
@@ -187,6 +166,21 @@ extern VOID PIN_CallApplicationFunction(const CONTEXT * ctxt, THREADID tid, CALL
 
                                                                   /* DO NOT EDIT */
 extern BOOL INS_IsAddedForFunctionReplacement(INS ins);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* PIN_RegisterItcAuxCallBackPushFun is now deprecated. */
+extern PIN_DEPRECATED_API VOID PIN_RegisterItcAuxCallBackPushFun(AFUNPTR callBackPushFun);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* RTN_ComplexReplaceWithUninstrumentedRoutine is now deprecated. */
+extern PIN_DEPRECATED_API VOID RTN_ComplexReplaceWithUninstrumentedRoutine(RTN replacedRtn, AFUNPTR replacementFun);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* PIN_FindAlternateAppStack is now deprecated. */
+extern PIN_DEPRECATED_API ADDRINT PIN_FindAlternateAppStack();
 
                                                                   /* DO NOT EDIT */
 extern VOID CALLBACK_SetExecutionOrder(PIN_CALLBACK callback, CALL_ORDER order);
@@ -279,6 +273,9 @@ typedef enum
 extern VOID PIN_SetSmcSupport(SMC_ENABLE_DISABLE_TYPE enable_disable);
 
                                                                   /* DO NOT EDIT */
+extern PIN_CALLBACK PIN_AddProbesInsertedFunction( PROBES_INSERTED_CALLBACK fun, VOID *val );
+
+                                                                  /* DO NOT EDIT */
 enum FPOINT
 {
     FPOINT_BEFORE,          ///< Call-back in parent, just before fork
@@ -352,10 +349,27 @@ extern VOID PIN_StartProgram(PIN_CONFIGURATION_INFO options);
 extern VOID PIN_StartProgramProbed();
 
                                                                   /* DO NOT EDIT */
-extern const std::string& PIN_Version();
+extern MESSAGE_TYPE MessageTypeLogProbe;
+
+                                                                  /* DO NOT EDIT */
+extern MESSAGE_TYPE MessageTypeLogBuffer;
+
+                                                                  /* DO NOT EDIT */
+extern MESSAGE_TYPE MessageTypeLogUnwind;
+
+                                                                  /* DO NOT EDIT */
+extern MESSAGE_TYPE MessageTypeLogFetchRtnIns;
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* ParseCommandLine is now deprecated. Instead check the return value from PIN_Init. */
+extern PIN_DEPRECATED_API BOOL ParseCommandLine(int xargc, CHAR **xargv);
 
                                                                   /* DO NOT EDIT */
 extern BOOL PIN_Init(INT32 argc, CHAR ** argv);
+
+                                                                  /* DO NOT EDIT */
+extern VOID PIN_SetReplayMode(UINT32 flags);
 
                                                                   /* DO NOT EDIT */
 extern VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...);
@@ -467,6 +481,25 @@ extern VOID PIN_GetPhysicalContextFPState(const PHYSICAL_CONTEXT * pPhysCtxt, VO
 
                                                                   /* DO NOT EDIT */
 extern VOID PIN_RaiseException(const CONTEXT * ctxt, THREADID tid, const EXCEPTION_INFO * pExceptInfo);
+
+                                                                  /* DO NOT EDIT */
+extern BOOL PIN_SpawnApplicationThread(const CONTEXT * ctxt);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* INS_ChangeMemOpToBaseRegisterAddressMode is now deprecated and no longer supported. See INS_RewriteMemoryOperand
+ * for a more powerful replacement.
+ */
+extern PIN_DEPRECATED_API BOOL INS_ChangeMemOpToBaseRegisterAddressMode(INS ins, MEMORY_TYPE mtype, REG newBase);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* INS_RewriteMemoryAddressingToBaseRegisterOnly is now deprecated and no longer supported. See INS_RewriteMemoryOperand
+ * for a more powerful replacement.
+ */
+extern PIN_DEPRECATED_API  BOOL INS_RewriteMemoryAddressingToBaseRegisterOnly(INS ins,
+                                                                                MEMORY_TYPE mtype,
+                                                                                REG newBase);
 
                                                                   /* DO NOT EDIT */
 extern VOID INS_RewriteMemoryOperand(INS ins,

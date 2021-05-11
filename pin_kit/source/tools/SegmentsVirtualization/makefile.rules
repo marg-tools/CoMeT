@@ -99,10 +99,9 @@ set_thread_area3.test: $(OBJDIR)set_thread_area3$(EXE_SUFFIX)
 	$(DIFF) $(OBJDIR)set_thread_area3.out $(OBJDIR)set_thread_area3.pin.out
 	$(RM) $(OBJDIR)set_thread_area3.out $(OBJDIR)set_thread_area3.pin.out
 
-# Unable to run this test when virtual_segments is off since we write to gs which is not allowed in 64 bits
 load_far_pointer.test: $(OBJDIR)load_far_pointer$(EXE_SUFFIX)
 	$(OBJDIR)load_far_pointer$(EXE_SUFFIX) > $(OBJDIR)load_far_pointer.out
-	$(PIN) -xyzzy -virtual_segments 1 -- $(OBJDIR)load_far_pointer$(EXE_SUFFIX) > $(OBJDIR)load_far_pointer.pin.out 2>&1
+	$(PIN) -- $(OBJDIR)load_far_pointer$(EXE_SUFFIX) > $(OBJDIR)load_far_pointer.pin.out 2>&1
 	$(DIFF) $(OBJDIR)load_far_pointer.out $(OBJDIR)load_far_pointer.pin.out
 	$(RM) $(OBJDIR)load_far_pointer.out $(OBJDIR)load_far_pointer.pin.out
     

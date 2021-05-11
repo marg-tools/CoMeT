@@ -20,8 +20,7 @@
 TEST_TOOL_ROOTS := after hello icount1 icount2 icount3 icount4 icount5 context-pc icountcheck sequence sequencecheck reg \
                    brtaken verify bblnull sec callargs malloc new rtnNumIns rtn_create_at_dup \
                    IARGList inscount_per_image imageLoadBackward finiRemove bblFallThrough detach imageLoad \
-                   parse_executed_rtns const_context_at_ins set_df_flag_tool clear_df_flag_tool set_status_flags_tool \
-                   trace_address
+                   parse_executed_rtns const_context_at_ins set_df_flag_tool clear_df_flag_tool set_status_flags_tool
 
 # This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
 TEST_ROOTS := icount1_jit_recursion verify-nocmov check_env jecxz helpmsg helpmsg_nofilename helpmsg_tool \
@@ -41,7 +40,7 @@ TOOL_ROOTS := segv probe traceusage rtn_insert_call_probed tracecount smc_check 
 SA_TOOL_ROOTS :=
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := foobar jecxz check_env trace_address_app empty_str_app
+APP_ROOTS := foobar jecxz check_env
 
 # This defines any additional object files that need to be compiled.
 OBJECT_ROOTS := jecxz_$(TARGET) df_flag_utils_asm
@@ -93,7 +92,7 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_ROOTS += launcher_mac helpmsg_app helpmsg_app_nofilename
     TOOL_ROOTS += launcher_tool
@@ -123,9 +122,16 @@ ifneq ($(KIT),1)
     APP_ROOTS := $(filter-out launcher_app, $(APP_ROOTS))
 endif
 
+# For check_env see Mantis 3077.
 ifeq ($(TARGET_OS),windows)
-    # For check_env see Mantis 3077.
     TEST_ROOTS := $(filter-out check_env, $(TEST_ROOTS))
+    ifeq ($(TARGET),intel64)
+        ifeq ($(VisualStudioVersion),15.0)
+            # See Mantis 4213
+            TEST_TOOL_ROOTS := $(filter-out context-pc, $(TEST_TOOL_ROOTS))
+            TEST_ROOTS := $(filter-out on_stack_context_pc, $(TEST_ROOTS))
+        endif
+    endif
     # See Mantis 4468
     ifeq ($(ICC),1)
         TEST_ROOTS := $(filter-out test_ebx_in_exceptions, $(TEST_ROOTS))
@@ -137,7 +143,7 @@ endif
 # See mantis 4439
 # Disabled for libc 2.26
 ifeq ($(TARGET_OS),linux)
-    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion ge 2.26)
+    LIBC_VERSION_GE_2_26 := $(shell $(TOOLS_ROOT)/Utils/testLibcVersion 2.26)
     ifeq ($(LIBC_VERSION_GE_2_26),1)
         TEST_TOOL_ROOTS := $(filter-out ifuncmemcpy, $(TEST_TOOL_ROOTS))
     endif
@@ -444,18 +450,6 @@ helpmsg_app_nofilename.test: | $(OBJDIR)
 	$(QGREP) "E:  missing argument for -logfile" pin.log
 	$(RM) $(OBJDIR)$(@:.test=.out) pin.log
 
-trace_address.test: $(OBJDIR)trace_address$(PINTOOL_SUFFIX) $(OBJDIR)trace_address_app$(EXE_SUFFIX)
-	$(PIN) -t $(OBJDIR)trace_address$(PINTOOL_SUFFIX) -o $(OBJDIR)trace_address_tool.out -- \
-	  $(OBJDIR)trace_address_app$(EXE_SUFFIX) > $(OBJDIR)trace_address_app.out
-	$(TR) '\t' '\n' <$(OBJDIR)trace_address_tool.out | $(SORT) > $(OBJDIR)trace_address_tool.out.tmp 
-	$(TR) '\t' '\n' <$(OBJDIR)trace_address_app.out | $(SORT) > $(OBJDIR)trace_address_app.out.tmp 
-	$(CMP) $(OBJDIR)trace_address_tool.out.tmp $(OBJDIR)trace_address_app.out.tmp 
-	$(RM) $(OBJDIR)trace_address_tool.out.tmp $(OBJDIR)trace_address_app.out.tmp 
-	$(RM) $(OBJDIR)trace_address_tool.out $(OBJDIR)trace_address_app.out
-
-# invoke the test application with empty argument (test app checks argv[2] to be empty)
-empty_str.test: $(OBJDIR)empty_str_app$(EXE_SUFFIX)
-	$(PIN) -- $(OBJDIR)empty_str_app$(EXE_SUFFIX) "A" "" "B" > $(OBJDIR)empty_str_app.out
 
 ##############################################################
 #
@@ -553,13 +547,6 @@ $(OBJDIR)rep_ip_at_ipoint_after_app_unix$(EXE_SUFFIX): rep_ip_at_ipoint_after_ap
 
 $(OBJDIR)jecxz$(EXE_SUFFIX): $(OBJDIR)jecxz_$(TARGET)$(OBJ_SUFFIX)
 	$(LINKER) $(APP_LDFLAGS_LINK_ASM) $(LINK_EXE)$@ $(PIE) $<
-
-$(OBJDIR)trace_address_app$(EXE_SUFFIX): trace_address_app.cpp 
-	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(DBG_INFO_CXX_ALWAYS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) \
-	  $(DBG_INFO_LD_ALWAYS) $(APP_LIBS)
-
-$(OBJDIR)empty_str_app$(EXE_SUFFIX): empty_str_app.c
-	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT)
 
 ###### Special objects' build rules ######
 

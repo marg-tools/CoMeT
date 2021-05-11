@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component private header
 
@@ -110,18 +97,20 @@ typedef UINT64  ANYADDR;
  * which means that the ADDRDELTA which is signed may overflow.
  */
 #if defined(TARGET_IA32)
-
 typedef UINT32 ADDRINT;
+// typedef int INT32;
 typedef INT32 ADDRDELTA;
 #define ADDRINT_SIZE_IN_BITS 32
-#define STACK_WORD_SIZE 4
+
 
 #elif defined(TARGET_IA32E)
-
 typedef UINT64 ADDRINT;
 typedef INT64 ADDRDELTA;
 #define ADDRINT_SIZE_IN_BITS 64
-#define STACK_WORD_SIZE 8
+
+#elif defined(TARGET_DOXYGEN)
+typedef xxx ADDRINT;
+typedef xxx ADDRDELTA;
 
 #else
 #error "Unsupported target architecture"
@@ -197,11 +186,6 @@ typedef ADDRINT OS_EVENT;
  * The size of the memory cache line in a single core.
  */
 #define CPU_MEMORY_CACHELINE_SIZE 64
-
-/*! @ingroup OS_APIS_TYPES
- * The size of the file name buffer.
- */
-#define FILENAME_BUF_SIZE 1024
 
 #endif // ASM_ONLY
 

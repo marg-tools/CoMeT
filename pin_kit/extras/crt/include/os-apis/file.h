@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -43,29 +30,20 @@ typedef enum
     OS_FILE_OPEN_TYPE_CLOSE_ON_EXEC                   = (1<<8)   // Close on exec (Unix systems only)
 } OS_FILE_OPEN_TYPE;
 
-/*! @ingroup OS_APIS_FILE
- * File access permission modes (not all enums apply in Windows)
- */
-enum OS_FILE_PERMISSION
-{
-    OS_FILE_PERMISSION_TYPE_EXECUTE_OTHERS       = 0001, // 0x1
-    OS_FILE_PERMISSION_TYPE_WRITE_OTHERS         = 0002, // 0x2
-    OS_FILE_PERMISSION_TYPE_READ_OTHERS          = 0004, // 0x4
-    OS_FILE_PERMISSION_TYPE_ALL_OTHERS           = 0007, // 0x7
-    OS_FILE_PERMISSION_TYPE_EXECUTE_GROUP        = 0010, // 0x8
-    OS_FILE_PERMISSION_TYPE_WRITE_GROUP          = 0020, // 0x10
-    OS_FILE_PERMISSION_TYPE_READ_GROUP           = 0040, // 0x20
-    OS_FILE_PERMISSION_TYPE_ALL_GROUP            = 0070, // 0x38
-    OS_FILE_PERMISSION_TYPE_EXECUTE_USER         = 0100, // 0x40
-    OS_FILE_PERMISSION_TYPE_WRITE_USER           = 0200, // 0x80
-    OS_FILE_PERMISSION_TYPE_READ_USER            = 0400, // 0x100
-    OS_FILE_PERMISSION_TYPE_ALL_USER             = 0700, // 0x1C0
-};
 
 /*! @ingroup OS_APIS_FILE
- * Bit-mask of OS_FILE_PERMISSION's
+ * File permission modes
  */
-typedef INT OS_FILE_PERMISSION_TYPE;
+typedef enum
+{
+    OS_FILE_PERMISSION_TYPE_READ                 = (1<<0),
+    OS_FILE_PERMISSION_TYPE_WRITE                = (1<<1),
+    OS_FILE_PERMISSION_TYPE_EXECUTE              = (1<<2)
+} OS_FILE_PERMISSION_TYPE;
+
+#define OS_APIS_FILE_PERMISSION_TYPE_ALL (OS_FILE_PERMISSION_TYPE_READ | \
+                                          OS_FILE_PERMISSION_TYPE_WRITE| \
+                                          OS_FILE_PERMISSION_TYPE_EXECUTE)
 
 /*! @ingroup OS_APIS_FILE
  * File seek modes
@@ -122,10 +100,10 @@ typedef enum
  *      @b fd    - Assigned with the file descriptor\n
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
-OS_RETURN_CODE OS_OpenFD(const CHAR* path, INT flags, OS_FILE_PERMISSION_TYPE mode, NATIVE_FD* fd);
+OS_RETURN_CODE OS_OpenFD(const CHAR* path, INT flags, INT mode, NATIVE_FD* fd);
 
 
 /*! @ingroup OS_APIS_FILE
@@ -142,7 +120,7 @@ OS_RETURN_CODE OS_OpenFD(const CHAR* path, INT flags, OS_FILE_PERMISSION_TYPE mo
  *      @b size     Assigned with the number of bytes successfully written\n
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_WriteFD(NATIVE_FD fd, const VOID *buffer, USIZE *count);
@@ -163,7 +141,7 @@ OS_RETURN_CODE OS_WriteFD(NATIVE_FD fd, const VOID *buffer, USIZE *count);
  *      @b buffer   Contains @b count bytes that were read from @b fd \n
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_ReadFD(NATIVE_FD fd, USIZE *count, VOID *buffer);
@@ -185,7 +163,7 @@ OS_RETURN_CODE OS_ReadFD(NATIVE_FD fd, USIZE *count, VOID *buffer);
  *      @b offset    - Assigned with the number of bytes successfully read\n
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_SeekFD(NATIVE_FD fd, INT whence, INT64 *offset);
@@ -200,7 +178,7 @@ OS_RETURN_CODE OS_SeekFD(NATIVE_FD fd, INT whence, INT64 *offset);
  * @retval     OS_RETURN_CODE_FILE_CLOSE_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_CloseFD(NATIVE_FD fd);
@@ -214,7 +192,7 @@ OS_RETURN_CODE OS_CloseFD(NATIVE_FD fd);
  * @retval     OS_RETURN_CODE_FILE_DELETE_FAILED If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_DeleteFile(const CHAR* name);
@@ -244,7 +222,7 @@ OS_RETURN_CODE OS_FlushFD(NATIVE_FD fd);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetFDAttributes(NATIVE_FD fd, OS_FILE_ATTRIBUTES *attr);
@@ -263,7 +241,7 @@ OS_RETURN_CODE OS_GetFDAttributes(NATIVE_FD fd, OS_FILE_ATTRIBUTES *attr);
  * On Unix, will provide the user (not group/other) permissions.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_FilePermissionsFD(NATIVE_FD fd, OS_FILE_PERMISSION_TYPE *permissions);
@@ -278,7 +256,7 @@ OS_RETURN_CODE OS_FilePermissionsFD(NATIVE_FD fd, OS_FILE_PERMISSION_TYPE *permi
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_FileSizeFD(NATIVE_FD fd, USIZE* size);
@@ -293,7 +271,7 @@ OS_RETURN_CODE OS_FileSizeFD(NATIVE_FD fd, USIZE* size);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Cwd(CHAR* cwd, INT len);
@@ -310,7 +288,7 @@ OS_RETURN_CODE OS_Cwd(CHAR* cwd, INT len);
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Chdir(const CHAR* dir, CHAR* cwd, INT len);
@@ -325,7 +303,7 @@ OS_RETURN_CODE OS_Chdir(const CHAR* dir, CHAR* cwd, INT len);
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_OpenDirFD(const CHAR* name, NATIVE_FD* fd);
@@ -341,10 +319,10 @@ OS_RETURN_CODE OS_OpenDirFD(const CHAR* name, NATIVE_FD* fd);
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
-OS_RETURN_CODE OS_MkDir(const CHAR* name, OS_FILE_PERMISSION_TYPE mode);
+OS_RETURN_CODE OS_MkDir(const CHAR* name, INT mode);
 
 /*! @ingroup OS_APIS_FILE
  * Deletes a directory.
@@ -355,7 +333,7 @@ OS_RETURN_CODE OS_MkDir(const CHAR* name, OS_FILE_PERMISSION_TYPE mode);
  * @retval     OS_RETURN_CODE_FILE_DELETE_FAILED If the operation failed.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_DeleteDirectory(const CHAR* name);
@@ -378,7 +356,7 @@ OS_RETURN_CODE OS_DeleteDirectory(const CHAR* name);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_IsConsoleFD(NATIVE_FD fd, INT* isConsole);
@@ -399,7 +377,7 @@ OS_RETURN_CODE OS_IsConsoleFD(NATIVE_FD fd, INT* isConsole);
  *      @b buffer    - Contains @b count bytes that were read from @b fd \n
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_ReadDirectoryFD(NATIVE_FD fd, USIZE* count, VOID* buffer);
@@ -415,7 +393,7 @@ OS_RETURN_CODE OS_ReadDirectoryFD(NATIVE_FD fd, USIZE* count, VOID* buffer);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetFDAccessMode(NATIVE_FD fd, OS_FILE_OPEN_TYPE* mode);
@@ -433,7 +411,7 @@ OS_RETURN_CODE OS_GetFDAccessMode(NATIVE_FD fd, OS_FILE_OPEN_TYPE* mode);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_ReadLink(const CHAR* path, CHAR* buf, USIZE* size);
@@ -448,7 +426,7 @@ OS_RETURN_CODE OS_ReadLink(const CHAR* path, CHAR* buf, USIZE* size);
  * @retval     OS_RETURN_CODE_FILE_QUERY_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetFileAttributes(const CHAR* path, OS_FILE_ATTRIBUTES* attr);
@@ -463,7 +441,7 @@ OS_RETURN_CODE OS_GetFileAttributes(const CHAR* path, OS_FILE_ATTRIBUTES* attr);
  * @retval     OS_RETURN_CODE_FILE_OPERATION_FAILED If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_RenameFile(const CHAR* oldPath, const CHAR* newPath);
@@ -499,7 +477,7 @@ OS_RETURN_CODE OS_FileUniqueID(NATIVE_FD fd, OS_FILE_UNIQUE_ID* uniqueId);
  * @retval     OS_RETURN_CODE_FILE_OPERATION_FAILED If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_DuplicateFD(NATIVE_FD fd, BOOL_T dupCloseOnExec, NATIVE_FD* outFd);
@@ -516,7 +494,7 @@ OS_RETURN_CODE OS_DuplicateFD(NATIVE_FD fd, BOOL_T dupCloseOnExec, NATIVE_FD* ou
  * @retval     OS_RETURN_CODE_FILE_OPERATION_FAILED If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows & Linux & macOS* \n
+ *   @b O/S:   Windows & Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Ftruncate(NATIVE_FD fd, INT64 length);
@@ -529,7 +507,7 @@ OS_RETURN_CODE OS_Ftruncate(NATIVE_FD fd, INT64 length);
  * @param[in]  fd       File descriptor to record.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 void OS_ReportFileOpen(NATIVE_FD fd);
@@ -543,7 +521,7 @@ void OS_ReportFileOpen(NATIVE_FD fd);
  * @param[in]  fd       File descriptor to record.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 void OS_ReportFileClose(NATIVE_FD fd);
@@ -561,7 +539,7 @@ void OS_ReportFileClose(NATIVE_FD fd);
  * @retval     Lowest file descriptor to use.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 NATIVE_FD OS_GetLowestFileDescriptorToUse();
@@ -576,22 +554,23 @@ NATIVE_FD OS_GetLowestFileDescriptorToUse();
  * @param[in,out] fd       File descriptor to relocate and record.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 void OS_RelocateAndReportFileOpen(NATIVE_FD* fd);
 
 /*! @ingroup OS_APIS_FILE
- * Queries whether a certain file descriptor was opened by
- * OS-APIs or not.
+ * Queries whether a certain file descriptor was opened by the thread
+ * (or another thread  sharing the same FDs table) using OS-APIs or not.
  *
  * @param[in]  fd       File descriptor to query.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 BOOL_T OS_WasFileReportedOpen(NATIVE_FD fd);
+
 
 # define OS_APIS_STDERR_FILENAME ((const CHAR*)((ADDRINT)2))
 

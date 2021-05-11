@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #include "os_specific.h"
 #include <libproc.h>
 
@@ -63,44 +82,44 @@ void update_environment(char* base_path)
 
     setenv("PIN_DYLD_RESTORE_REQUIRED", "t", 1);
 
-    base_path32 = appendPath(base_path, "/", "ia32");
-    base_path64 = appendPath(base_path, "/", "intel64");
+    base_path32 = append3(base_path, "/", "ia32");
+    base_path64 = append3(base_path, "/", "intel64");
 
-    extras_path = appendPath(base_path, "/", extras_dir);
-    xed32 = appendPath(extras_path, "/", "xed-ia32");
-    xed64 = appendPath(extras_path, "/", "xed-intel64");
-    xed_runtime_libs32 = appendPath(xed32, "/", lib_dir);
-    xed_runtime_libs64 = appendPath(xed64, "/", lib_dir);
+    extras_path = append3(base_path, "/", extras_dir);
+    xed32 = append3(extras_path, "/", "xed-ia32");
+    xed64 = append3(extras_path, "/", "xed-intel64");
+    xed_runtime_libs32 = append3(xed32, "/", lib_dir);
+    xed_runtime_libs64 = append3(xed64, "/", lib_dir);
 
     /* make pin_libs - required for pin/vm */
-    pin_runtime_libs32 = appendPath(base_path32, "/", pin_runtime_dir);
-    pin_runtime_libs64 = appendPath(base_path64, "/", pin_runtime_dir);
+    pin_runtime_libs32 = append3(base_path32, "/", pin_runtime_dir);
+    pin_runtime_libs64 = append3(base_path64, "/", pin_runtime_dir);
 
-    pincrt_libs32 = appendPath(pin_runtime_libs32, "/", pincrt_lib_dir);
-    pincrt_libs64 = appendPath(pin_runtime_libs64, "/", pincrt_lib_dir);
+    pincrt_libs32 = append3(pin_runtime_libs32, "/", pincrt_lib_dir);
+    pincrt_libs64 = append3(pin_runtime_libs64, "/", pincrt_lib_dir);
 
-    ext_libs32 = appendPath(base_path32, "/", lib_ext_dir);
-    ext_libs64 = appendPath(base_path64, "/", lib_ext_dir);
+    ext_libs32 = append3(base_path32, "/", lib_ext_dir);
+    ext_libs64 = append3(base_path64, "/", lib_ext_dir);
 
     /* make pin_ld_library_path pre-pending pin_libs -- for the VM ultimately */
     ld_library_path = getenv("PIN_VM_DYLD_LIBRARY_PATH");
     pin_ld_library_path = ld_library_path;
 
     /* Add the path which contains XED */
-    pin_ld_library_path = appendPath(xed_runtime_libs32, ":", pin_ld_library_path);
-    pin_ld_library_path = appendPath(xed_runtime_libs64, ":", pin_ld_library_path);
-    new_ld_library_path = appendPath(xed_runtime_libs32, ":", new_ld_library_path);
-    new_ld_library_path = appendPath(xed_runtime_libs64, ":", new_ld_library_path);
+    pin_ld_library_path = append3(xed_runtime_libs32, ":", pin_ld_library_path);
+    pin_ld_library_path = append3(xed_runtime_libs64, ":", pin_ld_library_path);
+    new_ld_library_path = append3(xed_runtime_libs32, ":", new_ld_library_path);
+    new_ld_library_path = append3(xed_runtime_libs64, ":", new_ld_library_path);
 
     /* Add the path which contains the Pin CRT runtime */
-    pin_ld_library_path = appendPath(pincrt_libs32, ":", pin_ld_library_path);
-    pin_ld_library_path = appendPath(pincrt_libs64, ":", pin_ld_library_path);
-    new_ld_library_path = appendPath(pincrt_libs32, ":", new_ld_library_path);
-    new_ld_library_path = appendPath(pincrt_libs64, ":", new_ld_library_path);
+    pin_ld_library_path = append3(pincrt_libs32, ":", pin_ld_library_path);
+    pin_ld_library_path = append3(pincrt_libs64, ":", pin_ld_library_path);
+    new_ld_library_path = append3(pincrt_libs32, ":", new_ld_library_path);
+    new_ld_library_path = append3(pincrt_libs64, ":", new_ld_library_path);
 
     /* Add pindwarf path to PIN tool's library search path */
-    pin_ld_library_path = appendPath(ext_libs32, ":", pin_ld_library_path);
-    pin_ld_library_path = appendPath(ext_libs64, ":", pin_ld_library_path);
+    pin_ld_library_path = append3(ext_libs32, ":", pin_ld_library_path);
+    pin_ld_library_path = append3(ext_libs64, ":", pin_ld_library_path);
 
     /* Set the pin vm library path. */
     r = setenv("PIN_VM_DYLD_LIBRARY_PATH", pin_ld_library_path, overwrite);
@@ -123,18 +142,17 @@ char** build_child_argv(char* base_path, int argc, char** argv, int user_argc,
         char** user_argv)
 {
     char** child_argv = (char**) malloc(sizeof(char*) * (argc + user_argc + 4));
-    if (!child_argv)
-    {
-        abort();
-    }
     int var = 0, user_arg = 0, child_argv_ind = 0;
 
+    check_file(append3(base_path, "/", "ia32/bin/pinbin"));
     /*
-     * All macOS systems support 64 bit. Start with it and change to 32 bit only if needed.
+     * Since 64bit system can run 32bit executables, we run the 32bit pinbin. If this is a 64bit
+     * machine, pinbin will switch to the 64bit version of itself based on the -p64 parameter.
      */
-    child_argv[child_argv_ind++] = appendPath(base_path, "/", "intel64/bin/pinbin");
-    child_argv[child_argv_ind++] = "-p32";
-    child_argv[child_argv_ind++] = appendPath(base_path, "/", "ia32/bin/pinbin");
+    child_argv[child_argv_ind++] = append3(base_path, "/", "ia32/bin/pinbin");
+    child_argv[child_argv_ind++] = "-p64";
+    child_argv[child_argv_ind++] = append3(base_path, "/",
+            "intel64/bin/pinbin");
 
     /* Add the user arguments */
     for (user_arg = 0; user_arg < user_argc; ++user_arg)

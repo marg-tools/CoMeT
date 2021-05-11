@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 /// @file threads.h
@@ -23,8 +10,6 @@
 #ifndef OS_APIS_THREAD_H
 #define OS_APIS_THREAD_H
 
-#define OS_APIS_TLS_SLOT_TLS_AND_STACK_START_ADDRESS 4
-#define OS_APIS_TLS_SLOT_TLS_AND_STACK_SIZE 5
 
 /*! @ingroup OS_APIS_THREAD
  * Create a new thread in the current process.
@@ -42,7 +27,7 @@
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_CreateThread(VOID (*ThreadMainFunction)(VOID*), VOID *ThreadParam,
@@ -58,7 +43,7 @@ OS_RETURN_CODE OS_CreateThread(VOID (*ThreadMainFunction)(VOID*), VOID *ThreadPa
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_ExitThread(NATIVE_TID td);
@@ -75,7 +60,7 @@ OS_RETURN_CODE OS_ExitThread(NATIVE_TID td);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS*\n
+ *   @b O/S:   Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_ThreadExitAndClear(void* stackAddr, ADDRINT stackSize, INT32* dwordToReset);
@@ -90,7 +75,7 @@ OS_RETURN_CODE OS_ThreadExitAndClear(void* stackAddr, ADDRINT stackSize, INT32* 
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_SuspendThread(NATIVE_TID td);
@@ -105,7 +90,7 @@ OS_RETURN_CODE OS_SuspendThread(NATIVE_TID td);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_ResumeThread(NATIVE_TID td);
@@ -120,7 +105,7 @@ OS_RETURN_CODE OS_ResumeThread(NATIVE_TID td);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_Sleep(INT interval);
@@ -135,7 +120,7 @@ OS_RETURN_CODE OS_Sleep(INT interval);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_GetTid(NATIVE_TID* id);
@@ -148,7 +133,7 @@ OS_RETURN_CODE OS_GetTid(NATIVE_TID* id);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_Yield(void);
@@ -164,7 +149,7 @@ OS_RETURN_CODE OS_Yield(void);
  * @return      Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_RaiseException(NATIVE_TID td, UINT32 code);

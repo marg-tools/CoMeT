@@ -61,30 +61,23 @@ _STLP_BEGIN_NAMESPACE
 // program; the same applies to cout and wcout, and cerr/clog and
 // wcerr/wclog.
 
-#ifdef _STLP_IMPORT_IOSTREAMS
-#  define _STLP_DECLSPEC_DLL _STLP_IMPORT_DECLSPEC
-#else
-#  define _STLP_DECLSPEC_DLL _STLP_DECLSPEC
-#endif
-
-
-extern _STLP_DECLSPEC_DLL istream cin;
+extern _STLP_DECLSPEC istream cin;
 
 #  ifdef _STLP_REDIRECT_STDSTREAMS
-extern _STLP_DECLSPEC_DLL ofstream cout;
-extern _STLP_DECLSPEC_DLL ofstream cerr;
-extern _STLP_DECLSPEC_DLL ofstream clog;
+extern _STLP_DECLSPEC ofstream cout;
+extern _STLP_DECLSPEC ofstream cerr;
+extern _STLP_DECLSPEC ofstream clog;
 #  else
-extern _STLP_DECLSPEC_DLL ostream cout;
-extern _STLP_DECLSPEC_DLL ostream cerr;
-extern _STLP_DECLSPEC_DLL ostream clog;
+extern _STLP_DECLSPEC ostream cout;
+extern _STLP_DECLSPEC ostream cerr;
+extern _STLP_DECLSPEC ostream clog;
 #  endif
 
 #  ifndef _STLP_NO_WCHAR_T
-extern _STLP_DECLSPEC_DLL wistream wcin;
-extern _STLP_DECLSPEC_DLL wostream wcout;
-extern _STLP_DECLSPEC_DLL wostream wcerr;
-extern _STLP_DECLSPEC_DLL wostream wclog;
+extern _STLP_DECLSPEC wistream wcin;
+extern _STLP_DECLSPEC wostream wcout;
+extern _STLP_DECLSPEC wostream wcerr;
+extern _STLP_DECLSPEC wostream wclog;
 #  endif
 
 _STLP_END_NAMESPACE

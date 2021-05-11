@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -33,7 +20,7 @@ typedef enum _OS_APIS_MUTEX_KIND {
  * This type holds a representation of a mutex.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 typedef struct _OS_APIS_MUTEX_TYPE {
@@ -47,11 +34,11 @@ typedef struct _OS_APIS_MUTEX_TYPE {
 #endif
 } OS_MUTEX_TYPE_IMPL;
 
-typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
+typedef union
 {
     OS_MUTEX_TYPE_IMPL impl;
-    char reserved[2 * CPU_MEMORY_CACHELINE_SIZE];
-}  POST_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) OS_MUTEX_TYPE;
+    char reserved[CPU_MEMORY_CACHELINE_SIZE*2];
+}  ALIGNED_TO(CPU_MEMORY_CACHELINE_SIZE) OS_MUTEX_TYPE;
 
 #ifdef TARGET_WINDOWS
 #define OS_APIS_MUTEX_IMPL_DEPTH_SIMPLE_INITIALIZER {OS_MUTEX_DEPTH_SIMPLE ,(OS_SPINLOCK_TYPE)0, OS_EVENT_INITIALIZER, \
@@ -74,7 +61,7 @@ typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
  * to a simple mutex.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 #define OS_APIS_MUTEX_DEPTH_SIMPLE_INITIALIZER {OS_APIS_MUTEX_IMPL_DEPTH_SIMPLE_INITIALIZER}
@@ -96,7 +83,7 @@ typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
  * Will be initialized before any constuctor will be called.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 #define OS_APIS_MUTEX_DEPTH_RECURSIVE_INITIALIZER {OS_APIS_MUTEX_IMPL_DEPTH_RECURSIVE_INITIALIZER}
@@ -109,7 +96,7 @@ typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
  * @param[in]  lock               The mutex to initialize.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_MutexInit(volatile OS_MUTEX_TYPE *lock);
@@ -122,7 +109,7 @@ void OS_MutexInit(volatile OS_MUTEX_TYPE *lock);
  * @param[in]  lock               The mutex to initialize.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_MutexRecursiveInit(volatile OS_MUTEX_TYPE *lock);
@@ -137,7 +124,7 @@ void OS_MutexRecursiveInit(volatile OS_MUTEX_TYPE *lock);
  * @param[in]  lock               The mutex to destroy.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_MutexDestroy(volatile OS_MUTEX_TYPE *lock);
@@ -148,7 +135,7 @@ void OS_MutexDestroy(volatile OS_MUTEX_TYPE *lock);
  * @param[in]  lock               The mutex to acquire.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_MutexLock(volatile OS_MUTEX_TYPE *lock);
@@ -164,7 +151,7 @@ void OS_MutexLock(volatile OS_MUTEX_TYPE *lock);
  *                                not known (e.g. in a mutex of type OS_MUTEX_DEPTH_SIMPLE).
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 void OS_MutexLockTid(volatile OS_MUTEX_TYPE *lock, NATIVE_TID myTid);
@@ -179,7 +166,7 @@ void OS_MutexLockTid(volatile OS_MUTEX_TYPE *lock, NATIVE_TID myTid);
  * @retval     TRUE               If the mutex was acquired.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexTryLock(volatile OS_MUTEX_TYPE *lock);
@@ -199,7 +186,7 @@ BOOL_T OS_MutexTryLock(volatile OS_MUTEX_TYPE *lock);
  * @retval     TRUE               If the mutex was acquired.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexTryLockTid(volatile OS_MUTEX_TYPE *lock0, NATIVE_TID myTid);
@@ -213,7 +200,7 @@ BOOL_T OS_MutexTryLockTid(volatile OS_MUTEX_TYPE *lock0, NATIVE_TID myTid);
  * @retval     TRUE               If the mutex is locked.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexIsLocked(volatile OS_MUTEX_TYPE *lock);
@@ -230,7 +217,7 @@ BOOL_T OS_MutexIsLocked(volatile OS_MUTEX_TYPE *lock);
  *             FALSE              If the timeout was expired and the mutex can't be acquired during that time.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexTimedLock(volatile OS_MUTEX_TYPE *lock, UINT32 timeoutMillis);
@@ -252,7 +239,7 @@ BOOL_T OS_MutexTimedLock(volatile OS_MUTEX_TYPE *lock, UINT32 timeoutMillis);
  *             FALSE              If the timeout was expired and the mutex can't be acquired during that time.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexTimedLockTid(volatile OS_MUTEX_TYPE *lock0, NATIVE_TID myTid, UINT32 timeoutMillis);
@@ -267,14 +254,14 @@ BOOL_T OS_MutexTimedLockTid(volatile OS_MUTEX_TYPE *lock0, NATIVE_TID myTid, UIN
  * @note The return value of this function is undefined for non-recursive (simple) mutex.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 NATIVE_TID OS_MutexGetOwner(volatile OS_MUTEX_TYPE *lock);
 
 /*! @ingroup OS_APIS_MUTEX
  * Queries the recursion of a recursive mutex. I.e. the number of times that the unlock functions needs to be
- * called before the mutex can be acquired by other thread.
+ * called before the mutex can be acquired by other thread. 
  *
  * @param[in]  lock               The mutex to query.
  *
@@ -284,7 +271,7 @@ NATIVE_TID OS_MutexGetOwner(volatile OS_MUTEX_TYPE *lock);
  *       or 0 if the mutex is unlocked.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 UINT32 OS_MutexGetRecursionLevel(volatile OS_MUTEX_TYPE *lock);
@@ -297,7 +284,7 @@ UINT32 OS_MutexGetRecursionLevel(volatile OS_MUTEX_TYPE *lock);
  * @retval     TRUE               If the mutex was locked and as a result of this call was unlocked.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 BOOL_T OS_MutexUnlock(volatile OS_MUTEX_TYPE *lock);

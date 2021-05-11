@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 
 #include "alarms.H"
 #include "alarm_manager.H"
@@ -20,8 +39,6 @@
 using namespace std;
 using namespace CONTROLLER;
 using namespace CALLSTACK;
-
-/// @cond INTERNAL_DOXYGEN
 
 //*****************************************************************************
 VOID ALARM_ICOUNT::Activate(){
@@ -591,19 +608,8 @@ VOID ALARM_TIMEOUT::Activate(){
 VOID ALARM_TIMEOUT::WaitForTimeout(VOID* v)
 {
     ALARM_TIMEOUT* timeout_alarm = static_cast<ALARM_TIMEOUT*>(v);
-    while (1)
-    {
-        // Wait 100 millisecond till the alarm is armed
-        // Timeout alarm is not relevant to any specific thread so just pick 0.
-        while (!timeout_alarm->_armed[0])
-        {
-            PIN_Sleep(100);
-        }
-
-        PIN_Sleep(timeout_alarm->_seconds_timeout * 1000);
-        timeout_alarm->_timeout_passed = TRUE;
-        break;
-    }
+    PIN_Sleep(timeout_alarm->_seconds_timeout*1000);
+    timeout_alarm->_timeout_passed = TRUE;
 }
 
 VOID ALARM_TIMEOUT::Trace(TRACE trace, VOID* v)
@@ -668,58 +674,3 @@ VOID ALARM_SIGNAL::ContextChangeCallback(
     }
 }
 #endif
-
-//*****************************************************************************
-
-VOID ALARM_IMAGE_LOAD::Activate() 
-{
-    IMG_AddInstrumentFunction(ImageLoad, this);
-}
-
-VOID ALARM_IMAGE_LOAD::ImageLoad(IMG img, VOID* v)
-{
-    // Check if we need to file the signal alarm now for the specific thread 
-    ALARM_IMAGE_LOAD *image_alarm = static_cast<ALARM_IMAGE_LOAD *>(v);
-    const string image_name = IMG_Name(img);
-
-    // Fire alarm if we got the correct image
-    string image_file_name = ExtractFileName(image_name);
-    if (image_file_name.compare(image_alarm->_image_name) == 0)
-    {
-        Fire(image_alarm, NULL, 0, PIN_ThreadId());
-    }
-}
-
-// Find the last directory separator and return everything after that, or the
-// whole string if there is no separator.
-// On Windows we allow either '/' or '\\', since both are accepted by
-// the kernel.
-string ALARM_IMAGE_LOAD::ExtractFileName(const string & fullpath)
-{
-    size_t max_slash = 0;
-    BOOL found_slash = FALSE;
-
-    // Handle Unix slash
-    size_t unix_slash = fullpath.rfind('/');
-    if (unix_slash != string::npos)
-    {
-        max_slash = unix_slash;
-        found_slash = TRUE;
-    }
-
-    // Handle Windows slash
-#if defined (TARGET_WINDOWS)
-    size_t windows_slash = fullpath.rfind('\\');
-    if (windows_slash != string::npos && windows_slash > max_slash)
-    {
-        max_slash = windows_slash;
-        found_slash = TRUE;
-    }
-#endif
-
-    if (found_slash)
-        max_slash++;
-    return fullpath.substr(max_slash);
-}
-
-/// @endcond

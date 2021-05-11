@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 /// @file xed-operand-storage.h
 
@@ -28,7 +46,6 @@ typedef struct xed_operand_storage_s {
     xed_uint8_t asz;
     xed_uint8_t bcrc;
     xed_uint8_t cet;
-    xed_uint8_t cldemote;
     xed_uint8_t df32;
     xed_uint8_t df64;
     xed_uint8_t dummy;
@@ -47,7 +64,6 @@ typedef struct xed_operand_storage_s {
     xed_uint8_t modep55c;
     xed_uint8_t mode_first_prefix;
     xed_uint8_t mpxmode;
-    xed_uint8_t must_use_evex;
     xed_uint8_t needrex;
     xed_uint8_t norex;
     xed_uint8_t no_scale_disp8;
@@ -66,6 +82,7 @@ typedef struct xed_operand_storage_s {
     xed_uint8_t rexx;
     xed_uint8_t sae;
     xed_uint8_t sib;
+    xed_uint8_t skip_osz;
     xed_uint8_t tzcnt;
     xed_uint8_t ubit;
     xed_uint8_t using_default_segment0;
@@ -105,6 +122,7 @@ typedef struct xed_operand_storage_s {
     xed_uint8_t map;
     xed_uint8_t nelem;
     xed_uint8_t scale;
+    xed_uint8_t type;
     xed_uint8_t bcast;
     xed_uint8_t chip;
     xed_uint8_t need_memdisp;

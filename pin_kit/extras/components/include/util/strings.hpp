@@ -1,16 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 // <COMPONENT>: util
 // <FILE-TYPE>: component public header
 
@@ -41,20 +58,6 @@ template<typename T> std::string GetDecString(T val, int width = 0)
 }
 
 /*!
- * Convert a pointer value to a decimal string.
- *
- *  @param[in] val      Pointer value.
- *  @param[in] width    If not zero, "0"'s are prefixed if the
- *                       number has less than \a width digits.
- *
- * @return  String representation of \a val as a decimal integer.
- */
-template<typename T> std::string GetDecString(T * val, int width = 0)
-{
-    return GetDecString(reinterpret_cast<uintptr_t>(val), width);
-}
-
-/*!
  * Convert an integral value to a decimal string.
  *
  *  @param[in] val      Integral value.
@@ -68,56 +71,6 @@ template<typename T> std::wstring GetDecStringW(T val, int width = 0)
     std::wostringstream s;
     s << std::dec << std::setfill(L'0') << std::setw(width) << val;
     return s.str();
-}
-
-/*!
- * Convert a pointer value to a decimal string.
- *
- *  @param[in] val      Pointer value.
- *  @param[in] width    If not zero, "0"'s are prefixed if the
- *                       number has less than \a width digits.
- *
- * @return  String representation of \a val as a decimal integer.
- */
-template<typename T> std::wstring GetDecStringW(T * val, int width = 0)
-{
-    return GetDecStringW(reinterpret_cast<uintptr_t>(val), width);
-}
-
-/*!
- * Convert an integral value to a hex string.
- *
- *  @param[in] val          Integral value.
- *  @param[in] showBase     If TRUE, the string is prefix with "0x".
- *  @param[in] width        If not zero, "0"'s are prefixed if the
- *                           number has less than \a width digits.
- *
- * @return  String representation of \a val as a hex string.
- */
-template<typename T> std::string GetHexString(T val, bool showBase = true,
-    int width = 0)
-{
-    std::ostringstream s;
-    if (showBase)
-        s << "0x";
-    s << std::hex << std::noshowbase << std::setfill('0') << std::setw(width) << val;
-    return s.str();
-}
-
-/*!
- * Convert a pointer value to a hex string.
- *
- *  @param[in] val          Pointer value.
- *  @param[in] showBase     If TRUE, the string is prefix with "0x".
- *  @param[in] width        If not zero, "0"'s are prefixed if the
- *                           number has less than \a width digits.
- *
- * @return  String representation of \a val as a hex string.
- */
-template<typename T> std::string GetHexString(T * val, bool showBase = true,
-    int width = 0)
-{
-    return GetHexString(reinterpret_cast<uintptr_t>(val), showBase, width);
 }
 
 /*!
@@ -141,19 +94,23 @@ template<typename T> std::wstring GetHexStringW(T val, bool showBase = true,
 }
 
 /*!
- * Convert a pointer value to a hex string.
+ * Convert an integral value to a hex string.
  *
- *  @param[in] val          Pointer value.
+ *  @param[in] val          Integral value.
  *  @param[in] showBase     If TRUE, the string is prefix with "0x".
  *  @param[in] width        If not zero, "0"'s are prefixed if the
  *                           number has less than \a width digits.
  *
  * @return  String representation of \a val as a hex string.
  */
-template<typename T> std::wstring GetHexStringW(T * val, bool showBase = true,
+template<typename T> std::string GetHexString(T val, bool showBase = true,
     int width = 0)
 {
-    return GetHexStringW(reinterpret_cast<uintptr_t>(val), showBase, width);
+    std::ostringstream s;
+    if (showBase)
+        s << "0x";
+    s << std::hex << std::noshowbase << std::setfill('0') << std::setw(width) << val;
+    return s.str();
 }
 
 /*!

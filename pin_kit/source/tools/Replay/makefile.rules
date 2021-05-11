@@ -68,10 +68,6 @@ ifeq ($(TARGET_OS),windows)
         ifeq ($(VisualStudioVersion),15.0)
             TEST_TOOL_ROOTS := $(filter-out record_imageload2, $(TEST_TOOL_ROOTS))
         endif
-        # Fails also with MSVC14. Once resolved with MSVC15, try to enable this one too.
-        ifeq ($(VisualStudioVersion),14.0)
-            TEST_TOOL_ROOTS := $(filter-out record_imageload2, $(TEST_TOOL_ROOTS))
-        endif
     endif
 endif
 

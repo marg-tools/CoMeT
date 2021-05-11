@@ -42,7 +42,7 @@ obj-%:
 # In this case, we require that $(OBJDIR) exist, but we don't care if it has changed.
 $(TEST_TOOL_ROOTS:%=%.test) $(TEST_ROOTS:%=%.test): %: | dir
 $(TESTS) $(SANITY): %: | dir
-$(TOOLS) $(TOOLS:%$(PINTOOL_SUFFIX)=%$(OBJ_SUFFIX)) $(SA_TOOLS) $(SA_TOOLS:%$(SATOOL_SUFFIX)=%$(OBJ_SUFFIX)): %: | dir
+$(TOOLS) $(TOOLS:%$(PINTOOL_SUFFIX)=%$(OBJ_SUFFIX)) $(SA_TOOLS) $(SA_TOOLS:%=%$(OBJ_SUFFIX)): %: | dir
 $(APPS) $(OBJECTS) $(DLLS) $(LIBS): %: | dir
 
 ###### Build ######
@@ -120,9 +120,6 @@ $(ATTACH_LAUNCHER):
 
 $(THREAD_APP):
 	$(MAKE) -C $(TOOLS_ROOT)/Utils dir $(OBJDIR)thread_app$(EXE_SUFFIX)
-
-$(INSCOUNT_TOOL):
-	$(MAKE) -C $(TOOLS_ROOT)/ManualExamples dir $(OBJDIR)inscount0$(PINTOOL_SUFFIX)
 
 $(CHECKAVX):
 	$(MAKE) -C $(TOOLS_ROOT)/Utils dir $(OBJDIR)avx_check$(EXE_SUFFIX)

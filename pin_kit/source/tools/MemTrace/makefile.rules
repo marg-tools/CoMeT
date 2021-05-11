@@ -17,7 +17,7 @@
 # This defines tests which run tools of the same name.  This is simply for convenience to avoid
 # defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
 # Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
-TEST_TOOL_ROOTS := memtrace memtrace_simple
+TEST_TOOL_ROOTS := memtrace memtrace_simple traceaddress
 
 # This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
 TEST_ROOTS := memtracemt memtrace_simple_mt
@@ -35,7 +35,7 @@ TOOL_ROOTS :=
 SA_TOOL_ROOTS :=
 
 # This defines all the applications that will be run during the tests.
-APP_ROOTS := thread
+APP_ROOTS := thread traceaddressapp
 
 # This defines any additional object files that need to be compiled.
 OBJECT_ROOTS :=
@@ -68,11 +68,18 @@ endif
 
 # TODO: These tests fail - fix and remove the following:
 
+# See mantis #3715 for why these tests are disabled.
+ifeq ($(TARGET_OS),windows)
+    TEST_TOOL_ROOTS := $(filter-out memtrace_threadpool membuffer_threadpool, $(TEST_TOOL_ROOTS))
+    TEST_ROOTS := $(filter-out memtrace_threadpool_mt membuffer_threadpool_mt, $(TEST_ROOTS))
+endif
+
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
 
 ##############################################################
 #
@@ -98,7 +105,14 @@ membuffer_simple_tid.test: $(OBJDIR)membuffer_simple_tid$(PINTOOL_SUFFIX) $(OBJD
 
 memtrace_simple_mt.test: $(OBJDIR)memtrace_simple$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
 	$(PIN) -t $(OBJDIR)memtrace_simple$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
-
+	
+traceaddress.test: $(OBJDIR)traceaddress$(PINTOOL_SUFFIX) $(OBJDIR)traceaddressapp$(EXE_SUFFIX)
+		$(PIN) -t $(OBJDIR)traceaddress$(PINTOOL_SUFFIX) -o $(OBJDIR)traceaddresstool.out -- $(OBJDIR)traceaddressapp$(EXE_SUFFIX) > $(OBJDIR)traceaddressapp.out
+		tr '\t' '\n' <$(OBJDIR)traceaddresstool.out | $(SORT) > $(OBJDIR)traceaddresstool.out.tmp 
+		tr '\t' '\n' <$(OBJDIR)traceaddressapp.out | $(SORT) > $(OBJDIR)traceaddressapp.out.tmp 
+		$(CMP) $(OBJDIR)traceaddresstool.out.tmp $(OBJDIR)traceaddressapp.out.tmp 
+	   -$(RM) $(OBJDIR)traceaddresstool.out.tmp $(OBJDIR)traceaddressapp.out.tmp $(OBJDIR)traceaddresstool.out $(OBJDIR)traceaddressapp.out
+	
 # The following 4 tests do not support late exit because the tests were not designed
 # to gracefully finish active internal threads at regular exit point.
 membuffer_threadpool_mt.test: $(OBJDIR)membuffer_threadpool$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
@@ -125,7 +139,6 @@ memtrace_threadpool.test: $(OBJDIR)memtrace_threadpool$(PINTOOL_SUFFIX) $(TESTAP
 	$(RM) $(OBJDIR)$(@:.test=.makefile.copy)
 	-$(RM) $(OBJDIR)$(@:.test=.out)
 
-
 ##############################################################
 #
 # Build rules
@@ -142,3 +155,6 @@ $(OBJDIR)thread$(EXE_SUFFIX): thread.c $(THREADLIB)
 
 $(OBJDIR)thread2$(EXE_SUFFIX): thread2.cpp $(THREADLIB) $(OBJDIR)atomic_increment_$(TARGET)$(OBJ_SUFFIX)
 	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)traceaddressapp$(EXE_SUFFIX): traceaddressapp.cpp 
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(DBG_INFO_CXX_ALWAYS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT)  $(DBG_INFO_LD_ALWAYS) $(APP_LIBS)

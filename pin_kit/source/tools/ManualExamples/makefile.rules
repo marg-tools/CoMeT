@@ -58,7 +58,7 @@ ifeq ($(TARGET_OS),linux)
     APP_ROOTS += fork_app follow_child_app1 follow_child_app2 divide_by_zero
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS += fork_jit_tool follow_child_tool strace
     TEST_ROOTS += statica
@@ -68,7 +68,7 @@ endif
 
 # Windows
 ifeq ($(TARGET_OS),windows)
-    TEST_TOOL_ROOTS += w_malloctrace buffer_windows emudiv replacesigprobed dumpargv
+    TEST_TOOL_ROOTS += w_malloctrace buffer_windows emudiv replacesigprobed
     APP_ROOTS += divide_by_zero
 endif
 
@@ -79,14 +79,6 @@ endif
 # See Mantis 4311 for nonstatica
 ifeq ($(TARGET_OS),windows)
     TEST_TOOL_ROOTS := $(filter-out nonstatica, $(TEST_TOOL_ROOTS))
-endif
-
-ifeq ($(TARGET_OS),mac)
-    # See mantis 4670
-    MACOS_VERSION_GE_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion ge 10.14.0)
-    ifeq ($(MACOS_VERSION_GE_1014), 1)
-        TEST_ROOTS := $(filter-out statica, $(TEST_ROOTS))
-    endif
 endif
 
 ###### Define the sanity subset ######
@@ -114,7 +106,7 @@ replacesigprobed.test: $(OBJDIR)replacesigprobed$(PINTOOL_SUFFIX) $(TESTAPP)
 	$(PIN) -t $(OBJDIR)replacesigprobed$(PINTOOL_SUFFIX) \
 	  -- $(TESTAPP) makefile $(OBJDIR)replacesigprobed.makefile.copy > $(OBJDIR)replacesigprobed.out
 	$(DIFF) makefile $(OBJDIR)replacesigprobed.makefile.copy
-	$(EGREP) "NewMalloc|Skip replacing" $(OBJDIR)replacesigprobed.out
+	$(QGREP) "NewMalloc" $(OBJDIR)replacesigprobed.out
 	$(RM) $(OBJDIR)replacesigprobed.makefile.copy $(OBJDIR)replacesigprobed.out
 
 malloc_mt.test: $(OBJDIR)malloc_mt$(PINTOOL_SUFFIX) $(THREAD_APP)
@@ -163,10 +155,6 @@ follow_child_tool.test: $(OBJDIR)follow_child_tool$(PINTOOL_SUFFIX) $(OBJDIR)fol
 	$(PIN) -follow_execv 1 -t $(OBJDIR)follow_child_tool$(PINTOOL_SUFFIX) \
 	  -- $(OBJDIR)follow_child_app1$(EXE_SUFFIX) $(OBJDIR)follow_child_app2$(EXE_SUFFIX)
 
-dumpargv.test: $(OBJDIR)dumpargv$(PINTOOL_SUFFIX) $(THREAD_APP)
-	$(PIN) -error_file '\\isamba\nfs\site\ptl\bistro\log' -t $(OBJDIR)dumpargv$(PINTOOL_SUFFIX) \
-	  -- $(THREAD_APP) > $(OBJDIR)dumpargv.out 2>&1
-	$(RM) $(OBJDIR)dumpargv.out
 
 ##############################################################
 #

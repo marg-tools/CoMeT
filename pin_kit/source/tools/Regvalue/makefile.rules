@@ -88,16 +88,9 @@ ifneq ($(AVX_DEPENDENTS),)
     endif
 endif
 
-# binutils older than 2.21 does not support avx512, disable these tests.
+# Visual Studio 2008 does not support avx, disable these tests.
 ifeq ($(MACHINE_SUPPORTS_AVX_INSTRUCTIONS),Yes)
-    COMPILER_SUPPORTS_AVX = 1
-    ifeq ($(TARGET_OS),linux)
-        ASSEMBLER_LT_2_21 := $(shell $(TOOLS_ROOT)/Utils/testToolVersion `which as` lt 2.21)
-        ifeq ($(ASSEMBLER_LT_2_21),1)
-            COMPILER_SUPPORTS_AVX = 0
-        endif
-    endif
-    ifeq ($(COMPILER_SUPPORTS_AVX), 0)
+    ifeq ($(COMPILER_VERSION),msvc9)
         TEST_TOOL_ROOTS := $(filter-out context_regvalue change_context_regvalue change_context_rflags context_perf \
                                         emu_context_regvalue iarg_reg_reference , $(TEST_TOOL_ROOTS))
         TEST_ROOTS := $(filter-out const_context_regvalue partial_context_regvalue change_partial_context_regvalue \
@@ -105,14 +98,6 @@ ifeq ($(MACHINE_SUPPORTS_AVX_INSTRUCTIONS),Yes)
         APP_ROOTS := $(filter-out regvalue_app, $(APP_ROOTS))
         OBJECT_ROOTS := $(filter-out changeRegs, $(OBJECT_ROOTS))
     endif
-endif
-
-# See Mantis 4788 for change_context_rflags
-ifeq ($(TARGET_OS),windows)
-    TEST_TOOL_ROOTS := $(filter-out change_context_rflags, $(TEST_TOOL_ROOTS))
-endif
-ifeq ($(TARGET_OS),mac)
-    TEST_TOOL_ROOTS := $(filter-out change_context_rflags, $(TEST_TOOL_ROOTS))
 endif
 
 ###### Define the sanity subset ######
@@ -313,7 +298,8 @@ endif
 
 ifeq ($(MACHINE_SUPPORTS_AVX512F_INSTRUCTIONS),Yes)
     ifeq ($(TARGET_OS),windows)
-        DEFINE_USING_AVX512F := /DCONTEXT_USING_AVX512F
+        # See Mantis 4488
+        # DEFINE_USING_AVX512F := /DCONTEXT_USING_AVX512F
     else
         DEFINE_USING_AVX512F := -DCONTEXT_USING_AVX512F
     endif

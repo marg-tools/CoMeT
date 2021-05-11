@@ -9,29 +9,29 @@ from subprocess import *
 
 def main():
     appImage = sys.argv[1]
-    print("Running app: " + appImage)
+    print "Running app: " + appImage
     app=Popen(appImage,stdin=PIPE,stdout=PIPE)
-    pidString = app.stdout.readline().rstrip().decode()
+    pidString = app.stdout.readline().rstrip()
     pat = re.compile("my pid: (\d+)")
     mat = pat.match(pidString)
     if not mat:
-        print("Error in pid line: " + pidString)
+        print "Error in pid line: " + pidString
         sys.exit(1)
     #while this app waits for input we are attaching Pin
     cmd = [sys.argv[2]]
     cmd.extend(['-pid'])
     cmd.extend([mat.group(1)])
     cmd.extend(sys.argv[3:])
-    print("Running Pin: " + " ".join(cmd))
+    print "Running Pin: " + " ".join(cmd)
     Popen(cmd)
-    print("Waiting for few seconds")
+    print "Waiting for few seconds"
     time.sleep(5) #waiting for Pin to attach
     #sending input to app in order to make app finish running
-    print("Continuing app")
-    (stdoutdata, stderrdata) = app.communicate(b'start')
+    print "Continuing app"
+    (stdoutdata, stderrdata) = app.communicate('start')
     app.wait()
-    print("App exited")
-    print(stdoutdata)
+    print "App exited"
+    print stdoutdata
 
 if __name__ == "__main__":
     main()

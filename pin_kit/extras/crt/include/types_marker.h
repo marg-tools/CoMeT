@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component private header
 
@@ -120,24 +107,19 @@
 #endif
 
 /*
- UNUSED         - Designates possibly unused variable
- PRE_ALIGNTO    - Designates type of variable that should be aligned to a specific alignment.
-                    This should precede the type declaration.
-                    One should use both PRE_ALIGNTO and POST_ALIGNTO (below) to ensure proper alignment on all operating systems.
- POST_ALIGNTO   - Designates type of variable that should be aligned to a specific alignment.
-                    This should follow the type declaration
-                    One should use both PRE_ALIGNTO (above) and POST_ALIGNTO to ensure proper alignment on all operating systems.
- NORETURN       - Designates function that never returns
- REGPARM        - Designates function whose first arguments are passed in registers instead of on the stack.
-                    The registers used to pass arguments are compiler-dependent, for example:
-                    GCC: EAX, EDX, and ECX
-                    MS:  ECX and EDX
+ UNUSED     - designates possibly unused variable
+ ALIGNED_TO - designates type of variable that should be aligned to a specific alignment.
+ NORETURN   - designates function that never returns
+ REGPARM    - on x86, designates function whose first arguments are passed in registers
+              instead of on the stack.
+              The registers used to pass arguments are compiler-dependent:
+              GCC: EAX, EDX, and ECX
+              MS:  ECX and EDX
 */
 #if defined(PIN_GNU_COMPATIBLE)
 
 #define UNUSED __attribute__ ((__unused__))
-#define PRE_ALIGNTO(c)
-#define POST_ALIGNTO(c) __attribute__ ((aligned(c)))
+#define ALIGNED_TO(c) __attribute__ ((aligned(c)))
 #define NORETURN __attribute__ ((noreturn))
 #define REGPARM __attribute__ ((regparm (3)))
 #define NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
@@ -145,8 +127,7 @@
 #elif defined(PIN_MS_COMPATIBLE)
 
 #define UNUSED
-#define PRE_ALIGNTO(c) __declspec(align(c))
-#define POST_ALIGNTO(c)
+#define ALIGNED_TO(c) __declspec ( align(c) )
 #define NORETURN __declspec(noreturn)
 #define REGPARM __fastcall
 #define NO_SANITIZE_ADDRESS
@@ -240,28 +221,9 @@
 #endif
 
 #if defined(TARGET_WINDOWS)
-  /* Defines global pointer to an object of specified type.
-     The pointer is considered either exported as data object or imported depending on VAR_EXPORTED.
-     The name of pointer is created with prefix of Import Address Table entry.
-     This way all references to the pointer in all kit images use the same name
-     regardless of export / import status.
-     When exported, the pointer is statically initialized with specified value.
-     Note: to become exported a separate linker directive should be provided.
-     It is expected (but not validated) only one exported pointer is defined in whole kit.
-  */
-  #if defined(VAR_EXPORTED)
-    #if defined(TARGET_IA32)
-      #define GLOBALDLLCVAR(type,name,val) GLOBALCVAR type name = val; \
-                                     GLOBALCVAR __declspec( selectany ) type * _imp__##name = &name
-    #else
-      #define GLOBALDLLCVAR(type,name,val) GLOBALCVAR type name = val; \
-                                     GLOBALCVAR __declspec( selectany ) type * __imp_##name = &name
-    #endif
-  #else
-    #define GLOBALDLLCVAR(type,name,val) GLOBALCVAR __declspec( dllimport ) type name
-  #endif
+#define GLOBALDLLCVAR(type,name,val) GLOBALCVAR __declspec( dllexport ) type name = val
 #else
-  #define GLOBALDLLCVAR(type,name,val) GLOBALCVAR type name; \
+#define GLOBALDLLCVAR(type,name,val) GLOBALCVAR type name; \
                                      type name = val
 #endif
 

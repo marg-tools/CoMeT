@@ -1,14 +1,32 @@
 /*BEGIN_LEGAL 
-Copyright 2002-2019 Intel Corporation.
+Intel Open Source License 
 
-This software and the related documents are Intel copyrighted materials, and your
-use of them is governed by the express license under which they were provided to
-you ("License"). Unless the License provides otherwise, you may not use, modify,
-copy, publish, distribute, disclose or transmit this software or the related
-documents without Intel's prior written permission.
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-This software and the related documents are provided as is, with no express or
-implied warranties, other than those that are expressly stated in the License.
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 /// @file xed-reg-class-enum.h
 
@@ -18,33 +36,6 @@ END_LEGAL */
 #if !defined(XED_REG_CLASS_ENUM_H)
 # define XED_REG_CLASS_ENUM_H
 #include "xed-common-hdrs.h"
-#define XED_REG_CLASS_INVALID_DEFINED 1
-#define XED_REG_CLASS_BNDCFG_DEFINED 1
-#define XED_REG_CLASS_BNDSTAT_DEFINED 1
-#define XED_REG_CLASS_BOUND_DEFINED 1
-#define XED_REG_CLASS_CR_DEFINED 1
-#define XED_REG_CLASS_DR_DEFINED 1
-#define XED_REG_CLASS_FLAGS_DEFINED 1
-#define XED_REG_CLASS_GPR_DEFINED 1
-#define XED_REG_CLASS_GPR16_DEFINED 1
-#define XED_REG_CLASS_GPR32_DEFINED 1
-#define XED_REG_CLASS_GPR64_DEFINED 1
-#define XED_REG_CLASS_GPR8_DEFINED 1
-#define XED_REG_CLASS_IP_DEFINED 1
-#define XED_REG_CLASS_MASK_DEFINED 1
-#define XED_REG_CLASS_MMX_DEFINED 1
-#define XED_REG_CLASS_MSR_DEFINED 1
-#define XED_REG_CLASS_MXCSR_DEFINED 1
-#define XED_REG_CLASS_PSEUDO_DEFINED 1
-#define XED_REG_CLASS_PSEUDOX87_DEFINED 1
-#define XED_REG_CLASS_SR_DEFINED 1
-#define XED_REG_CLASS_TMP_DEFINED 1
-#define XED_REG_CLASS_X87_DEFINED 1
-#define XED_REG_CLASS_XCR_DEFINED 1
-#define XED_REG_CLASS_XMM_DEFINED 1
-#define XED_REG_CLASS_YMM_DEFINED 1
-#define XED_REG_CLASS_ZMM_DEFINED 1
-#define XED_REG_CLASS_LAST_DEFINED 1
 typedef enum {
   XED_REG_CLASS_INVALID,
   XED_REG_CLASS_BNDCFG,

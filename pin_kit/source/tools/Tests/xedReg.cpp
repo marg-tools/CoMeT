@@ -1,31 +1,45 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*! @file
  *  Check how many instructions use EAX when it contains 0, using xed APIs.
- *  The purpose of this test is to check INS_XedExactMapToPinReg and INS_XedExactMapFromPinReg
- *  APIs.
+ *  The purpose of this test is to check INS_XedExactMapToPinReg API.
  */
 
 #include <iostream>
-#include <assert.h>
 #include "pin.H"
-
 extern "C" {
 #include "xed-interface.h"
 }
 
-using std::string;
-using std::endl;
-using std::cout;
+using namespace std;
 
 UINT32 eaxIsZeroCount = 0;
 
@@ -47,21 +61,17 @@ VOID InstrumentOperand(
         xed_reg_enum_t xedreg = xed_decoded_inst_get_reg(xedd, operand_name);
         xed_reg_class_enum_t reg_class =  xed_reg_class(xedreg);
         if (reg_class == XED_REG_CLASS_GPR) {
-            xed_reg_enum_t fullXedreg = xed_get_largest_enclosing_register(xedreg);
-            xed_reg_enum_t fullXedregTarget;
+            xed_reg_enum_t fullreg = xed_get_largest_enclosing_register(xedreg);
+            xed_uint32_t reg;
 #if defined(TARGET_IA32)
-            fullXedregTarget = static_cast<xed_reg_enum_t>(fullXedreg - XED_REG_GPR64_FIRST + XED_REG_GPR32_FIRST);
+            reg = fullreg - XED_REG_GPR64_FIRST + XED_REG_GPR32_FIRST;
 #else
-            fullXedregTarget = fullXedreg;
+            reg = fullreg;
 #endif
-            REG pinreg  = INS_XedExactMapToPinReg(fullXedregTarget);
-            //check INS_XedExactMapFromPinReg
-            xed_reg_enum_t xed_reg2=INS_XedExactMapFromPinReg(pinreg);
-            ASSERTX(xed_reg2 == fullXedregTarget);
-
+            REG pinreg  = INS_XedExactMapToPinReg(reg);
+                
             if (pinreg == REG_EAX)
                 INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)CountIfZero, IARG_REG_VALUE, REG_EAX, IARG_END);
-
         }
      }
 }

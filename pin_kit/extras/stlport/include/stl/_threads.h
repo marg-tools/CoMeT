@@ -1,19 +1,4 @@
 /*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-/*
  * Copyright (c) 1997-1999
  * Silicon Graphics Computer Systems, Inc.
  *
@@ -52,7 +37,7 @@
 #  include <stl/_cstdlib.h>
 #endif
 
-// On SUN and macOS* gcc, zero-initialization works just fine...
+// On SUN and Mac OS X gcc, zero-initialization works just fine...
 #if defined (__sun) || (defined (__GNUC__) && defined(__APPLE__))
 #  define _STLP_MUTEX_INITIALIZER
 #endif

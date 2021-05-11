@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -9,7 +9,7 @@ typedef enum
     KNOB_MODE_INVALID,
     KNOB_MODE_COMMENT,    ///< comment for knob family
     KNOB_MODE_WRITEONCE,  ///< single value, single write
-    KNOB_MODE_OVERWRITE,  ///< single value, overwrite, unless the user set the knob from command line.
+    KNOB_MODE_OVERWRITE,  ///< single value, overwrite 
     KNOB_MODE_ACCUMULATE, ///< single value, update 
     KNOB_MODE_APPEND,     ///< list of values, append
     KNOB_MODE_LAST
@@ -19,19 +19,19 @@ typedef enum
 template<class TYPE> class KNOBVALUE
 {
   private:
-    TYPE _value;                ///< typed representation
-    std::string _value_string;  ///< string representation
-    KNOBVALUE<TYPE> * _next;    ///< list pointer
+    TYPE _value;             ///< typed representation
+    string _value_string;    ///< string representation
+    KNOBVALUE<TYPE> * _next; ///< list pointer
 
     // Disable compiler generated copy c'tors
-    KNOBVALUE(const KNOBVALUE &) : _next(NULL) { PIN_ERROR("KNOBVALUE should not be copied"); }
+    KNOBVALUE(const KNOBVALUE &) { PIN_ERROR("KNOBVALUE should not be copied"); }
     // Disable compiler generated assignment operator
     KNOBVALUE& operator=(const KNOBVALUE &) { PIN_ERROR("KNOBVALUE should not be copied"); };
 
   public:
     // conversion methods
-    STATIC TYPE FromString(const std::string & strvalue);
-    STATIC std::string ToString(const TYPE & value, const std::string & origString)
+    STATIC TYPE FromString(const string & strvalue);
+    STATIC string ToString(const TYPE & value, const string & origString)
     {
         return origString;
     }
@@ -43,30 +43,30 @@ template<class TYPE> class KNOBVALUE
     }
 
     // type name accessor
-    STATIC const std::string Type();
+    STATIC const string Type();
 
     //
     // constructors/destructors
     //
-    KNOBVALUE() : _value(TYPE()), _next(NULL) {}
+    KNOBVALUE() : _next(NULL) {}
 
     //
     // accessors
     //
     const TYPE & Value() const { return _value; }
-    const std::string & ValueString() const { return _value_string; }
+    const string & ValueString() const { return _value_string; }
 
     KNOBVALUE * Next() const { return _next; }
 
     //
     // modifiers
     //
-    VOID Overwrite(const std::string & valstring)
+    VOID Overwrite(const string & valstring)
     {
         _value = FromString(valstring);
         _value_string = ToString(_value, valstring);
     }
-    VOID Accumulate(const std::string & valstring)
+    VOID Accumulate(const string & valstring)
     {
         Accumulate(_value, FromString(valstring));
         _value_string = ToString(_value, valstring);
@@ -97,7 +97,7 @@ template<class TYPE> class KNOBVALUE_LIST
     //
     // constructors/destructors
     //
-    KNOBVALUE_LIST(const std::string & valstring, BOOL hasDefault) : _numNodes(0)
+    KNOBVALUE_LIST(const string & valstring, BOOL hasDefault) : _numNodes(0)
     {
         if (hasDefault)
         {
@@ -143,17 +143,17 @@ template<class TYPE> class KNOBVALUE_LIST
 
   public:
     UINT32 NumberOfValues() const { return _numNodes; }
-    const std::string & ValueString(const UINT32 index) const { return Node(index)->ValueString(); }
+    const string & ValueString(const UINT32 index) const { return Node(index)->ValueString(); }
     const TYPE & Value(const UINT32 index) const { return Node(index)->Value(); }
     const TYPE & Value() const { return _first.Value(); }
-    const std::string & ValueString() const { return _first.ValueString(); }
+    const string & ValueString() const { return _first.ValueString(); }
 
     //
     // modifiers
     //
-    VOID Overwrite(const std::string & valstring) { _first.Overwrite(valstring); }
-    VOID Accumulate(const std::string & valstring) { _first.Accumulate(valstring); }
-    VOID Append(const std::string & valstring)
+    VOID Overwrite(const string & valstring) { _first.Overwrite(valstring); }
+    VOID Accumulate(const string & valstring) { _first.Accumulate(valstring); }
+    VOID Append(const string & valstring)
     {
         listnode * node;
         if (_numNodes == 0)
@@ -178,14 +178,13 @@ class KNOB_BASE
     STATIC KNOB_BASE *_knob_list;
     STATIC BOOL _parsing_done;
     STATIC BOOL _developer_flags_enabled; // True when xyzzy is used
-    BOOL _set_by_user;  ///< An indicator to whether or not the user gave the knob a value in the command line.
 
   protected:
     KNOB_BASE   *_next;
-    const std::string _family;
-    const std::string _name;
-    const std::string _purpose;
-    const std::string _default_value;
+    const string _family;
+    const string _name;
+    const string _purpose;
+    const string _default_value;
     const KNOB_MODE _mode;
     BOOL  _disabled;
     INT32 _nreads;
@@ -196,8 +195,8 @@ class KNOB_BASE
     // constructors/destructors
     //
     // basic constructor
-    KNOB_BASE(const std::string & myprefix, const std::string & myname, const std::string & myfamily,
-              const std::string & mydefault,const std::string & mypurpose, KNOB_MODE mymode = KNOB_MODE_WRITEONCE);
+    KNOB_BASE(const string & myprefix, const string & myname, const string & myfamily, const string & mydefault,
+              const string & mypurpose, KNOB_MODE mymode = KNOB_MODE_WRITEONCE);
 
     // virtual destructor required due to virtual functions present
     virtual ~KNOB_BASE() {}
@@ -205,15 +204,15 @@ class KNOB_BASE
     //
     // accessors
     //
-    virtual const std::string Type() = 0; // subclass needs to implement this
+    virtual const string Type() = 0; // subclass needs to implement this
 
     KNOB_MODE Mode() const {return _mode;}
 
-    const std::string & Family() const {return _family;}
+    const string & Family() const {return _family;}
 
-    const std::string & Name() const {return _name;}
+    const string & Name() const {return _name;}
 
-    std::string Cmd() const { return ("-" + _name); }
+    string Cmd() const { return ("-" + _name); }
 
     BOOL Enabled() const {return !_disabled;}
 
@@ -224,10 +223,10 @@ class KNOB_BASE
     STATIC UINT32 NumberOfKnobs();
 
     // disable all options with the given family
-    STATIC VOID DisableKnobFamily(const std::string & myfamily);
+    STATIC VOID DisableKnobFamily(const string & myfamily);
 
     // enable all options with the given family
-    STATIC VOID EnableKnobFamily(const std::string & myfamily);
+    STATIC VOID EnableKnobFamily(const string & myfamily);
 
     // Mark that developer flags are used (xyzzy)
     STATIC VOID SetDeveloperFlagsEnabled();
@@ -236,22 +235,22 @@ class KNOB_BASE
     STATIC BOOL WasDeveloperFlagsEnabled();
 
     // disable single options
-    STATIC VOID DisableKnob(const std::string & myname);
+    STATIC VOID DisableKnob(const string & myname);
 
     // enable single options
-    STATIC VOID EnableKnob(const std::string & myname);
+    STATIC VOID EnableKnob(const string & myname);
 
     // print textual summary of all options for help page
-    STATIC std::string StringKnobSummary();
+    STATIC string StringKnobSummary();
 
     // print textual summary of all options for analysis/debugging
-    STATIC std::string StringLongAll();
+    STATIC string StringLongAll();
 
-    STATIC KNOB_BASE * FindKnob(const std::string & name);
+    STATIC KNOB_BASE * FindKnob(const string & name);
 
-    STATIC KNOB_BASE * FindFamily(const std::string & name);
+    STATIC KNOB_BASE * FindFamily(const string & name);
 
-    STATIC KNOB_BASE * FindEnabledKnob(const std::string & name);
+    STATIC KNOB_BASE * FindEnabledKnob(const string & name);
 
     // Calling this method indicates that the command line parsing is done.
     // It is guaranteed that the values of all knobs are consisntent once
@@ -264,36 +263,16 @@ class KNOB_BASE
     int Compare(const KNOB_BASE & k2) const;
 
     // get string representation of value number index
-    virtual const std::string & ValueString(const UINT32 index) const = 0;
+    virtual const string & ValueString(const UINT32 index) const = 0;
 
     // get number of values
     virtual UINT32 NumberOfValues() const = 0;
 
-    /*!
-     * The function operate differently based on the knob's mode:
-     *
-     * KNOB_MODE_WRITEONCE - Set knob's value with the specified value. If the knob was already given a value, exit with PIN_ERROR.
-     * KNOB_MODE_OVERWRITE - Overwrite knob's value with the specified value unless knob was initialized from command line
-     * (knobs which were initialized with a value in the command line by the user are not permitted to be changed).
-     * KNOB_MODE_ACCUMULATE - Add the value to the knob's former value. If the knob wasn't given a value before,
-     * make it the knob's value.
-     * KNOB_MODE_APPEND - Concatenate the value to the knob's value list.
-     *
-     * @return TRUE if the value of the knob got changed, False otherwise.
-     */
-    virtual BOOL AddValue(const std::string & valstring) = 0;
-
-    /// @cond INTERNAL_DOXYGEN
-    /*! @ingroup KNOB
-     * Mark that this knob was set from command line.
-     */
-    VOID TurnOnSetByUser();
-    /// @endcond
-
-    /*! @ingroup KNOB_BASIC
-     *  @return TRUE if the user set the knob from command line, FALSE otherwise.
-     */
-    BOOL SetByUser() const;
+    //
+    // modifiers
+    //
+    // add a new value
+    virtual VOID AddValue(const string & valstring) = 0;
 };
 
                                                                   /* DO NOT EDIT */
@@ -311,43 +290,28 @@ template<class TYPE> class KNOB : public KNOB_BASE
     KNOB& operator=(const KNOB&)  { PIN_ERROR("KNOB should not be copied"); }
 
   public:
-    KNOB(KNOB_MODE mymode, const std::string & myfamily, const std::string & myname,
-         const std::string & mydefault, const std::string & mypurpose, const std::string & myprefix = "")
+    KNOB(KNOB_MODE mymode, const string & myfamily, const string & myname,
+         const string & mydefault, const string & mypurpose, const string & myprefix = "")
     :
         KNOB_BASE(myprefix, myname, myfamily, mydefault, mypurpose, mymode),
         _value_list(mydefault, (mymode != KNOB_MODE_APPEND))
     {}
 
-    /*!
-     * The function operate differently based on the knob's mode:
-     *
-     * KNOB_MODE_WRITEONCE - Set knob's value with the specified value. If the knob was already given a value, exit with PIN_ERROR.
-     *  unless knob was initialized from command line (knobs which are....)
-     * KNOB_MODE_OVERWRITE - Overwrite knob's value with the specified value unless knob was initialized from command line
-     * (knobs which were initialized with a value in the command line by the user are not permitted to be changed).
-     * KNOB_MODE_ACCUMULATE - Add the value to the knob's former value. If the knob wasn't given a value before,
-     * make it the knob's value.
-     * KNOB_MODE_APPEND - Concatenate the value to the knob's value list.
-     *
-     * @return TRUE if the value of the knob got changed, False otherwise.
-     */
-    BOOL AddValue(const std::string & valstring)
+    //
+    // modifiers
+    //
+    // add a new value
+    VOID AddValue(const string & valstring)
     {
         switch (_mode)
         {
           case KNOB_MODE_WRITEONCE:
             // Ignore exact-duplicate values
-            if (!(_nwrites == 0 || _value_list.ValueString() == valstring))
-            {
-                PIN_ERROR("trying to overwrite write-once knob '" + _name + "'\n");
-            }
+            ASSERT(_nwrites == 0 || _value_list.ValueString() == valstring ,
+                   "trying to overwrite write-once knob '" + _name + "'");
 
             // intentional fall-through
           case KNOB_MODE_OVERWRITE:
-            if (SetByUser())
-            {
-                return FALSE;
-            }
             _value_list.Overwrite(valstring);
             break;
 
@@ -360,27 +324,25 @@ template<class TYPE> class KNOB : public KNOB_BASE
             break;
 
           default:
-            ASSERT(false, "unknown mode " + decstr(static_cast<UINT32>(_mode)) + " for knob '" + _name + "'");
+            ASSERT(false,"unknown mode " + decstr(static_cast<UINT32>(_mode)) + " for knob '" + _name + "'");
         }
 
         _nwrites++;
-
-        return TRUE;
     }
 
     //
     // accessors
     //
     // implementation of virtual Type string accessor
-    const std::string Type() { return KNOBVALUE<TYPE>::Type(); }
+    const string Type() { return KNOBVALUE<TYPE>::Type(); }
     // fast accessor for first element
     const TYPE & Value() const { /* too slow _nreads++; */ return _value_list.Value(); }
-    const std::string & ValueString() const { /* too slow _nreads++; */ return _value_list.ValueString(); }
+    const string & ValueString() const { /* too slow _nreads++; */ return _value_list.ValueString(); }
     // implicit conversion from KNOB<TYPE> to (rvalue) const TYPE
     operator TYPE() const { return Value(); }
     // accessor for any elements in value list
     const TYPE & Value(const UINT32 index) { _nreads++; return _value_list.Value(index); }
-    const std::string & ValueString(const UINT32 index) const { return _value_list.ValueString(index); }
+    const string & ValueString(const UINT32 index) const { return _value_list.ValueString(index); }
     UINT32 NumberOfValues() const { return _value_list.NumberOfValues(); }
 };
 
@@ -389,7 +351,7 @@ class KNOB_COMMENT : public KNOB<BOOL>
 {
 
   public:
-    KNOB_COMMENT( const std::string & family, const std::string & purpose) :
+    KNOB_COMMENT( const string & family, const string & purpose) :
         KNOB<BOOL>(KNOB_MODE_COMMENT,family,"","",purpose)
     {}
 
@@ -419,7 +381,7 @@ class ADDRESS_RANGE
         return *this;
     }
 
-    std::string String() const
+    string String() const
     {
         return hexstr(_low) + ":" + hexstr(_high);
     }

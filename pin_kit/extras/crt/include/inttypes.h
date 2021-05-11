@@ -23,13 +23,8 @@
 #include <sys/cdefs.h>
 
 #ifdef __LP64__
-# ifdef __clang__
-#define __PRI_64_prefix "ll"
-#define __PRI_PTR_prefix
-# else
 #define __PRI_64_prefix  "l"
 #define __PRI_PTR_prefix "l"
-# endif
 #else
 #define __PRI_64_prefix "ll"
 #define __PRI_PTR_prefix

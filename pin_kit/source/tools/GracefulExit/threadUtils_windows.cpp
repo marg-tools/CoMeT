@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #include <map>
 #include <cstdio>
 #include <cstdlib>
@@ -16,32 +35,28 @@
 
 using std::map;
 
+HANDLE cancellationPoint;
+
 
 /**************************************************
  * Global variables                               *
  **************************************************/
-static volatile int numOfThreads = 0;
-static map<TidType, HANDLE> handles;
+volatile int numOfThreads = 0;
+map<TidType, HANDLE> handles;
 
 
 /**************************************************
  * Global locks                                   *
  **************************************************/
-static HANDLE printLock;        // This mutex lock is used for synchronizing prints.
-static HANDLE numThreadsLock;   // This mutex lock is used for synchronizing access to numOfThreads.
+CRITICAL_SECTION printLock;          // This lock is used for synchronizing prints.
+CRITICAL_SECTION numThreadsLock;     // This lock is used for synchronizing access to numOfThreads.
 
 
 /**************************************************
  * Static functions declaration                   *
  **************************************************/
-static void GetLock(HANDLE * thelock);
-static void ReleaseLock(HANDLE * thelock);
-static void ErrorExitUnlocked(Results res);
-
-
-
-
-static HANDLE cancellationPoint;
+static void GetLock(CRITICAL_SECTION* thelock);
+static void ReleaseLock(CRITICAL_SECTION* thelock);
 
 
 /**************************************************
@@ -52,8 +67,8 @@ unsigned int GetTid() {
 }
 
 void InitLocks() {
-    printLock = CreateMutex(NULL, FALSE, NULL);
-    numThreadsLock = CreateMutex(NULL, FALSE, NULL);    // Create mutexes without initial ownership.
+    InitializeCriticalSection(&printLock);
+    InitializeCriticalSection(&numThreadsLock);
     cancellationPoint = CreateEvent(NULL, TRUE, FALSE, NULL); // manual reset event
 }
 
@@ -128,13 +143,6 @@ void ErrorExit(Results res) {
     exit(res);
 }
 
-void ErrorExitUnlocked(Results res) {
-    fflush(stderr);
-    fprintf(stderr, "APP ERROR <%d>: %s\n", GetTid(), errorStrings[res].c_str());
-    fflush(stderr);
-    exit(res);
-}
-
 void DoSleep(unsigned int seconds) {
     Sleep(seconds*1000);
 }
@@ -151,15 +159,10 @@ void EnterSafeCancellationPoint() {
 /**************************************************
  * Static functions implementation                *
  **************************************************/
-void GetLock(HANDLE * thelock) {
-    DWORD status = WaitForSingleObject(*thelock, INFINITE);
-    if (status == WAIT_OBJECT_0) return;    // Success.
-    // Do not proceed if status is either WAIT_ABANDONED (thread that owned the mutex was terminated,
-    // current thread takes ownership, but we don't want to recover), or WAIT_FAILED (any other failure).
-    ErrorExitUnlocked(RES_LOCK_FAILED);
+void GetLock(CRITICAL_SECTION* thelock) {
+    EnterCriticalSection(thelock);
 }
 
-void ReleaseLock(HANDLE * thelock) {
-    if (ReleaseMutex(*thelock)) return; // Success.
-    ErrorExitUnlocked(RES_UNLOCK_FAILED);
+void ReleaseLock(CRITICAL_SECTION* thelock) {
+    LeaveCriticalSection(thelock);
 }

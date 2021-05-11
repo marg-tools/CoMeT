@@ -83,11 +83,24 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
-# macOS*
-# Starting from macOS 10.14 clang doesn't support building 32 bits. 
-# Starting from macOS 10.15 32 bit binaries won't be able to run.
-# Starting from clang 11 we build Pin only in 64 bit (since clang 11 don't support 32 bit), therefore it can't run 32 bit 
-# applications. (Therefore we don't run any tests here)
+# OS X*
+ifeq ($(TARGET_OS),mac)
+    ifeq ($(TARGET),intel64)
+        # TODO: child_process_injection_app1 requires /usr/bin/chfn. If this fails during testing, add a check
+        #       to see if it exists and if not, remove the application and the child_process_injection1 test.
+        TEST_TOOL_ROOTS +=
+        TEST_ROOTS += cross_32_64_32 cross_64_32_64 space_$(TARGET_OS) sigchld_cross child_process_injection \
+                      child_process_injection1
+        TOOL_ROOTS += follow_child_tool_dummy child_process_injection_dummy
+        SA_TOOL_ROOTS +=
+        APP_ROOTS += parent_process_$(TARGET_OS)_dummy child_process_$(TARGET_OS)_dummy \
+                     grand_child_process_$(TARGET_OS)_dummy child_process_injection_app_dummy sigchld_app_dummy \
+                     child_process_injection_app1_dummy
+        OBJECT_ROOTS +=
+        DLL_ROOTS +=
+        LIB_ROOTS +=
+    endif
+endif
 
 # Windows
 ifeq ($(TARGET_OS),windows)
@@ -144,6 +157,11 @@ ifeq ($(TARGET_OS),linux)
     endif
 endif
 
+ifeq ($(TARGET_OS),mac)
+    # See Mantis 4402
+    TEST_ROOTS := $(filter-out child_process_injection1, $(TEST_ROOTS))
+endif
+
 # See Mantis 3197
 ifeq ($(TARGET_OS),windows)
     TEST_ROOTS := $(filter-out cross_32_64_early_termination_debugged cross_32_64_early_termination_probed_debugged \
@@ -154,7 +172,7 @@ endif
 # See Mantis #4211
 ifeq ($(TARGET_OS),windows)
     ifeq ($(TARGET),intel64)
-		ifeq ($(MSVCVER_GE_15), 1)
+        ifeq ($(VisualStudioVersion),15.0)
             TEST_ROOTS := $(filter-out cross_32_64_32 cross_64_32_64 cross_32_64_32_probe cross_64_64_32_log cross_32_32_64_probe_log \
                                        cross_32_64_32_sym cross_64_32_64_sym cross_32_64_32_probe_sym cross_64_32_64_probe_sym \
                                        cross_64_32_early_termination cross_64_32_early_termination_probed \
@@ -169,14 +187,6 @@ endif
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
-
-# Disable child_process_injection1 on rhel6 (or lower) - see mantis 4781
-ifeq ($(DIST_NAME_RHEL),1)
-    DIST_VER_LE_6 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion lt 7.0)
-    ifeq ($(DIST_VER_LE_6),1)
-        SANITY_SUBSET := $(filter-out child_process_injection1, $(SANITY_SUBSET))
-    endif
-endif
 
 
 ##############################################################
@@ -208,7 +218,7 @@ child_process_injection.test: $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX) 
 # happens look for a runaway instance of $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX).
 child_process_injection1.test: $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX) $(XOBJDIR)child_process_injection$(PINTOOL_SUFFIX) $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX)
 	$(PIN) -follow_execv 1 -error_file $(OBJDIR)$(@:%.test=%).xml -t64 $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX) \
-	  -t $(XOBJDIR)child_process_injection$(PINTOOL_SUFFIX) -- $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX) /usr/bin/chfn --help \
+	  -t $(XOBJDIR)child_process_injection$(PINTOOL_SUFFIX) -- $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX) \
 	    > $(OBJDIR)$(@:%.test=%).out
 	count=0; \
 	until $(BASHTEST) -e $(OBJDIR)$(@:%.test=%).xml || $(BASHTEST) $$count -gt 60; \
@@ -223,22 +233,7 @@ child_process_injection1.test: $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX)
 	$(QGREP) "Pin can&apos;t be injected to the application" $(OBJDIR)$(@:%.test=%).xml
 	$(QGREP) "since it does not have read and execv access" $(OBJDIR)$(@:%.test=%).xml
 	$(QGREP) "need execute and read access to /proc" $(OBJDIR)$(@:%.test=%).xml
-	$(RM) $(OBJDIR)$(@:%.test=%).out $(OBJDIR)$(@:%.test=%).xml
-	
-# 	This test checks that if an app execvs to an application which pin cannot instrument due to permissions, while followExecv is on, it will run anyways.
-#  To do so we change the owner and permissions of an app so it is owned by root and runs setuid, pin cannot instrument it.
-# We make sure the child exits successfully and prints its message.
-# (4711 == -rws--x--x) 	
-# Note: This test is not a Cross test, but kept here for consistency with child_process_injection1.
-# Note: The roots are defined with '_dummy' as this file overrides the default build rules.
-child_process_injection1_mac.test: $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX) $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX)
-	$(SUDO) $(CHOWN) root $(OBJDIR)setuid_utility$(EXE_SUFFIX)
-	$(SUDO) $(CHMOD) 4711 $(OBJDIR)setuid_utility$(EXE_SUFFIX)
-	$(PIN) -follow_execv 1  -t $(OBJDIR)child_process_injection$(PINTOOL_SUFFIX) -- $(OBJDIR)child_process_injection_app1$(EXE_SUFFIX) $(OBJDIR)setuid_utility$(EXE_SUFFIX) \
-	    > $(OBJDIR)$(@:%.test=%).out
-	$(QGREP) "UtilityOK" $(OBJDIR)$(@:%.test=%).out
-	$(QGREP) "Parent report: Child process exited successfully" $(OBJDIR)$(@:%.test=%).out
-	$(RM) $(OBJDIR)$(@:%.test=%).out
+	$(RM) $(OBJDIR)$(@:%.test=%).out $(OBJDIR)$(@:%.test=%).xml 
 
 cross_32_64_32.test: $(OBJDIR)follow_child_tool$(PINTOOL_SUFFIX) $(XOBJDIR)follow_child_tool$(PINTOOL_SUFFIX) $(XOBJDIR)parent_process_$(TARGET_OS)$(EXE_SUFFIX) $(OBJDIR)child_process_$(TARGET_OS)$(EXE_SUFFIX) $(XOBJDIR)grand_child_process_$(TARGET_OS)$(EXE_SUFFIX)
 	$(PIN) -follow_execv -t64 $(OBJDIR)follow_child_tool$(PINTOOL_SUFFIX) -t $(XOBJDIR)follow_child_tool$(PINTOOL_SUFFIX) \

@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -88,7 +75,7 @@ typedef enum
  *      Windows supports memory allocation on a different process on a single syscall.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_AllocateMemory(NATIVE_PID processId, UINT protectionType,
@@ -126,7 +113,7 @@ OS_RETURN_CODE OS_AllocateMemory(NATIVE_PID processId, UINT protectionType,
  *      Windows supports file mapping on a different process memory space.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_MapFileToMemory(NATIVE_PID processId, UINT protectionType,
@@ -153,7 +140,7 @@ OS_RETURN_CODE OS_MapFileToMemory(NATIVE_PID processId, UINT protectionType,
  *      Windows supports memory deallocation on a different process.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_FreeMemory(NATIVE_PID processId, VOID *base, USIZE size);
@@ -168,7 +155,7 @@ OS_RETURN_CODE OS_FreeMemory(NATIVE_PID processId, VOID *base, USIZE size);
  * @retval     OS_RETURN_CODE_QUERY_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetPageSize(USIZE *size);
@@ -200,7 +187,7 @@ OS_RETURN_CODE OS_GetPageSize(USIZE *size);
  *      Windows supports memory query on a different process memory space.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_QueryMemory(NATIVE_PID processId, VOID *memoryAddr, OS_MEMORY_AT_ADDR_INFORMATION *info);
@@ -229,7 +216,7 @@ OS_RETURN_CODE OS_QueryMemory(NATIVE_PID processId, VOID *memoryAddr, OS_MEMORY_
  *      Windows supports memory protection change on a different process memory space.
  *
  * @par Availability:
- *   - @b O/S:   Windows, Linux & macOS*
+ *   - @b O/S:   Windows, Linux & OS X*
  *   - @b CPU:   All
  */
 OS_RETURN_CODE OS_ProtectMemory(NATIVE_PID processId, VOID *base, USIZE size, UINT newProtectionType);

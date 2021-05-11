@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -102,7 +89,7 @@ OS_RETURN_CODE OS_SigActionWithTrampoline(INT signum, const struct SIGACTION_WIT
  * @return     Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS*\n
+ *   @b O/S:   Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_SigAction(INT signum, const struct SIGACTION *act, struct SIGACTION *oldact);
@@ -118,7 +105,7 @@ OS_RETURN_CODE OS_SigAction(INT signum, const struct SIGACTION *act, struct SIGA
  * @return     Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS*\n
+ *   @b O/S:   Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_SigSuspend(const SIGSET_T *mask);
@@ -133,7 +120,7 @@ OS_RETURN_CODE OS_SigSuspend(const SIGSET_T *mask);
  * @return     Operation status code.
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS*\n
+ *   @b O/S:   Linux & OS X*\n
  *   @b CPU:   All\n
  */
 OS_RETURN_CODE OS_SigPending(const SIGSET_T *set);
@@ -150,7 +137,7 @@ ignore the pid.
 * @return     Operation status code.
 *
 * @par Availability:
-*   @b O/S:   Linux & macOS*\n
+*   @b O/S:   Linux & OS X*\n
 *   @b CPU:   All\n
 */
 OS_RETURN_CODE OS_SendSignalToThread(NATIVE_PID pid, NATIVE_TID tid, UINT32 signal);

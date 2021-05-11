@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 /// @file host.h
@@ -44,7 +31,7 @@ typedef enum
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetHostName(CHAR* buf, USIZE buflen);
@@ -58,7 +45,7 @@ OS_RETURN_CODE OS_GetHostName(CHAR* buf, USIZE buflen);
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetHostCPUArch(OS_HOST_CPU_ARCH_TYPE* arch);
@@ -71,7 +58,7 @@ OS_RETURN_CODE OS_GetHostCPUArch(OS_HOST_CPU_ARCH_TYPE* arch);
  * @retval     read-only string representing the CPU arch
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 const char* OS_CPUArchToString(OS_HOST_CPU_ARCH_TYPE arch);
@@ -86,7 +73,7 @@ const char* OS_CPUArchToString(OS_HOST_CPU_ARCH_TYPE arch);
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetKernelRelease(CHAR* buf, USIZE bufsize);
@@ -101,7 +88,7 @@ OS_RETURN_CODE OS_GetKernelRelease(CHAR* buf, USIZE bufsize);
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetOSName(CHAR* buf, USIZE bufsize);
@@ -116,7 +103,7 @@ OS_RETURN_CODE OS_GetOSName(CHAR* buf, USIZE bufsize);
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS* \n
+ *   @b O/S:   Windows, Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetOSVersion(CHAR* buf, USIZE bufsize);
@@ -130,7 +117,7 @@ OS_RETURN_CODE OS_GetOSVersion(CHAR* buf, USIZE bufsize);
  * @retval     OS_RETURN_CODE_QUERY_FAILED       If the operation failed
  *
  * @par Availability:
- *   @b O/S:   macOS* \n
+ *   @b O/S:   OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_ReadProcessorFrequency(UINT32* freq);

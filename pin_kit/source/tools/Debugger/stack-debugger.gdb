@@ -1,5 +1,5 @@
 set width 200
-b "fibonacci.cpp":21
+b "fibonacci.cpp":12
 cont
 b exit
 monitor stacktrace on

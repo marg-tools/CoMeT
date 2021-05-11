@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -28,7 +28,7 @@ class LOGFILE
      * Write the specified message to the file.
      */
     virtual VOID Write(const CHAR* message, size_t length) = 0;
-    VOID Write(const std::string& message);
+    VOID Write(const string& message);
     virtual VOID WriteAtPosition( const CHAR* message, size_t length, size_t offset) = 0;
 
     virtual ~LOGFILE() {}
@@ -43,7 +43,7 @@ enum LOGTYPE
 };
 
                                                                   /* DO NOT EDIT */
-typedef BOOL (*MESSAGE_CALLBACK)(const std::string &message, PIN_ERRTYPE type,
+typedef BOOL (*MESSAGE_CALLBACK)(const string &message, PIN_ERRTYPE type,
                                             INT32 userType, INT32 severity, INT32 numArgs,
                                             va_list ap);
 
@@ -53,21 +53,24 @@ class MESSAGE_TYPE
   private:
     STATIC VOID (*_panic_callback) ();
     STATIC VOID (*_terminate_callback) ();
-    STATIC std::string _log_fname;
+    STATIC string _log_fname;
+    STATIC string _image_name;
     STATIC MESSAGE_TYPE *_list;
     STATIC LOGFILE   *_logstream;
     STATIC BOOL _logstreamAppend;
     STATIC MESSAGE_CALLBACK _message_callback;
 
   private:
-    const std::string _name;
-    const std::string _prefix;
-    const std::string _comment;
+    const string _name;
+    const string _prefix;
+    const string _comment;
     BOOL _terminate;
     BOOL _trace;
     BOOL _enabled;
     BOOL _resource;
     LOGTYPE _log;
+    // RM: see remarks in constructor
+    BOOL _initted;
 
     MESSAGE_TYPE   *_next;
 
@@ -75,13 +78,14 @@ class MESSAGE_TYPE
   public:
     STATIC VOID RegisterPanicCallBack( VOID (*cb) () );
     STATIC VOID RegisterTerminateCallBack( VOID (*cb) () );
-    STATIC VOID RegisterLogFile(const std::string& name, BOOL append);
-    STATIC std::string GetLogFileName();
-    STATIC MESSAGE_TYPE * Find(const std::string& name);
-    STATIC BOOL Disable(const std::string& name);
-    STATIC BOOL Enable(const std::string& name);
+    STATIC VOID RegisterLogFile(const string& name, BOOL append);
+    STATIC string GetLogFileName();
+    STATIC VOID RegisterImageName(const string& name );
+    STATIC MESSAGE_TYPE * Find(const string& name);
+    STATIC BOOL Disable(const string& name);
+    STATIC BOOL Enable(const string& name);
     STATIC UINT32 Number();
-    STATIC std::string StringLongAll();
+    STATIC string StringLongAll();
     STATIC BOOL IsTerminating();
     STATIC NORETURN VOID PrintMessageAndExit(const char *message, const char *message2,
                                     PIN_ERRTYPE errType = PIN_ERR_NONE, INT32 numArgs = 0, ...);
@@ -94,13 +98,13 @@ class MESSAGE_TYPE
     STATIC VOID DumpTrace();
 
   public:
-    MESSAGE_TYPE( std::string name, std::string prefix, BOOL terminate, BOOL trace, BOOL enabled, BOOL resource,
-                  LOGTYPE log, std::string comment);
+    MESSAGE_TYPE( string name, string prefix, BOOL terminate, BOOL trace, BOOL enabled, BOOL resource,
+                  LOGTYPE log, string comment);
 
-    VOID Message(const std::string& message, BOOL printPrefix = TRUE,
+    VOID Message(const string& message, BOOL printPrefix = TRUE,
                  PIN_ERRTYPE errType = PIN_ERR_NONE, INT32 numArgs=0, ...);
 
-    VOID NORETURN MessageNoReturn(const std::string& message, BOOL printPrefix = TRUE,
+    VOID NORETURN MessageNoReturn(const string& message, BOOL printPrefix = TRUE,
                  PIN_ERRTYPE errType = PIN_ERR_NONE, INT32 numArgs=0, ...);
 
     BOOL inline on() const {return _enabled;}
@@ -110,15 +114,15 @@ class MESSAGE_TYPE
     int Compare(const MESSAGE_TYPE & k2) const;
 
   private:
-    VOID MessageInternal(const std::string& message, BOOL printPrefix, PIN_ERRTYPE errType, va_list va, INT32 numArgs);
+    VOID MessageInternal(const string& message, BOOL printPrefix, PIN_ERRTYPE errType, va_list va, INT32 numArgs);
 };
 
                                                                   /* DO NOT EDIT */
 class MESSAGE_TYPE_ALWAYS_ON : public MESSAGE_TYPE
 {
   public:
-    inline MESSAGE_TYPE_ALWAYS_ON( std::string name, std::string prefix, BOOL terminate, BOOL trace, BOOL resource,
-                  LOGTYPE log, std::string comment)
+    inline MESSAGE_TYPE_ALWAYS_ON( string name, string prefix, BOOL terminate, BOOL trace, BOOL resource,
+                  LOGTYPE log, string comment)
       : MESSAGE_TYPE(name, prefix, terminate, trace, true, resource, log, comment)
     {}
     BOOL inline on() const {return true;}
@@ -128,7 +132,7 @@ class MESSAGE_TYPE_ALWAYS_ON : public MESSAGE_TYPE
 extern MESSAGE_TYPE MessageTypeNonFatalError;
 
                                                                   /* DO NOT EDIT */
-extern MESSAGE_TYPE_ALWAYS_ON MessageTypeError;
+extern MESSAGE_TYPE MessageTypeError;
 
                                                                   /* DO NOT EDIT */
 extern MESSAGE_TYPE MessageTypeCriticalError;
@@ -167,16 +171,16 @@ extern MESSAGE_TYPE MessageTypeStats;
 extern MESSAGE_TYPE MessageTypeLog;
 
                                                                   /* DO NOT EDIT */
-extern const std::string Line1;
+extern const string Line1;
 
                                                                   /* DO NOT EDIT */
 extern UINT64 MilliSecondsElapsed();
 
                                                                   /* DO NOT EDIT */
-extern std::string AssertString(const char *fileName, const char *functionName, unsigned line, const std::string &message);
+extern string AssertString(const char *fileName, const char *functionName, unsigned line, const std::string &message);
 
                                                                   /* DO NOT EDIT */
-extern void setPauseMessage(const std::string& message);
+extern "C" VOID PrintPinStackTrace(ostream& os);
 
                                                                   /* DO NOT EDIT */
 extern VOID BreakMe();
@@ -189,20 +193,13 @@ extern BOOL SlowAssertsEnabled();
 
 #define QMESSAGE(t,m)                     do{ if(t.on()) t.Message(m); }while(0)
 #define QMESSAGE0(t,m,p,e)                do{ if(t.on()) t.Message(m,p,e,0); }while(0)
+#define QMESSAGE0_NORETURN(t,m,p,e)       do{ if(t.on()) t.MessageNoReturn(m,p,e,0); }while(0)
 #define QMESSAGE1(t,m,p,e,a1)             do{ if(t.on()) t.Message(m,p,e,1,a1); }while(0)
+#define QMESSAGE1_NORETURN(t,m,p,e,a1)    do{ if(t.on()) t.MessageNoReturn(m,p,e,1,a1); }while(0)
 #define QMESSAGE2(t,m,p,e,a1,a2)          do{ if(t.on()) t.Message(m,p,e,2,a1,a2); }while(0)
+#define QMESSAGE2_NORETURN(t,m,p,e,a1,a2) do{ if(t.on()) t.MessageNoReturn(m,p,e,2,a1,a2); }while(0)
 #define QMESSAGEP(t,m,p)                  do{ if(t.on()) t.Message(m,p); }while(0)
 #define QMESSAGE_LIMIT(t,m,max)           do{ static int qqq = 0; if( qqq++ >= max) break; if(t.on()) t.Message(m);}while(0)
-
-#ifdef __KLOCWORK__
-#define QMESSAGE0_NORETURN(t,m,p,e)       do { abort(); } while (0)
-#define QMESSAGE1_NORETURN(t,m,p,e,a1)    do { abort(); } while (0)
-#define QMESSAGE2_NORETURN(t,m,p,e,a1,a2) do { abort(); } while (0)
-#else
-#define QMESSAGE0_NORETURN(t,m,p,e)       do{ if(t.on()) t.MessageNoReturn(m,p,e,0); }while(0)
-#define QMESSAGE1_NORETURN(t,m,p,e,a1)    do{ if(t.on()) t.MessageNoReturn(m,p,e,1,a1); }while(0)
-#define QMESSAGE2_NORETURN(t,m,p,e,a1,a2) do{ if(t.on()) t.MessageNoReturn(m,p,e,2,a1,a2); }while(0)
-#endif
 
 #define ASSERTQ(message) QMESSAGE0_NORETURN(LEVEL_BASE::MessageTypeAssert, message, TRUE, PIN_ERR_ASSERT)
 

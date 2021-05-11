@@ -77,14 +77,6 @@ endif
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 
-# See mantis 4654
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_FEDORA),1)
-        ifeq ($(DIST_VER_GE_28),1)
-            SANITY_SUBSET := $(filter-out app_backtrace, $(SANITY_SUBSET))
-        endif
-    endif
-endif
 
 ##############################################################
 #

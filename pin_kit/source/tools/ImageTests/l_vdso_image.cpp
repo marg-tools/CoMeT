@@ -1,29 +1,42 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
  *  This tool check that vdso image can be instrumented (see code comments for more details).
  *  The tool should be used with the l_vdso_image_app application.
- *
- *  See below KnobCheckVsyscallAreaNotUsed documentation for another mode this tool is checking.
  */
 
 #include <iostream>
 #include <fstream>
 #include <linux/unistd.h>
 #include "pin.H"
-using std::ofstream;
-using std::cerr;
-using std::string;
-using std::endl;
 
 
 // Global variables
@@ -38,73 +51,6 @@ BOOL unload_vsdo = false;
 BOOL vdsoUsed = false; // True if one of the functions below are fetched
 ADDRINT vdsoGetTimeOfDayAddress = 0; // Address of __vdso_gettimeofday function
 ADDRINT kernelVsyscallAddress = 0; // Address of __kernel_vsyscall function
-BOOL vsyscallAreaUsed = false; // True if vsyscall area is being fetched and instrumented
-
-/*!
- * Kernel release type enumerations (like major and minor)
- */
-typedef enum
-{
-    KERNEL_RELEASE_MAJOR,
-    KERNEL_RELEASE_MINOR
-} KERNEL_RELEASE_KIND;
-
-/*
- * Return kernel release major or minor number based on the specified kind enum.
- * 0 returned upon KERNEL_RELEASE_MAJOR means some error has occurred.
- */
-static UINT32 GetKernelRelease(KERNEL_RELEASE_KIND kind)
-{
-    static BOOL first = TRUE;
-    static UINT32 kernelReleaseMajor = 0;
-    static UINT32 kernelReleaseMinor = 0;
-    char* ptr;
-
-    if ( (kind < KERNEL_RELEASE_MAJOR) || (kind > KERNEL_RELEASE_MINOR))
-    {
-        ASSERTX(0);
-    }
-
-    if (!first)
-    {
-        if (kind == KERNEL_RELEASE_MAJOR) return kernelReleaseMajor;
-        else if (kind == KERNEL_RELEASE_MINOR) return kernelReleaseMinor;
-    }
-
-    char buf[128];
-    OS_RETURN_CODE ret = OS_GetKernelRelease(buf, sizeof(buf));
-    ASSERTX(OS_RETURN_CODE_IS_SUCCESS(ret));
-    ptr = buf;
-
-    char *dot = strchr(ptr, '.');
-    if (dot)
-    {
-        *dot = '\0';
-        kernelReleaseMajor = atoi(ptr);
-    }
-    else
-    {
-        return 0;
-    }
-
-    ptr = dot+1;
-    dot = strchr(ptr, '.');
-    if (dot)
-    {
-        *dot = '\0';
-        kernelReleaseMinor = atoi(ptr);
-    }
-
-    first = FALSE;
-
-    if (kind == KERNEL_RELEASE_MAJOR) return kernelReleaseMajor;
-    else if (kind == KERNEL_RELEASE_MINOR) return kernelReleaseMinor;
-
-    // Shouldn't get here.
-    ASSERTX(0);
-    return 0;
-}
-
 
 /* ===================================================================== */
 /* Analysis routines                                                     */
@@ -137,14 +83,6 @@ VOID Trace(TRACE trace, VOID *v)
         outFile << "vdso used" << endl;
         vdsoUsed = true;
     }
-
-#if defined(TARGET_IA32E)
-    if ((traceAddress >= 0xffffffffff600000) && (traceAddress < 0xffffffffff601000))
-    {
-        outFile << "Reached ins of vsyscall area, adderss = 0x" << std::hex << traceAddress<< endl;
-        vsyscallAreaUsed = true;
-    }
-#endif
 }
 
 /* ===================================================================== */
@@ -212,18 +150,6 @@ static VOID Fini(INT32 code, VOID *v)
                 "(__vdso_gettimeofday() or __kernel_vsyscall with __NR_gettimeofday)");
     // sanity check: A situation where VDSO was not used but the analysis was called shouldn't happen
     ASSERTX( !(!vdsoUsed && beforeTimeOfDayCalled) );
-
-    const UINT32 kerenReleseMajor = GetKernelRelease(KERNEL_RELEASE_MAJOR);
-    const UINT32 kerenReleseMinor = GetKernelRelease(KERNEL_RELEASE_MINOR);
-
-    if ((kerenReleseMajor >= 5) && (kerenReleseMinor >=3))
-    {
-        // Starting from Linux kernel 5.3, vsyscall area is execute only (XO). Therefore PIN cannot fetch and/or instrument it.
-        // on Linux distributions greater than  kernel 5.3, if Pin doesn't handle correctly indirect branches to vsyscall area
-        // it will crash before getting to this assert. So this assert should never occur on these distributions.
-        ASSERT(vsyscallAreaUsed==false, "Starting from Linux kernel XYZ, vsyscall area is execute only (XO). Therefore PIN cannot "
-                "fetch and/or instrument it.\n");
-    }
     outFile.close();
 }
 

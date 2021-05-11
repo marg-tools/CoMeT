@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
    Test the scenario where Pin tries to reattach to an application, using PIN_AttachProbed API,
    when the main thread of the application is a zombie thread.
@@ -27,8 +46,7 @@
 #include <fstream>
 #include <sstream>
 #include "zombie_utils.h"
-#include <string.h>
-#define MAX_COMMAND_LINE_SIZE 15    // the size for the array of arguments to execv (this value is arbitrary)
+
 
 EXPORT_SYM bool AfterAttach1();
 
@@ -45,40 +63,34 @@ bool AfterAttach1()
 }
 
 // This function is invoked when the secondary thread starts execution.
-void* SecondaryThreadMain(void* v)
+void* SecondaryThreadMain(void* v) 
 {
     // Wait until Pin notifies the application that it can't reattach to it since
     // the main thread of the application is a zombie thread.
     while(!NotifyUserPinUnableToAttach(fileName)) sleep(1);
-    pthread_exit(0);
-    return NULL;
+    pthread_exit(0);  
 }
 
 // Expected argv arguments:
 // [1] pin executable
-// [2] Pin flags (e.g. -slow_asserts)
-//     >> zero or more flags possible
-// [3] "-t"
-// [4] tool
-// [5] imageName
-// [6] output file
+// [2] -slow_assert
+// [3] tool
+// [4] imageName 
+// [5] output file	
 int main(int argc, char** argv)
 {
-    if(argc < 6)
+    if(argc!=6)
     {
        fprintf(stderr, "Not enough arguments\n" );
        fflush(stderr);
        exit(RES_INVALID_ARGS);
     }
-    if (argc > MAX_COMMAND_LINE_SIZE - 3){      // added: -probe -pid attachPid -o NULL, omitted: argv[0], imageName
-        fprintf(stderr, "Too many arguments\n" );
-        fflush(stderr);
-        exit(RES_INVALID_ARGS);
-    }
-    imageToLoad = argv[argc-2];     // argv[argc-2] is imageName
-    fileName = argv[argc-1];        // argv[argc-1] is output file
+
+    imageToLoad= argv[4];
+    fileName = argv[5];
     zombieThreadPid = getpid();
     pid_t child = fork();
+    
     if (child < 0)
     {
         perror("Fork failed while creating application process");
@@ -135,33 +147,18 @@ int main(int argc, char** argv)
             exit(RES_SUCCESS);
         }
         else
-        {
+        { 
             //Inside child 2
             char attachPid[MAX_SIZE];
             snprintf(attachPid, MAX_SIZE , "%d", zombieThreadPid);
 
-            char* args[MAX_COMMAND_LINE_SIZE] = {NULL};  // arguments for execv command
-            int args_count = 0;
-            int argv_count = 1;                          // to start from argv[1]...
-            args[args_count++] = argv[argv_count++];     // by convention, first arg is the filename of the executed file (pin)
-            args[args_count++] = (char*)"-probe";
-            args[args_count++] = (char*)"-pid";
-            args[args_count++] = attachPid;
-            while (strcmp(argv[argv_count], "-t") != 0){   // additional Pin flags (optional)
-                args[args_count++] = argv[argv_count++];
-            }
-            args[args_count++] = argv[argv_count++];     // "-t"
-            args[args_count++] = argv[argv_count++];     // tool
-            args[args_count++] = (char*)"-o";
-            argv_count++;                                // skip the imageName, not needed for the execv command
-            args[args_count++] = argv[argv_count++];     // output file
-            args[args_count++] = NULL;                   // end
             // Pin  attaches to the application.
-            execv(argv[1], (char * const *)args);        // never returns
-            perror("execv failed while trying to attach Pin to the application\n");
+            // never return
+            execl(argv[1], argv[1], argv[2], "-probe", "-pid", attachPid, "-t",  argv[3],"-o", argv[5], NULL);
+            perror("execl failed while trying to attach Pin to the application\n");
             exit(RES_EXEC_FAILED);
         }
-    }
+    } 
 
     return RES_SUCCESS;
 }

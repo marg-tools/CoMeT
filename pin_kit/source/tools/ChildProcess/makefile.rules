@@ -55,18 +55,16 @@ ifeq ($(TARGET_OS),linux)
                   follow_execv_with_config3 apparmor unique_logfile injectchild injectparent selfexec selfexeclog sigchld2 \
                   unix_launcher null_argument fork_probed vfork_probed fork_probed_static vfork_probed_static execve_errno \
                   follow_execv_with_config1_probe follow_execv_with_config2_probe follow_execv_with_config3_probe \
-                  null_argument_probed child_injection_ppid parent_injection_ppid
+                  null_argument_probed child_injection_ppid
     TOOL_ROOTS += fork_hang_tool fork_jit_tool fork_probed_tool follow_child unix_parent_tool null_arg_check_tool \
                   simple_tool
     APP_ROOTS += fork_hang_app fork_app vfork_app fork_app_static vfork_app_static parent_process child_process \
                  injection_test_app sigchld_app null_check_app1 null_check_app2 bind_now_app badexec selfexec_app \
-                 fork_app2 child_injection_ppid parent_injection_ppid
+                 fork_app2 child_injection_ppid
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
-    MACOS_VERSION_LT_1014 := $(shell $(TOOLS_ROOT)/Utils/testMacOsVersion lt 10.14.0)
-
     TEST_ROOTS += fork_jit badexec unique_logfile_mac follow_execv_with_config1 follow_execv_with_config2 \
                   follow_execv_with_config3 fork_probed follow_execv_with_config1_probe follow_execv_with_config2_probe \
                   follow_execv_with_config3_probe fork_hang injectchild vfork_probed follow_posix_spawn_probe \
@@ -77,14 +75,6 @@ ifeq ($(TARGET_OS),mac)
     APP_ROOTS += fork_app vfork_app parent_process child_process injection_test_app null_check_app1 null_check_app2 \
                  badexec fork_app fork_hang_app injection_test_app vfork_app parent_process_waitpid_bug \
                  parent_process_spawn2 parent_process_waitpid_bug2 child_injection_ppid
-    ifeq ($(MACOS_VERSION_LT_1014), 1)
-        # Starting from macOS 10.14 the OS blocked completely the option of a regular process to attach to another process using PTRACE.
-        # Only signed executables are allowed to attach to another process using PTRACE. Today in parent injection the child process
-        # is not signed, therefore we stopped using parent injectin from macOS 10.14 and this is why we enable the below test only in
-        # older OS's. Note that in child injection the parent process is pinbin which is signed.
-        TEST_ROOTS += parent_injection_ppid
-        APP_ROOTS += parent_injection_ppid
-    endif
 endif
 
 # Windows
@@ -131,27 +121,12 @@ ifeq ($(TARGET_OS),windows)
     TEST_ROOTS := $(filter-out win_early_termination_debugged win_early_termination_probed_debugged, $(TEST_ROOTS))
 endif
 
-# see mantis 4772
-ifeq ($(TARGET_OS),linux)
-    ifeq ($(DIST_NAME_FEDORA),1)
-        DIST_VER_GE_30 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 30)
-        ifeq ($(DIST_VER_GE_30),1)
-            TEST_ROOTS := $(filter-out null_argument_probed, $(TEST_ROOTS))
-        endif
-    endif
-    ifeq ($(DIST_NAME_UBUNTU),1)
-        DIST_VER_GE_1904 := $(shell $(TOOLS_ROOT)/Utils/testLinuxDistVersion ge 19.04)
-        ifeq ($(DIST_VER_GE_1904),1)
-            TEST_ROOTS := $(filter-out null_argument_probed, $(TEST_ROOTS))
-        endif
-    endif
-endif
-
 ###### Define the sanity subset ######
 
 # This defines the list of tests that should run in sanity. It should include all the tests listed in
 # TEST_TOOL_ROOTS and TEST_ROOTS excluding only unstable tests.
 SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
 
 ##############################################################
 #
@@ -184,7 +159,7 @@ injectparent.test: $(OBJDIR)injection_test_app$(EXE_SUFFIX)
 # injection mode will fail if the kernel happens to load the Pin image in a range that
 # conflicts with the application.  Since there is some randomness in the address ranges
 # the kernel selects for Pin and it's shared libraries, this test will sometimes fail
-# and sometimes succeed.  It appears to me that it fails about 1 in 10 tries.
+# and sometimes succeed.  It appears to me (gmlueck) that it fails about 1 in 10 tries.
 injectself.test:
 	touch $(OBJDIR)injectself.makefile.copy; $(RM) $(OBJDIR)injectself.makefile.copy
 	$(PIN) -injection self -- $(TESTAPP) makefile $(OBJDIR)injectself.makefile.copy
@@ -489,8 +464,6 @@ child_injection_ppid.test: $(OBJDIR)unix_parent_tool$(PINTOOL_SUFFIX) $(OBJDIR)c
 	  -probe -app ALL -- $(OBJDIR)child_injection_ppid$(EXE_SUFFIX)
 	$(PIN) -xyzzy -injection child -follow_execv -t $(OBJDIR)unix_parent_tool$(PINTOOL_SUFFIX) -o $(@:test=tool.out) \
 	  -app ALL -- $(OBJDIR)child_injection_ppid$(EXE_SUFFIX)
-
-parent_injection_ppid.test: $(OBJDIR)unix_parent_tool$(PINTOOL_SUFFIX) $(OBJDIR)child_injection_ppid$(EXE_SUFFIX)
 	$(PIN) -xyzzy -injection parent -follow_execv -t $(OBJDIR)unix_parent_tool$(PINTOOL_SUFFIX) -o $(@:test=tool.out) \
 	  -probe -app ALL -- $(OBJDIR)child_injection_ppid$(EXE_SUFFIX)
 	$(PIN) -xyzzy -injection parent -follow_execv -t $(OBJDIR)unix_parent_tool$(PINTOOL_SUFFIX) -o $(@:test=tool.out) \
@@ -515,10 +488,10 @@ unique_logfile.test: $(OBJDIR)parent_process$(EXE_SUFFIX) $(OBJDIR)child_process
 
 unique_logfile_mac.test: $(OBJDIR)parent_process$(EXE_SUFFIX) $(OBJDIR)child_process$(EXE_SUFFIX)
 	$(RM) -f $(OBJDIR)unique_logfile_mac.log.*
-	$(PIN) -follow_execv 1 -xyzzy -mesgon log_injector -logfile $(OBJDIR)unique_logfile_mac.log -unique_logfile \
+	$(PIN) -follow_execv 1 -xyzzy -mesgon log_syscall -logfile $(OBJDIR)unique_logfile_mac.log -unique_logfile \
 	  -- $(OBJDIR)parent_process$(EXE_SUFFIX) $(OBJDIR)child_process$(EXE_SUFFIX) "param1 param2" param3 \
 	    > $(OBJDIR)unique_logfile_mac.out
-	$(BASHTEST) `ls $(OBJDIR)unique_logfile_mac.log.* | $(LINECOUNT)` -ge 2
+	$(BASHTEST) `ls $(OBJDIR)unique_logfile_mac.log.* | $(LINECOUNT)` -eq 2
 	$(RM) $(OBJDIR)unique_logfile_mac.log.* $(OBJDIR)unique_logfile_mac.out
 
 # Test for LD_BIND_NOW
@@ -747,14 +720,7 @@ win_parent_process2_mt_ppp.test: $(OBJDIR)grand_parent_tool$(PINTOOL_SUFFIX) $(O
 	  "$(PINFLAGS) -p32 $(PIN32) -p64 $(PIN64) -follow_execv -probe -t" "$(OBJDIR)grand_parent_tool$(PINTOOL_SUFFIX)" \
 	  "-probe_child 1 -probe_grand_child 1" "-- $(CMD) win_parent_process_mt_launcher.bat $(OBJDIR)" \
 	    > $(OBJDIR)win_parent_process2_mt_ppp.out 2>&1
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(LINECOUNT)` -eq 22
-	$(BASHTEST) `$(SORT) $(OBJDIR)win_parent_process2_mt_ppp.out | $(UNIQ) | $(LINECOUNT)` -eq 6
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "In grand_parent_tool PinTool is probed 1" | $(LINECOUNT)` -eq 1
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "In parent_tool PinTool is probed 1" | $(LINECOUNT)` -eq 3
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "In follow_child PinTool is probed 1" | $(LINECOUNT)` -eq 9
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "First Process was created successfully!" | $(LINECOUNT)` -eq 3
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "Second Process was created successfully!" | $(LINECOUNT)` -eq 3
-	$(BASHTEST) `$(UNIQ) $(OBJDIR)win_parent_process2_mt_ppp.out | $(GREP) "Third Process was created successfully!" | $(LINECOUNT)` -eq 3
+	$(DIFF) $(OBJDIR)win_parent_process2_mt_ppp.out win_parent_process2_mt_ppp.reference
 	$(RM) $(OBJDIR)win_parent_process2_mt_ppp.out
 
 parent_process_waitpid_bug2.test: $(OBJDIR)parent_process_waitpid_bug2$(EXE_SUFFIX)

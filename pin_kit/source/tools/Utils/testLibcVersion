@@ -1,27 +1,9 @@
 #! /bin/bash
-
-# This script gets two arguments:
-# 1) An operand (eq/ne/ge/gt/le/lt) 
-# 2) A version number 
-# and returns the result of the comparison.
-#
-# Example usage:
-# To test whether the libc version is == 2.26 , run the following command:
-# testLibcVersion eq 2.26
-
 # this function takes a string in version format (s.a 2.6.16) and makes it an integer (00020006001600000000)
 function digit_version { echo $1 | awk -F. '{ printf("%04d%04d%04d\n", $1, $2, $3); }'; }
 
-libc_ver=$(digit_version `ldd --version| egrep -o "[1-9]+\.[0-9]+(\.[0-9]*)?" | head -1`)
-arg_ver=$(digit_version $2)
-
-case $1 in
-    "eq" )  if [ $libc_ver -eq $arg_ver ]; then echo 1; else echo 0; fi;;
-    "ne" )  if [ $libc_ver -ne $arg_ver ]; then echo 1; else echo 0; fi;;
-    "lt" )  if [ $libc_ver -lt $arg_ver ]; then echo 1; else echo 0; fi;;
-    "le" )  if [ $libc_ver -le $arg_ver ]; then echo 1; else echo 0; fi;;
-    "gt" )  if [ $libc_ver -gt $arg_ver ]; then echo 1; else echo 0; fi;;
-    "ge" )  if [ $libc_ver -ge $arg_ver ]; then echo 1; else echo 0; fi;;
-    * )     echo "Bad argument $1 (should be eq/ne/ge/gt/le/lt) " ;;
-esac
-
+#echo  $(digit_version `ldd --version| egrep -o "[1-9]+\.[1-9]+(\.[0-9]*)?" | head -1`)
+#echo  $(digit_version $1)
+#now we use digit_version to compare between the current version and the given one.
+#If the libc version is Greater or Equal to the version passed as input, then print 1, else print 0.
+if [[ $(digit_version `ldd --version| egrep -o "[1-9]+\.[1-9]+(\.[0-9]*)?" | head -1`) -ge $(digit_version $1) ]]; then echo 1; else echo 0; fi

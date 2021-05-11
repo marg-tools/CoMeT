@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -7,7 +7,7 @@
 typedef enum
 {
     REG_INVALID_ = 0,
-/// @cond INTERNAL_DOXYGEN
+# if !defined(TARGET_DOXYGEN)
     REG_NONE = 1,
     REG_FIRST = 2,
 
@@ -32,7 +32,7 @@ typedef enum
 
     REG_TO_SPILL_BASE = REG_RBASE,
 
-/// @endcond
+# endif // not TARGET_DOXYGEN
 
     REG_GR_BASE = REG_RBASE,
 # if defined(TARGET_IA32E)
@@ -111,9 +111,9 @@ typedef enum
     REG_INST_PTR = REG_EIP,
 # endif // not defined(TARGET_IA32E)
 
-/// @cond INTERNAL_DOXYGEN
+# if !defined(TARGET_DOXYGEN)
     REG_PHYSICAL_INTEGER_END = REG_INST_PTR,
-/// @endcond
+# endif // not TARGET_DOXYGEN
 
     // partial registers common to both the IA-32 and Intel(R) 64 architectures.
     REG_AL,
@@ -420,7 +420,7 @@ typedef enum
     REG_TR7,
     REG_TR_LAST = REG_TR7,
 
-/// @cond INTERNAL_DOXYGEN
+    # if !defined(TARGET_DOXYGEN)
 
     REG_MACHINE_LAST = REG_TR_LAST, /* last machine register */
 
@@ -452,56 +452,7 @@ typedef enum
     /* Pin's virtual register names */
     REG_TOOL_BASE,
 
-/// @endcond
-
-    /**
-     * *** Segment registers (FS/GS) handling in Pin ***
-     *
-     * Background about segment virtualization support in Pin:
-     * Segment virtualization was introduced in Pin in the past in order to support Pin on OS's which didn't contain old
-     * (without segment usage) libc in a standard installation.
-     * Application and Pin were using 2 different TLS's, however access to them was done through segment registers
-     * (Also known as thread-self-pointer registers)
-     * (actually through their matching segment descriptor which contain the segment base address).
-     * Segment register (selector) can have one value at a time. Changing segment register value back and forth (from application
-     * to Pin and the other way around) is very costly performance wise (involve system calls).
-     * Also there may have been other limitations.
-     * Therefore it was decided to emulate application instructions which use segments registers.
-     * This is done by saving segment selector value and segment base address in the spill area (i.e REG_PIN_SEG_GS_VAL
-     * and REG_SEG_GS_BASE ) for each thread and performing all segment related instruction (of the application) using their
-     * values (by emulating instructions that set these registers and translate instructions that are accessing the memory using
-     * fs or gs prefix - we call this virtualizing segment).
-     * (This also help when passing effective address of memory operands to analysis routines)
-     * In Linux 32 bit the segment base address changes every time we write to a segment register (every time we load GS/FS,
-     * the hidden part is also loaded with the segment base address - it's kind of a cache for optimization, to save bus cycles)
-     * In order to support this beside emulating these in instructions we also tracked GDT/LDT tables (We store these tables
-     * inside Pin and update them every time needed).
-     *
-     * Today we have PinCRT which doesn't use segment registers, therefore we don't have to virtualize application segment usage
-     * and just let application execute these instructions in their original form (without modifying them or without emulating
-     * them).
-     *
-     * Linux
-     * In Linux we no longer virtualize application handling of segments: application instructions which uses segments or
-     * segments prefix now runs in their original form.
-     * In Linux 64 bits we now only track segment base address virtual register by emulating the system call which changes the
-     * segment base address (track application segment base address inside a virtual register in addition to updating the
-     * application one).
-     * In Linux 32 bits it's more complicated: It's hard to track the segment address without fully emulating all writes to
-     * segment registers + tracking the GDT/LDT which is a lot of work.
-     * Instead we're using  GsBaseAddress()/FsBaseAddress() where needed including in PrecomputeSegBaseAddressIfNeeded() which
-     * is called from SetupArgumentEa() when needing to compute REG_SEG_FS_BASE/REG_SEG_GS_BASE value (holds the segment base
-     * address)
-     *
-     * macOS
-     * In macOS, PIN still use (at least) the system loader which uses the GS segment register, therefore segment virtualization
-     * is still used.
-     *
-     * Windows
-     * In Windows we compute segment base address at the beginning (assume it doens't change) and use its value when needed.
-     * REG_PIN_SEG_GS_VAL and REG_PIN_SEG_FS_VAL are unused in this platform
-     *
-     */
+# endif  // not TARGET_DOXYGEN
 
     // Virtual registers reg holding memory addresses pointed by GS/FS registers
     // These registers are visible for tool writers
@@ -609,7 +560,7 @@ typedef enum
     REG_TOOL_LAST = REG_BUF_LAST,
 # endif // end of !(defined(TARGET_IA32E))
 
-/// @cond INTERNAL_DOXYGEN
+# if !defined(TARGET_DOXYGEN)
     REG_SPECIAL_BASE,
 
     // REG_X87 is a representative of the X87 fp state - it is NOT available for explicit use in ANY
@@ -623,10 +574,8 @@ typedef enum
 
     REG_PIN_BASE,
 
-    REG_PIN_SEG_GS_VAL = REG_PIN_BASE,  // virtual reg holding actual value of GS (also known as segment selector which is the
-                                        // visible part of the segment register). Only used when KnobVirtualSegments is on.
-    REG_PIN_SEG_FS_VAL,                 // virtual reg holding actual value of FS (also known as segment selector which is the
-                                        // visible part of the segment register). Only used when KnobVirtualSegments is on.
+    REG_PIN_SEG_GS_VAL = REG_PIN_BASE,  // virtual reg holding actual value of gs
+    REG_PIN_SEG_FS_VAL,                 // virtual reg holding actual value of fs
 
     REG_LAST_CONTEXT_REG = REG_PIN_SEG_FS_VAL,  // Last register in the canonical SPILL AREA Based CONTEXT
 
@@ -871,11 +820,6 @@ typedef enum
     REG_PIN_BRIDGE_SPILL_AREA_CONTEXT_FRAME, // hold the address of the spill area context frame
     REG_PIN_BRIDGE_SPILL_AREA_CONTEXT_SP, // hold the sp at which the spill area context was pushed
 
-    REG_PIN_AVX_IN_USE, // holds the value of EDX resulting from an XGETBV instruction,
-                        // if both the CPU and the OS support AVX state and AVX is in use, 0 otherwise.
-                        // XGETBV with ECX=1 returns the logical AND of XCR0 
-                        // and the current value of the XINUSE state-component bitmap
-    
     REG_PIN_SPILLPTR,  // ptr to the pin spill area
     REG_PIN_GR_LAST = REG_PIN_SPILLPTR,
     REG_PIN_X87,
@@ -1048,7 +992,7 @@ typedef enum
 
     REG_PIN_LAST = REG_PIN_K_LAST,
 
-/// @endcond
+# endif // not TARGET_DOXYGEN
 
     REG_LAST
 
@@ -1348,12 +1292,6 @@ inline BOOL REG_is_pin_gpr(REG reg)
 inline BOOL REG_is_seg_base(REG reg)
 {
     return (reg == REG_SEG_GS_BASE)||(reg == REG_SEG_FS_BASE);
-}
-
-                                                                  /* DO NOT EDIT */
-inline BOOL REG_is_gs_or_fs(REG reg)
-{
-    return (reg == REG_SEG_GS || reg == REG_SEG_FS);
 }
 
                                                                   /* DO NOT EDIT */
@@ -1693,7 +1631,7 @@ extern UINT32 REG_Size(REG reg);
 extern REG REG_FullRegName(const REG reg);
 
                                                                   /* DO NOT EDIT */
-extern std::string REG_StringShort(REG reg);
+extern string REG_StringShort(REG reg);
 
                                                                   /* DO NOT EDIT */
 extern REG REG_IdentityCopy(const REG reg);

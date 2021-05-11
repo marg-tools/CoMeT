@@ -26,18 +26,18 @@ def Version():
 #######################################################################
 
 def Usage():
-    print("Usage: callgraph.py [OPTION]* symbol-file edge-profile")
-    print()
-    print("OPTIONS:")
-    print("\t-m mode       choose output format:  vcg or text")
-    print("\t-u            if one routine invokes another from multiple callsites, merge them into one edge")
-    print("\t-c cutoff     set cutoff, edges with smaller counts will not be shown ")
-    print("\t-t threshold  set thresholds, routines with a call count above the threshold will be colored red")   
-    print() 
-    print("the symbol file is compatible to the readelf symbol dump, it should be generated as follows:")
-    print("\t readelf -s img | grep FUNC >sym.txt")
-    print() 
-    print("the edge-profile must be generated using the edgcnt Pin tool")
+    print "Usage: callgraph.py [OPTION]* symbol-file edge-profile"
+    print
+    print "OPTIONS:"
+    print "\t-m mode       choose output format:  vcg or text"
+    print "\t-u            if one routine invokes another from multiple callsites, merge them into one edge"
+    print "\t-c cutoff     set cutoff, edges with smaller counts will not be shown "
+    print "\t-t threshold  set thresholds, routines with a call count above the threshold will be colored red"   
+    print 
+    print "the symbol file is compatible to the readelf symbol dump, it should be generated as follows:"
+    print "\t readelf -s img | grep FUNC >sym.txt"
+    print 
+    print "the edge-profile must be generated using the edgcnt Pin tool"
     return -1
 
 #######################################################################
@@ -45,16 +45,16 @@ def Usage():
 #######################################################################
 
 def Info(str):
-    print(str, file=sys.stderr)
+    print >> sys.stderr,  str
     return
 
 
 def Warning(str):
-    print(str, file=sys.stderr)
+    print >> sys.stderr,  str
     return
 
 def Error(str):
-    print(str, file=sys.stderr)
+    print >> sys.stderr,  str
     sys.exit(-1)
 
 
@@ -159,7 +159,7 @@ class EDG:
         self._count += count
         return
     
-    def StringVCG(self, threshold = 100000000000):
+    def StringVCG(self, threshold = 100000000000L):
         s = ""
         if self._count > threshold:
             s += "\t" + "nearedge:\n"
@@ -182,37 +182,37 @@ class EDG:
 
 
 def DumpVCG(cutoff, threshold):
-    print("// ###################################################################################")
-    print("// VCG Callgraph: cutoff %d,  threshold %d" %(cutoff, threshold))
-    print("// ###################################################################################")
+    print  "// ###################################################################################"
+    print  "// VCG Callgraph: cutoff %d,  threshold %d" %(cutoff, threshold)
+    print  "// ###################################################################################"
 
-    print("graph:")
-    print("{");
+    print  "graph:"
+    print  "{";
 
-    print("title: \"Call Graph\"")
-    print("label: \"Call Graph\"")
-    print("display_edge_labels: yes")
-    print("layout_downfactor: 100")
-    print("layout_nearfactor: 10")
-    print("layout_upfactor: 1")
+    print "title: \"Call Graph\""
+    print "label: \"Call Graph\""
+    print "display_edge_labels: yes"
+    print "layout_downfactor: 100"
+    print "layout_nearfactor: 10"
+    print "layout_upfactor: 1"
 #    print "dirty_edge_labels: yes"
-    print("layout_algorithm: mindepth")
-    print("manhatten_edges: yes")
-    print("edge.arrowsize: 15")
-    print("late_edge_labels: yes")    
+    print "layout_algorithm: mindepth"
+    print "manhatten_edges: yes"
+    print "edge.arrowsize: 15"
+    print "late_edge_labels: yes"    
 
     for e in ALL_EDG:
         if e._count < cutoff: continue 
-        print(e.StringVCG())
+        print e.StringVCG()
 
-    list = list(ALL_RTN.items())
+    list = ALL_RTN.items()
     list.sort()
     for (x,b) in list:
         if b.count_out() < cutoff and b.count_in() < cutoff: continue 
-        print(b.StringVCG(threshold))
+        print b.StringVCG(threshold)
 
-    print("}");
-    print("// eof")
+    print "}";
+    print "// eof"
     return
 
 #######################################################################
@@ -221,18 +221,18 @@ def DumpVCG(cutoff, threshold):
 
 def DumpText(cutoff):
 
-    print("# ###################################################################################")
-    print("# Callgraph: cutoff %d" % cutoff)
-    print("# ###################################################################################")
+    print  "# ###################################################################################"
+    print  "# Callgraph: cutoff %d" % cutoff
+    print  "# ###################################################################################"
 
 
-    list = list(ALL_RTN.items())
+    list = ALL_RTN.items()
     list.sort()
     for (x,b) in list:
         if b.count_out() < cutoff and b.count_in() < cutoff: continue 
-        print(b.String(cutoff))
+        print b.String(cutoff)
 
-    print("# eof")
+    print "# eof"
     return
 
 #######################################################################
@@ -247,8 +247,8 @@ def ProcessSymbols(lines):
     for l in lines:
         ll = string.split(l)
         (num,value,size,type,bind,vis,ndx,name) = ll[:8]
-        start = int(value,16)
-        if start in ALL_RTN:
+        start = long(value,16)
+        if ALL_RTN.has_key(start):
             name2 = ALL_RTN[start].name()
             if string.find(name2,name) == -1 and   string.find(name,name2) == -1:
                 Warning("two routines with same address %x: %s vs %s" %(start,name2,name))
@@ -285,7 +285,7 @@ def FindRtnByAddress(addr, s):
             Warning("found syscall")
             return RTN(addr,"syscall",1 )
 
-        if addr not in ALL_RTN:
+        if not ALL_RTN.has_key(addr):
             RTN(addr,"unknown_%s_0x%x" % (s,addr),1 )
         return ALL_RTN[addr]
 
@@ -311,10 +311,10 @@ def ProcessEdgProfile(lines, unique_edgs_only):
         if not match:
             continue
 
-        src = int(match.group(1),16)
-        dst = int(match.group(2),16)
+        src = long(match.group(1),16)
+        dst = long(match.group(2),16)
         type = match.group(3)
-        count = int(match.group(4))
+        count = long(match.group(4))
 
         if dst > MAX_ADDR: MAX_ADDR = dst
         if src > MAX_ADDR: MAX_ADDR = src
@@ -362,9 +362,9 @@ def Main(argv):
         if o == "-m":
             mode = a
         elif o == "-c":
-            cutoff = int(a)
+            cutoff = long(a)
         elif o == "-t":
-            threshold = int(a)
+            threshold = long(a)
         elif o == "-u":
             unique_edgs_only = 1
         else:
@@ -389,7 +389,7 @@ def Main(argv):
     ProcessSymbols(lines)
 
 
-    RTN_MAP = [x._start for x in list(ALL_RTN.values())]
+    RTN_MAP = map( lambda x: x._start, ALL_RTN.values()  )
     RTN_MAP.sort()
     Info("found %d symbols" % len(RTN_MAP))
 

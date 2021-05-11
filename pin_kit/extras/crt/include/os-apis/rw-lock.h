@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 
@@ -47,11 +34,11 @@ typedef struct
 #endif
 } OS_APIS_RW_LOCK_IMPL_T;
 
-typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
+typedef union
 {
     OS_APIS_RW_LOCK_IMPL_T impl;
-    char reserved[2 * CPU_MEMORY_CACHELINE_SIZE];
-} POST_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) OS_APIS_RW_LOCK_T;
+    char reserved[CPU_MEMORY_CACHELINE_SIZE*2];
+} ALIGNED_TO(CPU_MEMORY_CACHELINE_SIZE) OS_APIS_RW_LOCK_T;
 
 /*!
  * Static initializer for OS_APIS_RW_LOCK_T type.
@@ -70,7 +57,7 @@ typedef PRE_ALIGNTO(CPU_MEMORY_CACHELINE_SIZE) union
  * @param[in]  lock         The lock to initialize
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockInitialize(volatile OS_APIS_RW_LOCK_T* l);
@@ -81,7 +68,7 @@ void OS_RWLockInitialize(volatile OS_APIS_RW_LOCK_T* l);
  * @param[in]  lock         The lock to destroy
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockDestroy(volatile OS_APIS_RW_LOCK_T* l);
@@ -93,7 +80,7 @@ void OS_RWLockDestroy(volatile OS_APIS_RW_LOCK_T* l);
  * @param[in]  lock         The lock to acquire
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockAcquireWrite(volatile OS_APIS_RW_LOCK_T* lock);
@@ -104,7 +91,7 @@ void OS_RWLockAcquireWrite(volatile OS_APIS_RW_LOCK_T* lock);
  * @param[in]  lock         The lock to release
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockReleaseWrite(volatile OS_APIS_RW_LOCK_T* lock);
@@ -116,7 +103,7 @@ void OS_RWLockReleaseWrite(volatile OS_APIS_RW_LOCK_T* lock);
  * @param[in]  lock         The lock to acquire
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockAcquireRead(volatile OS_APIS_RW_LOCK_T* lock);
@@ -127,7 +114,7 @@ void OS_RWLockAcquireRead(volatile OS_APIS_RW_LOCK_T* lock);
  * @param[in]  lock         The lock to release
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 void OS_RWLockReleaseRead(volatile OS_APIS_RW_LOCK_T* lock);
@@ -143,7 +130,7 @@ void OS_RWLockReleaseRead(volatile OS_APIS_RW_LOCK_T* lock);
  *            return TRUE.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_RWLockRelease(volatile OS_APIS_RW_LOCK_T* l);
@@ -157,7 +144,7 @@ BOOL_T OS_RWLockRelease(volatile OS_APIS_RW_LOCK_T* l);
  * @return     TRUE         If the writer lock was acquired.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_RWLockTryAcquireWrite(volatile OS_APIS_RW_LOCK_T* l);
@@ -171,7 +158,7 @@ BOOL_T OS_RWLockTryAcquireWrite(volatile OS_APIS_RW_LOCK_T* l);
  * @return     TRUE         If the reader lock was acquired.
  *
  * @par Availability:
- *   @b O/S:   Windows, Linux & macOS*\n
+ *   @b O/S:   Windows, Linux & OS X*\n
  *   @b CPU:   All\n
  */
 BOOL_T OS_RWLockTryAcquireRead(volatile OS_APIS_RW_LOCK_T* l);

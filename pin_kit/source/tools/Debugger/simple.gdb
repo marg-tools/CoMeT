@@ -1,6 +1,6 @@
 break main
 cont
-break 24 if i == 6
+break 15 if i == 6
 cont
 print Sum
 print i

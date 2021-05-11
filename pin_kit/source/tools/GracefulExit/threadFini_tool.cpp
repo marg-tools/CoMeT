@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
  * This tool checks that all thread-fini and application fini callbacks are delivered upon program
  * termination in the correct order.
@@ -21,9 +40,6 @@
 #include <ctime>
 #include <set>
 #include "pin.H"
-using std::set;
-using std::string;
-using std::endl;
 
 using std::ofstream;
 
@@ -75,15 +91,6 @@ THREADID myThread = INVALID_THREADID;
 set<THREADID> appThreads;
 PIN_LOCK pinLock;
 
-static struct _ATEXIT {
-    ~_ATEXIT()
-    {
-        // We assume that stdout is not yet closed by application.
-        fprintf(stdout, "Tool unloaded.\n");
-        fflush(stdout);
-    }
-} s1;
-
 /**************************************************
  * Function declarations                          *
  **************************************************/
@@ -110,17 +117,13 @@ static void CreateToolThread() {
 // Calls exit application either directly (by the application thread) or indirectly (by releasing the internal thread).
 static void callExitApplication(bool appThread) {
     if (appThread) {
-        PIN_GetLock(&pinLock, PIN_GetTid());
         fprintf(outfile, "TOOL: <%d> Application thread calling PIN_ExitApplication()\n", PIN_GetTid());
         fflush(outfile);
-        PIN_ReleaseLock(&pinLock);
         PIN_ExitApplication(0);
     }
     else {
-        PIN_GetLock(&pinLock, PIN_GetTid());
         fprintf(outfile, "TOOL: <%d> Releasing the internal exit thread\n", PIN_GetTid());
         fflush(outfile);
-        PIN_ReleaseLock(&pinLock);
         releaseExitThread = true;
     }
 }
@@ -144,10 +147,6 @@ static VOID AppThreadStart(THREADID threadIndex) {
 
 static VOID ThreadStart(THREADID threadIndex, CONTEXT* c, INT32 flags, VOID *v) {
     if (myThread == INVALID_THREADID) {
-        // Assume the first ThreadStart event is for main thread.
-        if (threadIndex != 0) {
-            PIN_ExitProcess(103);
-        }
         myThread = threadIndex;
         AppThreadStart(threadIndex);
     }
@@ -183,19 +182,15 @@ static VOID OnImage(IMG img, VOID *v) {
     if (IMG_IsMainExecutable(img)) {
         RTN rtn = RTN_FindByName(img, "doExit");
         if (RTN_Valid(rtn)) {
-            PIN_GetLock(&pinLock, PIN_GetTid());
             fprintf(outfile, "TOOL: <%d> Found doExit routine\n", PIN_GetTid());
             fflush(outfile);
-            PIN_ReleaseLock(&pinLock);
             RTN_Open(rtn);
             RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)callExitApplication, IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
             RTN_Close(rtn);
         }
         else {
-            PIN_GetLock(&pinLock, PIN_GetTid());
             fprintf(outfile, "TOOL: <%d> Unable to find the doExit routine. Killing the test!\n", PIN_GetTid());
             fflush(outfile);
-            PIN_ReleaseLock(&pinLock);
             PIN_ExitProcess(102);
         }
         rtn = RTN_FindByName(img, "DoNewThread");
@@ -214,28 +209,22 @@ static VOID OnImage(IMG img, VOID *v) {
 // Internal thread's main function
 void InternalThreadMain(void* v) {
     time_t internal_th_start = time(NULL);
-    PIN_GetLock(&pinLock, PIN_GetTid());
     fprintf(outfile, "TOOL: <%d> Internal thread was created succesfully.\n", PIN_GetTid());
     fflush(outfile);
-    PIN_ReleaseLock(&pinLock);
     int timeout = 600;
     while (!releaseExitThread && --timeout > 0) { // wait here until the application requests to exit
         PIN_Yield();
         PIN_Sleep(1000); // 1 sec
     }
 
-    PIN_GetLock(&pinLock, PIN_GetTid());
-    fprintf(outfile, "TOOL: timeout = %d, seconds since starting internal thread=%.f\n",
-                     timeout, difftime(time(NULL), internal_th_start));
+    fprintf(outfile, "TOOL: timeout = %d, seconds since starting internal thread=%.f\n",timeout, difftime(time(NULL), internal_th_start));
     if (timeout <= 0 ) {
         fprintf(outfile, "TOOL: <%d> Internal thread got time out after 10 minutes - exiting with an error.\n", PIN_GetTid());
         fflush(outfile);
-        PIN_ReleaseLock(&pinLock);
         PIN_ExitProcess(102);
     } else {
         fprintf(outfile, "TOOL: <%d> Internal thread calling PIN_ExitApplication().\n", PIN_GetTid());
         fflush(outfile);
-        PIN_ReleaseLock(&pinLock);
         PIN_ExitApplication(0);
     }
 }
@@ -272,3 +261,4 @@ int main(INT32 argc, CHAR **argv) {
 
     return 0;
 }
+

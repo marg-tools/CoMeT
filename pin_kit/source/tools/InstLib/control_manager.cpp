@@ -1,16 +1,35 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-#include <sstream>
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
+
+#include <sstream> 
 #include "control_manager.H"
 #include "control_chain.H"
 #include "alarm_manager.H"
@@ -20,8 +39,6 @@
 using namespace std;
 using namespace CONTROLLER;
 
-
-/// @cond INTERNAL_DOXYGEN
 
 VOID CONTROL_MANAGER::InitKnobs(){
 
@@ -201,7 +218,6 @@ CONTROL_MANAGER::CONTROL_MANAGER(const string prefix,
     _uniform_alarm = NULL;
     _interactive_listener = NULL;
     _late_handler = FALSE;
-    _pass_context = FALSE;
     
     //add knobs definitions(new and old)
     InitKnobs();
@@ -209,17 +225,9 @@ CONTROL_MANAGER::CONTROL_MANAGER(const string prefix,
     //create the region controller
     CONTROL_ARGS args(_prefix,_control_family);
     _iregions = new CONTROL_IREGIONS(args,this);
-
-    // External regions fields
-    _external_region_chains = NULL;
-    _set_external_region_triggered = NULL;
-    _external_region_param = NULL;
+    _pcregions = new CONTROL_PCREGIONS(args,this);
 
     memset(_control_chain_thread_vec,0,sizeof(ADDRINT)*PIN_MAX_THREADS);
-
-    _region_info_callback = NULL;
-    _region_info_param = NULL;
-    _thread_trans_callback = NULL;
 }
 
 VOID CONTROL_MANAGER::Fini(INT32, VOID* v){
@@ -269,6 +277,15 @@ VOID CONTROL_MANAGER::Activate()
     _iregions->Activate(_pass_context, &regionControlChains);
     if (regionControlChains) {
         regionControllerNum = regionControlChains->size();
+
+    }
+
+    // Activate PCREGION class and get controller knobs from it
+    CHAIN_EVENT_VECTOR * pcRegionControlChains = NULL; 
+    UINT32 pcRegionControllerNum = 0;
+    _pcregions->Activate(_pass_context, &pcRegionControlChains);
+    if (pcRegionControlChains) {
+        pcRegionControllerNum = pcRegionControlChains->size();
     }
 
     UINT32 num_chains = _control_knob->NumberOfValues();
@@ -276,6 +293,12 @@ VOID CONTROL_MANAGER::Activate()
     // We do not allow using region controller with other controller knobs
     if (num_chains > regionControllerNum && regionControllerNum > 0) {
         ASSERT(FALSE,"Illegal usage of -control together with -regions:in ");
+    }
+    if (num_chains > pcRegionControllerNum && pcRegionControllerNum > 0) {
+        ASSERT(FALSE,"Illegal usage of -control together with -pcregions:in ");
+    }
+    if (regionControllerNum > 0 && pcRegionControllerNum > 0) {
+        ASSERT(FALSE,"Illegal usage of -regions:intogether with -pcregions:in ");
     }
 
     if (_control_log_knob->Value()){
@@ -291,8 +314,8 @@ VOID CONTROL_MANAGER::Activate()
     if (_control_interactive->Value() != ""){
 
         // We do not allow using region controller with interactive controller 
-        if (regionControllerNum > 0) {
-            ASSERT(FALSE,"Illegal usage of interactive controller together with -regions:in ");
+        if (regionControllerNum > 0 || pcRegionControllerNum) {
+            ASSERT(FALSE,"Illegal usage of interactive controller together with -regions:in or -pcregions:in ");
         }
         string name = _control_interactive->Value();
         _interactive_listener = new INTERACTIVE_LISTENER(name);
@@ -324,7 +347,7 @@ VOID CONTROL_MANAGER::Activate()
         chain->Activate();
     }
 
-    // Check if we got chain handler from iregions or external regions
+    // Check if we got chain handler from iregions or pcregions
     UINT32 num_handler_chains = 0;
     BOOL vector_chain = FALSE;
     if (regionControllerNum) {
@@ -333,7 +356,11 @@ VOID CONTROL_MANAGER::Activate()
         controlChains = regionControlChains;
         vector_chain = TRUE;
     }
-
+    else if (pcRegionControllerNum) {
+        // Support pc region controller
+        num_handler_chains = pcRegionControllerNum;
+        controlChains = pcRegionControlChains;
+    }
     // Iterate all chains with handles and parse them
     for (UINT32 i=0; i<num_handler_chains; i++){
         string chain_str = (*controlChains)[i].chain_str;
@@ -351,19 +378,10 @@ VOID CONTROL_MANAGER::Activate()
         // Add to vector chain of the thread
         if (vector_chain)
         {
-            // Search global string in chain str
-            // if found that use thread id 0
-            THREADID vector_tid = tid;
-            if (chain_str.find(":global") != std::string::npos)
-            {
-                vector_tid = 0;
-            }
-
-            // Add check to the vector
-            if (_control_chain_thread_vec[vector_tid] == NULL)
-                _control_chain_thread_vec[vector_tid] = new CONTROL_CHAIN_VECTOR;
-            _control_chain_thread_vec[vector_tid]->push_back(chain);
-            chain->SetVectorIndex(_control_chain_thread_vec[vector_tid]->size()-1);
+            if (_control_chain_thread_vec[tid] == NULL)
+                _control_chain_thread_vec[tid] = new CONTROL_CHAIN_VECTOR;
+            _control_chain_thread_vec[tid]->push_back(chain);
+            chain->SetVectorIndex(_control_chain_thread_vec[tid]->size()-1);
         }
 
         // parse the chain - creates all the required alarms
@@ -379,8 +397,8 @@ VOID CONTROL_MANAGER::Activate()
     //add translation of old controller knobs
     if (AddOldKnobs()) {
         // We do not allow using old controller knobs with interactive controller 
-        if (regionControllerNum > 0) {
-            ASSERT(FALSE,"Illegal usage of old controller knobs together with -regions:in or external regions ");
+        if (regionControllerNum > 0 || pcRegionControllerNum > 0) {
+            ASSERT(FALSE,"Illegal usage of old controller knobs together with -regions:in or -pcregions:in ");
         }
     }
     
@@ -409,12 +427,12 @@ VOID CONTROL_MANAGER::Fire(EVENT_TYPE eventID, CONTEXT* ctxt,
         _iregions->SetTriggeredRegion(tid,event_handler);
     }
 
-    // Handle external regions if active
-    if (ExternalRegionActive()) {
-        BOOL legal_event = _set_external_region_triggered(tid,eventID,event_handler,_external_region_param);
+    // Handle PCREGION if active
+    if (PCregionsActive()) {
+        BOOL legel_event = _pcregions->SetTriggeredRegion(tid,eventID,event_handler);
 
         // In case we found overlap region we should not fire the event
-        if (!legal_event) {
+        if (!legel_event) {
             if (_control_log_knob->Value()){
                 //emit the controllers events log 
                 _out << "TID" << tid << ":  ignore non legal event: " << _events.IDToString(eventID) << 
@@ -427,7 +445,7 @@ VOID CONTROL_MANAGER::Fire(EVENT_TYPE eventID, CONTEXT* ctxt,
                 chain->SetBlockFire();
             return;
         }
-    } 
+    }
 
     //call all registered control handlers
     list<CONTROL_HANDLER_PARAMS>::iterator iter = _control_handler.begin();
@@ -609,7 +627,7 @@ BOOL CONTROL_MANAGER::HasStartEvent(){
         return TRUE;
     }
 
-    if (ExternalRegionActive()){
+    if (_pcregions->IsActive()){
         return TRUE;
     }
 
@@ -668,8 +686,16 @@ IREGION * CONTROL_MANAGER::CurrentIregion(THREADID tid) const {
     return _iregions->LastTriggeredRegion(tid);
 }
 
+PCREGION * CONTROL_MANAGER::CurrentPCregion(THREADID tid) const {
+    return _pcregions->LastTriggeredRegion(tid);
+}
+
 BOOL CONTROL_MANAGER::IregionsActive() const {
     return _iregions->IsActive();
+}
+
+BOOL CONTROL_MANAGER::PCregionsActive() const {
+    return _pcregions->IsActive();
 }
 
 BOOL CONTROL_MANAGER::UniformActive(){
@@ -721,56 +747,3 @@ CONTROL_CHAIN * CONTROL_MANAGER::GetNextControlChain(UINT32 index, THREADID tid)
 
     return NULL;
 }
-
-// Add external region chains
-VOID CONTROL_MANAGER::AddExternalRegionChains(CHAIN_EVENT_VECTOR * external_region_chains,
-                             SET_EXTERNAL_REGION_TRIGGERED set_external_region_triggered,
-                             VOID* param) {
-    ASSERT(_external_region_chains == NULL,"Illegal to add more than one external chain to controller");
-    ASSERT(external_region_chains != NULL,"Set external region chain is NULL");
-    ASSERT(set_external_region_triggered != NULL,"Set external region trigger callback is NULL");
-    _external_region_chains = external_region_chains;
-    _set_external_region_triggered = set_external_region_triggered;
-    _external_region_param = param;
-
-    // Get external chains number
-    UINT32 ExternalRegionsChainsNum = _external_region_chains->size();
-    if (ExternalRegionsChainsNum == 0)
-        return;
-
-    // Sanity checks
-    if (_control_knob->NumberOfValues() > 0) {
-        ASSERT(FALSE,"Illegal usage of -control together with external regions ");
-    }
-    if (_control_interactive->Value() != ""){
-        ASSERT(FALSE,"Illegal usage of interactive controller together with  external regions ");
-    }
-
-    // Iterate all chains with handles and parse them
-    for (UINT32 i=0; i<ExternalRegionsChainsNum; i++){
-        string chain_str = (*_external_region_chains)[i].chain_str;
-        VOID* event_handler = (*_external_region_chains)[i].event_handler;
-
-        if (_control_log_knob->Value()){
-            // Emit the controller knobs
-            _out << "External Regions Controller knob " << i << " : " << chain_str << endl;
-        }
-
-        CONTROL_CHAIN* chain = new CONTROL_CHAIN(this, event_handler);
-        _control_chain.push_back(chain);
-
-        // parse the chain - creates all the required alarms
-        chain->Parse(chain_str);
-
-        if (_control_debug_knob->Value()){
-            chain->DebugPrint();
-        }
-
-        chain->Activate();
-    }
-
-    // Disable default controller
-    _init_alarm.Disable();
-}
-
-/// @endcond

@@ -57,7 +57,7 @@ endif
 
 ###### Handle exceptions here ######
 
-# The Maid test is disabled on macOS*.
+# The Maid test is disabled on OS X*.
 # See Mantis 3184
 ifeq ($(TARGET_OS),mac)
     TEST_TOOL_ROOTS :=

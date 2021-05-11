@@ -1,16 +1,3 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- */
-
 // <COMPONENT>: os-apis
 // <FILE-TYPE>: component public header
 /// @file memory.h
@@ -97,7 +84,7 @@ typedef enum
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Socket(OS_APIS_IPC_SOCKET_DOMAIN domain, OS_APIS_IPC_SOCKET_TYPE type,
@@ -115,7 +102,7 @@ OS_RETURN_CODE OS_Socket(OS_APIS_IPC_SOCKET_DOMAIN domain, OS_APIS_IPC_SOCKET_TY
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Accept(NATIVE_FD sockfd, struct sockaddr *addr, USIZE *addrlen, NATIVE_FD* newfd);
@@ -130,7 +117,7 @@ OS_RETURN_CODE OS_Accept(NATIVE_FD sockfd, struct sockaddr *addr, USIZE *addrlen
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Listen(NATIVE_FD sockfd, INT backlog);
@@ -146,7 +133,7 @@ OS_RETURN_CODE OS_Listen(NATIVE_FD sockfd, INT backlog);
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Connect(NATIVE_FD sockfd, const struct sockaddr *addr, USIZE addrlen);
@@ -162,7 +149,7 @@ OS_RETURN_CODE OS_Connect(NATIVE_FD sockfd, const struct sockaddr *addr, USIZE a
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Bind(NATIVE_FD sockfd, const struct sockaddr *addr, USIZE addrlen);
@@ -178,7 +165,7 @@ OS_RETURN_CODE OS_Bind(NATIVE_FD sockfd, const struct sockaddr *addr, USIZE addr
  * @retval     OS_RETURN_CODE_FILE_OPEN_FAILED   If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_GetSockName(NATIVE_FD sockfd, const struct sockaddr *addr, USIZE* addrlen);
@@ -196,7 +183,7 @@ OS_RETURN_CODE OS_GetSockName(NATIVE_FD sockfd, const struct sockaddr *addr, USI
  * @retval     OS_RETURN_CODE_FILE_CLOSE_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_Shutdown(NATIVE_FD sockfd, OS_APIS_IPC_SHUTDOWN how);
@@ -215,7 +202,7 @@ OS_RETURN_CODE OS_Shutdown(NATIVE_FD sockfd, OS_APIS_IPC_SHUTDOWN how);
  * @retval     OS_RETURN_CODE_FILE_WRITE_FAILED  If the operation failed
  *
  * @par Availability:
- *   @b O/S:   Linux & macOS* \n
+ *   @b O/S:   Linux & OS X* \n
  *   @b CPU:   All \n
  */
 OS_RETURN_CODE OS_SendTo(NATIVE_FD sockfd, const void *buffer, OS_APIS_IPC_SENDTO_FLAGS flags,

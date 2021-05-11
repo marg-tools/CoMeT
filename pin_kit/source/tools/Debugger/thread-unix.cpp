@@ -1,13 +1,4 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*NO LEGAL*/
 
 /*
  * Utility application that creates threads via pthreads().
@@ -55,7 +46,7 @@ int main(int argc, char **argv)
     for (unsigned i = 0;  i < NumThreads;  i++)
         pthread_join(workers[i], 0);
 
-    delete[] workers;
+    delete workers;
     return 0;
 }
 

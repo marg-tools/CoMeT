@@ -59,7 +59,7 @@ public:
   typedef const _CharT&                    reference;
 
 public:
-  istreambuf_iterator(streambuf_type* __p = 0) : _M_c(_CharT()) { this->_M_init(__p); }
+  istreambuf_iterator(streambuf_type* __p = 0) { this->_M_init(__p); }
   //  istreambuf_iterator(basic_istream<_CharT, _Traits>& __is) { this->_M_init(_M_get_istreambuf(__is)); }
   inline istreambuf_iterator(basic_istream<_CharT, _Traits>& __is);
 
@@ -103,8 +103,7 @@ private:
 };
 
 template<class _CharT, class _Traits>
-inline istreambuf_iterator<_CharT, _Traits>::istreambuf_iterator(basic_istream<_CharT, _Traits>& __is) :
-    _M_c(_CharT())
+inline istreambuf_iterator<_CharT, _Traits>::istreambuf_iterator(basic_istream<_CharT, _Traits>& __is)
 { this->_M_init(_M_get_istreambuf(__is)); }
 
 template<class _CharT, class _Traits>

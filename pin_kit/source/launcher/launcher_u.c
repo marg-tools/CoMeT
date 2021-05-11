@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*! @file
  *
  * Launcher code common to unix platforms.
@@ -34,9 +53,9 @@ static char** build_user_argv(int* argc)
      argv = (char**) malloc(sizeof(char*) * (*argc));
 
      argv[0] = "-t";
-     argv[1] = appendPath("path_to_tool", "/", "toolname32");
+     argv[1] = append3("path_to_tool", "/", "toolname32");
      argv[2] = "-t64";
-     argv[3] = appendPath("path_to_tool", "/", "toolname64");
+     argv[3] = append3("path_to_tool", "/", "toolname64");
      */
 
     return argv;
@@ -105,21 +124,14 @@ int main(int orig_argc, char** orig_argv)
     char* base_path;
     char* driver_name;
 
-    if (orig_argv == NULL || orig_argv[0] == NULL)
-        abort();
     driver_name = find_driver_name(orig_argv[0]);
-    if (driver_name == NULL)
-        abort();
     base_path = find_base_path(driver_name);
-    if (base_path == NULL)
-        abort();
+
     update_environment_common(base_path);
 
     user_argv = build_user_argv(&user_argc);
     child_argv = build_child_argv(base_path, orig_argc, orig_argv, user_argc,
             user_argv);
-    if (driver_name) free(driver_name);
-    if (base_path) free(base_path);
     path_to_cmd = child_argv[0];
 
     /* For testing purposes */

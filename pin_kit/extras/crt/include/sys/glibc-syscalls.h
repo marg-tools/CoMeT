@@ -1038,7 +1038,6 @@
 #define SYS_adjtimex __NR_adjtimex
 #define SYS_afs_syscall __NR_afs_syscall
 #define SYS_alarm __NR_alarm
-#define SYS_arch_prctl __NR_arch_prctl
 #define SYS_bdflush __NR_bdflush
 #define SYS_break __NR_break
 #define SYS_brk __NR_brk

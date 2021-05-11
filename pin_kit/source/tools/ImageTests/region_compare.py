@@ -19,9 +19,9 @@ for line in open(sys.argv[2]).readlines():
         app_output[os.path.abspath(match.group(1))] = []
     app_output[os.path.abspath(match.group(1))].append((int(match.group(2), 16), int(match.group(3), 16)))
 
-for img, segments in list(app_output.items()):
+for img, segments in app_output.items():
     if img not in tool_output:
-        print("An image visible to the app was not found by pin image load callbacks...")
+        print "An image visible to the app was not found by pin image load callbacks..."
         sys.exit(1)
 
     # iterate over the segments in the image
@@ -35,7 +35,7 @@ for img, segments in list(app_output.items()):
                 segment_found = True
 
         if not segment_found:
-            print("Couldn't find text/data segment in any of the image regions!")
+            print "Couldn't find text/data segment in any of the image regions!"
             for region in tool_output:
                 # Check if the segment is contained in one of
                 # the regions. It should!
@@ -43,10 +43,10 @@ for img, segments in list(app_output.items()):
                     segment_found = True
 
         if not segment_found:
-            print("Couldn't find text/data segment in any of the image regions!")
+            print "Couldn't find text/data segment in any of the image regions!"
             for region in tool_output[img]:
-                print("Image: {0}, region [{1}, {2}]".format(img, region[0], region[1]))
-            print("Image: {0}, segment[{1}, {2}]".format(img, segment[0], segment[1]))
+                print "Image: {0}, region [{1}, {2}]".format(img, region[0], region[1])
+            print "Image: {0}, segment[{1}, {2}]".format(img, segment[0], segment[1])
             sys.exit(1)
 
 sys.exit(0)

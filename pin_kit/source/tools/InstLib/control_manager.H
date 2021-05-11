@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2019 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #ifndef _CONTROL_MANAGER_H_
 #define _CONTROL_MANAGER_H_
 
@@ -26,6 +45,19 @@ extern "C"{
 #include "xed-interface.h"
 }
 
+#if PIN_PRODUCT_VERSION_MINOR < 8
+// added to make latest controller sources to build with older Pin kits
+#define INS_IsValidForIpointAfter(ins) INS_HasFallThrough(ins) //FIXME
+#define INS_IsValidForIpointTakenBranch(ins) INS_IsBranchOrCall(ins) //FIXME
+#define IMG_EntryAddress(img) IMG_Entry(img) //FIXME
+#define  INS_IsDirectControlFlow(ins) INS_IsDirectBranchOrCall(ins) //FIXME
+#define  INS_IsIndirectControlFlow(ins) INS_IsIndirectBranchOrCall(ins) //FIXME
+#define INS_IsIndirectControlFlowViaRegister(ins) INS_CallOrBranchIsRegisterIndirect(ins) //FIXME
+#define INS_IsIndirectControlFlowViaMemory(ins) INS_CallOrBranchIsMemoryIndirect(ins) //FIXME
+#define INS_GetIndirectControlFlowRegister(ins) INS_CallOrBranchGetIndirectRegister(ins) //FIXME
+#define INS_DirectControlFlowTargetAddress(ins) INS_DirectBranchOrCallTargetAddress(ins) //FIXME
+#endif
+
 using namespace std;
 
 namespace CONTROLLER 
@@ -35,27 +67,13 @@ static const UINT32 ALL_THREADS = 0xFFFF;
 
 typedef VOID (*CONTROL_HANDLER)(EVENT_TYPE, VOID *, CONTEXT *, VOID *, 
                                 THREADID tid, BOOL bcast);
-
 typedef struct {
     CONTROL_HANDLER handler;
     VOID* val;
     bool  passContext;        // context requirement indicator 
 } CONTROL_HANDLER_PARAMS;
 
-typedef struct {
-    string regionName;
-    UINT32 regionId;
-} CONTROL_REGION_INFO;
-
-typedef CONTROL_REGION_INFO (*REGION_INFO_CALLBACK)(THREADID tid, VOID *);
-
-// Set external region triggered callback
-typedef BOOL (*SET_EXTERNAL_REGION_TRIGGERED)(THREADID tid, EVENT_TYPE event_type, VOID* event_handler, VOID* param);
-
-// Thread translation callback
-typedef THREADID (*THREAD_TRANS_CALLBACK)(THREADID tid, VOID *);
-
-// This structure is used by iregions when creating
+// This structure is used by iregions and pcregions when creating
 // new alarms inside the controller.
 typedef struct {
     string chain_str;
@@ -69,7 +87,9 @@ class CONTROL_CHAIN;
 class ALARM_MANAGER;
 class CONTROLLER_EVENTS;
 class CONTROL_IREGIONS;
+class CONTROL_PCREGIONS;
 class IREGION;
+class PCREGION;
 
 typedef vector<CONTROL_CHAIN*> CONTROL_CHAIN_VECTOR;
 
@@ -128,8 +148,14 @@ public:
     //return the last triggered region
     IREGION * CurrentIregion(THREADID tid=0) const;
 
+    //return the last triggered region
+    PCREGION * CurrentPCregion(THREADID tid=0) const;
+
     //return True if region control is active
     BOOL IregionsActive() const;
+
+    //return True if region control is active
+    BOOL PCregionsActive() const;
 
     //FIXME:I think this is not required since we have the focus tid knob
     BOOL StartTIDActive(){return FALSE;}
@@ -162,34 +188,11 @@ public:
     // Get specific alarm manager according to index
     CONTROL_CHAIN * GetNextControlChain(UINT32 index, THREADID tid);
 
-    // Region name callback accessors
-    REGION_INFO_CALLBACK GetRegionInfoCallback() {return _region_info_callback;}
-    VOID * GetRegionInfoParam() {return _region_info_param;}
-    VOID SetRegionInfoCallback(REGION_INFO_CALLBACK region_info_callback, VOID * region_info_param) {
-        _region_info_callback=region_info_callback;
-        _region_info_param = region_info_param;
-    }
-
-    // Add external region chains
-    // This is an external API for the controller that enables 
-    // other SDE tools to send chain strings to be activated by the controller
-    //external_region_chains - external region chains vector
-    //set_external_region_triggered - Pointer to a function that return is triggered event is legel 
-    //param - parameter handle 
-    VOID AddExternalRegionChains(CHAIN_EVENT_VECTOR * external_region_chains,
-                                 SET_EXTERNAL_REGION_TRIGGERED set_external_region_triggered,
-                                 VOID* param);
-
-    // Thread translation callback
-    VOID SetThreadTransCallback(THREAD_TRANS_CALLBACK thread_trans_callback) {
-        _thread_trans_callback = thread_trans_callback;
-    }
-    THREAD_TRANS_CALLBACK GetThreadTransCallback() {return _thread_trans_callback;}
-
 private:
     //enable those classes to access private members
     friend class CONTROL_CHAIN;
     friend class CONTROL_IREGIONS;
+    friend class CONTROL_PCREGIONS;
     friend class INIT_ALARM;
 
     //add Icount instrumentation, used for logging controller events
@@ -234,10 +237,7 @@ private:
     BOOL PassContext(){return _pass_context;}
 
     INTERACTIVE_LISTENER* GetListener(){return _interactive_listener;}
-
-    // Return is external region is active
-    BOOL ExternalRegionActive() const {return _external_region_chains!=NULL;}
-
+  
     string _control_family;
     string _prefix;
     string _family_description;
@@ -269,11 +269,7 @@ private:
     KNOB<string>* _control_interactive;
 
     CONTROL_IREGIONS* _iregions;
-
-    // Chains from external tool
-    CHAIN_EVENT_VECTOR * _external_region_chains;
-    SET_EXTERNAL_REGION_TRIGGERED _set_external_region_triggered;
-    VOID* _external_region_param;
+    CONTROL_PCREGIONS* _pcregions;
 
     //list of all control chains
     list<CONTROL_CHAIN*>  _control_chain;
@@ -302,17 +298,11 @@ private:
     INTERACTIVE_LISTENER* _interactive_listener;
     
     CONTROL_CHAIN_VECTOR* _control_chain_thread_vec[PIN_MAX_THREADS];
-
-    // Region info callback
-    REGION_INFO_CALLBACK _region_info_callback;
-    VOID * _region_info_param;
-
-    // Thread translation callback
-    THREAD_TRANS_CALLBACK _thread_trans_callback;
 };//class
 
 } //namespace
 //must be here due to code dependency
 #include "regions_control.H"
+#include "pcregions_control.H"
 #endif
 

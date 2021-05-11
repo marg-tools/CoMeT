@@ -1,21 +1,9 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
 
 
-extern IMG IMG_CreateAt(const char* filename, ADDRINT start, USIZE size, ADDRINT loadOffset, BOOL mainExecutable);
-
-                                                                  /* DO NOT EDIT */
-extern VOID IMG_ReplayImageLoad(IMG img);
-
-                                                                  /* DO NOT EDIT */
-extern VOID* IMG_GetLoaderInfo(IMG img);
-
-                                                                  /* DO NOT EDIT */
-extern VOID IMG_SetLoaderInfo(IMG img, VOID* loaderInfo);
-
-                                                                  /* DO NOT EDIT */
 extern IMG IMG_Next(IMG img);
 
                                                                   /* DO NOT EDIT */
@@ -37,16 +25,10 @@ extern SEC IMG_SecTail(IMG img);
 extern SYM IMG_RegsymHead(IMG img);
 
                                                                   /* DO NOT EDIT */
-extern PIN_DEPRECATED_API ADDRINT IMG_Entry(IMG img);
+extern ADDRINT IMG_Entry(IMG img);
 
                                                                   /* DO NOT EDIT */
-extern ADDRINT IMG_EntryAddress(IMG img);
-
-                                                                  /* DO NOT EDIT */
-extern BOOL IMG_HasProperty(IMG img, IMG_PROPERTY property);
-
-                                                                  /* DO NOT EDIT */
-extern const std::string& IMG_Name(IMG img);
+extern const string& IMG_Name(IMG img);
 
                                                                   /* DO NOT EDIT */
 extern ADDRINT IMG_Gp(IMG img);
@@ -94,6 +76,9 @@ extern ADDRINT IMG_RegionHighAddress(IMG img, UINT32 n);
 extern ADDRINT IMG_RegionLowAddress(IMG img, UINT32 n);
 
                                                                   /* DO NOT EDIT */
+extern IMG IMG_CreateAt(const char* filename, ADDRINT start, USIZE size, ADDRINT loadOffset, BOOL mainExecutable);
+
+                                                                  /* DO NOT EDIT */
 extern IMG SEC_Img(SEC sec);
 
                                                                   /* DO NOT EDIT */
@@ -115,7 +100,7 @@ extern RTN SEC_RtnHead(SEC sec);
 extern RTN SEC_RtnTail(SEC sec);
 
                                                                   /* DO NOT EDIT */
-extern const std::string& SEC_Name(SEC sec);
+extern const string& SEC_Name(SEC sec);
 
                                                                   /* DO NOT EDIT */
 extern SEC_TYPE SEC_Type(SEC sec);
@@ -142,7 +127,19 @@ extern RTN RTN_Invalid();
 extern BOOL RTN_Valid(RTN x);
 
                                                                   /* DO NOT EDIT */
-extern const std::string& RTN_Name(RTN x);
+/* DO NOT EDIT */
+/* RTN_BblHead is now deprecated. See RTN_InsHead.
+ */
+extern PIN_DEPRECATED_API BBL RTN_BblHead(RTN x);
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* RTN_BblTail is now deprecated. See RTN_InsTail.
+ */
+extern PIN_DEPRECATED_API BBL RTN_BblTail(RTN x);
+
+                                                                  /* DO NOT EDIT */
+extern const string& RTN_Name(RTN x);
 
                                                                   /* DO NOT EDIT */
 extern BOOL RTN_IsArtificial(RTN x);
@@ -151,13 +148,16 @@ extern BOOL RTN_IsArtificial(RTN x);
 extern SYM RTN_Sym(RTN x);
 
                                                                   /* DO NOT EDIT */
-extern UINT RTN_DynamicMethodId(RTN x);
-
-                                                                  /* DO NOT EDIT */
 extern AFUNPTR RTN_Funptr(RTN x);
 
                                                                   /* DO NOT EDIT */
-extern UINT32 RTN_Id(RTN x);
+inline UINT32 RTN_Id(RTN x) { return x.q();}
+
+                                                                  /* DO NOT EDIT */
+/* DO NOT EDIT */
+/* RTN_No is now deprecated. See RTN_Id.
+ */
+inline PIN_DEPRECATED_API INT32 RTN_No(RTN x) { return x.q();}
 
                                                                   /* DO NOT EDIT */
 extern INS BBL_InsHead(BBL x);
@@ -196,10 +196,7 @@ extern ADDRINT INS_Address(INS ins);
 extern USIZE INS_Size(INS ins);
 
                                                                   /* DO NOT EDIT */
-extern PIN_DEPRECATED_API ADDRINT INS_DirectBranchOrCallTargetAddress(INS ins);
-
-                                                                  /* DO NOT EDIT */
-extern ADDRINT INS_DirectControlFlowTargetAddress(INS ins);
+extern ADDRINT INS_DirectBranchOrCallTargetAddress(INS ins);
 
                                                                   /* DO NOT EDIT */
 extern ADDRINT INS_NextAddress(INS ins);
@@ -211,7 +208,7 @@ extern SYM SYM_Next(SYM x);
 extern SYM SYM_Prev(SYM x);
 
                                                                   /* DO NOT EDIT */
-extern const std::string& SYM_Name(SYM x);
+extern const string& SYM_Name(SYM x);
 
                                                                   /* DO NOT EDIT */
 extern SYM SYM_Invalid();
@@ -264,32 +261,29 @@ class SymbolAddressRange
 {
     public:
         SymbolAddressRange() : base(0), size(0), name("") {}
-        SymbolAddressRange(std::string sym_name, ADDRINT sym_base, size_t sym_size) :
+        SymbolAddressRange(string sym_name, ADDRINT sym_base, size_t sym_size) :
             base(sym_base), size(sym_size), name(sym_name) {}
         SymbolAddressRange(const SymbolAddressRange &obj) {base=obj.base; size=obj.size; name=obj.name;}
-        SymbolAddressRange& operator = (const SymbolAddressRange &obj) {base=obj.base; size=obj.size; name=obj.name; return *this;}
+        void operator = (const SymbolAddressRange &obj) {base=obj.base; size=obj.size; name=obj.name;}
         BOOL operator < (const SymbolAddressRange &  range) const {return (base < range.base);}
         BOOL Contains(const ADDRINT addr) const { return ((addr-base)<size); }
     public:
         ADDRINT base;
         size_t size;
-        std::string name;
+        string name;
 };
 
                                                                   /* DO NOT EDIT */
 struct SymbolDebugInfo
 {
-    SymbolDebugInfo(std::string sym_name, ADDRINT sym_base, size_t sym_size) :
+    SymbolDebugInfo(string sym_name, ADDRINT sym_base, size_t sym_size) :
         name(sym_name), range(sym_name, sym_base, sym_size) {}
-    std::string name;
+    string name;
     SymbolAddressRange range;
 };
 
                                                                   /* DO NOT EDIT */
 extern UINT32 IMG_Id(IMG x);
-
-                                                                  /* DO NOT EDIT */
-extern VOID* IMG_DynamicRawData(IMG img);
 
                                                                   /* DO NOT EDIT */
 extern IMG IMG_FindImgById(UINT32 id);
@@ -319,13 +313,22 @@ extern RTN RTN_IFuncResolver(RTN rtn);
 extern RTN RTN_IFuncImplementation(RTN rtn);
 
                                                                   /* DO NOT EDIT */
-extern IMG IMG_Open(const std::string& filename);
+extern IMG IMG_Open(const string& filename);
 
                                                                   /* DO NOT EDIT */
 extern VOID IMG_Close(IMG img);
 
                                                                   /* DO NOT EDIT */
-extern std::string RTN_FindNameByAddress(ADDRINT address);
+extern VOID IMG_ReplayImageLoad(IMG img);
+
+                                                                  /* DO NOT EDIT */
+extern VOID* IMG_GetLoaderInfo(IMG img);
+
+                                                                  /* DO NOT EDIT */
+extern VOID IMG_SetLoaderInfo(IMG img, VOID* loaderInfo);
+
+                                                                  /* DO NOT EDIT */
+extern string RTN_FindNameByAddress(ADDRINT address);
 
                                                                   /* DO NOT EDIT */
 extern RTN RTN_FindByAddress(ADDRINT address);
@@ -358,7 +361,7 @@ extern VOID RTN_InsertCall(RTN rtn, IPOINT action, AFUNPTR funptr, ...);
 extern ADDRINT RTN_Address(RTN rtn);
 
                                                                   /* DO NOT EDIT */
-extern RTN RTN_CreateAt(ADDRINT address, std::string name);
+extern RTN RTN_CreateAt(ADDRINT address, string name);
 
                                                                   /* DO NOT EDIT */
 extern BOOL RTN_IsDynamic(RTN rtn);
@@ -394,7 +397,7 @@ extern IMG APP_ImgHead();
 extern IMG APP_ImgTail();
 
                                                                   /* DO NOT EDIT */
-extern std::string PIN_UndecorateSymbolName(const std::string & symbolName, UNDECORATION style);
+extern string PIN_UndecorateSymbolName(const string & symbolName, UNDECORATION style);
 
                                                                   /* DO NOT EDIT */
 

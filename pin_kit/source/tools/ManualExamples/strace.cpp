@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 /*
  *  This file contains an ISA-portable PIN tool for tracing system calls
  */
@@ -28,9 +47,9 @@ FILE * trace;
 // Print syscall number and arguments
 VOID SysBefore(ADDRINT ip, ADDRINT num, ADDRINT arg0, ADDRINT arg1, ADDRINT arg2, ADDRINT arg3, ADDRINT arg4, ADDRINT arg5)
 {
-#if defined(TARGET_LINUX) && defined(TARGET_IA32)
-    // On ia32 Linux, there are only 5 registers for passing system call arguments,
-    // but mmap needs 6. For mmap on ia32, the first argument to the system call
+#if defined(TARGET_LINUX) && defined(TARGET_IA32) 
+    // On ia32 Linux, there are only 5 registers for passing system call arguments, 
+    // but mmap needs 6. For mmap on ia32, the first argument to the system call 
     // is a pointer to an array of the 6 arguments
     if (num == SYS_mmap)
     {
@@ -82,10 +101,10 @@ VOID SyscallExit(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID
 // Is called for every instruction and instruments syscalls
 VOID Instruction(INS ins, VOID *v)
 {
-    // For O/S's (macOS*) that don't support PIN_AddSyscallEntryFunction(),
+    // For O/S's (Mac) that don't support PIN_AddSyscallEntryFunction(),
     // instrument the system call instruction.
 
-    if (INS_IsSyscall(ins) && INS_IsValidForIpointAfter(ins))
+    if (INS_IsSyscall(ins) && INS_HasFallThrough(ins))
     {
         // Arguments and syscall number is only available before
         INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(SysBefore),
@@ -114,7 +133,7 @@ VOID Fini(INT32 code, VOID *v)
 
 INT32 Usage()
 {
-    PIN_ERROR("This tool prints a log of system calls"
+    PIN_ERROR("This tool prints a log of system calls" 
                 + KNOB_BASE::StringKnobSummary() + "\n");
     return -1;
 }
@@ -137,6 +156,6 @@ int main(int argc, char *argv[])
 
     // Never returns
     PIN_StartProgram();
-
+    
     return 0;
 }

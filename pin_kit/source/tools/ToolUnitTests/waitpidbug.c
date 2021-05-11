@@ -1,14 +1,33 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -16,8 +35,6 @@
 #include <stdio.h>
 #include <sched.h>
 #include <errno.h>
-#include <string.h>
-#define MAX_COMMAND_LINE_SIZE 15    // the size for the array of arguments to execv (this value is arbitrary)
 
 /*
  * This program tests for a bug with waitpid. We run pin in a child and
@@ -32,19 +49,13 @@
 /*
  * Expected argv arguments:
  * [1] pin executable
- * [2] Pin flags (e.g. -slow_asserts)
- *     >> zero or more flags possible
+ * [2] "-slow_asserts"
  * [3] copy application
  * [4] copy source
  * [5] copy target
  */
 main(int argc, char * argv[])
 {
-    if (argc > MAX_COMMAND_LINE_SIZE){
-        fprintf(stderr, "Too many arguments\n" );
-        fflush(stderr);
-        exit(1);
-    }
     pid_t pid = fork();
     if (pid)
     {
@@ -77,14 +88,9 @@ main(int argc, char * argv[])
     }
     else
     {
-        char* args[MAX_COMMAND_LINE_SIZE] = {NULL};    // arguments for execv command
-        int args_count = 0;
-        int argv_count = 1;                            // to start from argv[1]...
-        while(argv_count < argc){
-            args[args_count++] = argv[argv_count++];   // all arguments including Pin flags will be passed to execv
-        }
-        args[args_count++] = NULL;                     // end
-        execv(argv[1], (char * const *)args);          // never returns
-        fprintf(stderr, "execv failed with errno: %d\n", errno);
+        execl(argv[1], argv[1], argv[2], "--", argv[3], argv[4], argv[5], NULL); // never returns
+        fprintf(stderr, "execl failed with errno: %d\n", errno);
     }
 }
+
+        

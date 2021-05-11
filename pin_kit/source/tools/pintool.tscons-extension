@@ -508,7 +508,7 @@ def ApplyCommonOptionsForPinToolsAndLibraries(opts):
     # thunk calls to materialize the PC.  Also, the Intel64 linker doesn't support dynamic
     # relocations to compensate for non-PIC code.
     #
-    # We don't do this on macOS* because non-PIC shared libraries are not supported on that
+    # We don't do this on OS X* because non-PIC shared libraries are not supported on that
     # platform.  As a result, IA32 tools that reference global variables will contain a call
     # to the thunk, and this will prevent them from being inlined.
     #

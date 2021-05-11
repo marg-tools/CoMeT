@@ -50,12 +50,12 @@ LIB_ROOTS :=
 
 # Linux
 ifeq ($(TARGET_OS),linux)
-    TEST_ROOTS += trace_thread trace_thread_with_virtual_segments
+    TEST_ROOTS += trace_thread
     TOOL_ROOTS += segtrace
     APP_ROOTS += thread
 endif
 
-# macOS*
+# Mac OS X*
 ifeq ($(TARGET_OS),mac)
     TEST_ROOTS += trace_thread
     TOOL_ROOTS += segtrace
@@ -87,10 +87,6 @@ SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 
 trace_thread.test: $(OBJDIR)segtrace$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
 	$(PIN) -t $(OBJDIR)segtrace$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
-
-# Same test for segment handling as in trace_thread.test only with virtualize segments on for backward compatibility
-trace_thread_with_virtual_segments.test: $(OBJDIR)segtrace$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
-	$(PIN) -xyzzy -virtual_segments 1 -t $(OBJDIR)segtrace$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
 
 trace_hello.test: $(OBJDIR)segtrace$(PINTOOL_SUFFIX) $(HELLO_APP)
 	$(PIN) -t $(OBJDIR)segtrace$(PINTOOL_SUFFIX) -- $(HELLO_APP)

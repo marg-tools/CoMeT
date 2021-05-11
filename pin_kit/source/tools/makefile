@@ -5,12 +5,12 @@
 # All directories which contain tests should be placed here.
 # Please maintain alphabetical order.
 
-ALL_TEST_DIRS :=   AlignChk AttachDetach Buffer ChildProcess  Cpp11Tests CrossIa32Intel64  Debugger	 \
+ALL_TEST_DIRS := AVX AVX2 AlignChk AttachDetach Buffer ChildProcess CodeCache Cpp11Tests CrossIa32Intel64 CRT Debugger	 \
                  DebugInfo DebugTrace GracefulExit I18N IArg ImageTests InlinedFuncsOpt Insmix InstLibExamples           \
-                 InstructionTests InstrumentationOrderAndVersion  LinuxTests  ManualExamples \
-                  Memory MemTrace MemTranslate Mix Mmx MyPinTool NonInlinedFuncsOpt Probes Regvalue Replay     \
+                 InstructionTests InstrumentationOrderAndVersion JitProfilingApiTests LinuxTests MacTests ManualExamples \
+                 MaskVector Memory MemTrace MemTranslate Mix Mmx MyPinTool NonInlinedFuncsOpt Probes Regvalue Replay     \
                  RtnTests SegTrace SegmentsVirtualization SignalTests SimpleExamples Smc SyncTests SyscallsEmulation     \
-                 Tests ToolUnitTests 
+                 Tests ToolUnitTests XyzzyKnobs
 
 # All directories which contain utilities for the test system should be placed here.
 # Please maintain alphabetical order.

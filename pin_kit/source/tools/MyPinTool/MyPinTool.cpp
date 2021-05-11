@@ -7,9 +7,6 @@
 #include "pin.H"
 #include <iostream>
 #include <fstream>
-using std::cerr;
-using std::string;
-using std::endl;
 
 /* ================================================================== */
 // Global variables 

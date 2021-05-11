@@ -1,28 +1,39 @@
-/*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
+/*BEGIN_LEGAL 
+Intel Open Source License 
 
+Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
 
 /*! @file
  *  An example of SMC application. 
  */
 #include "smc_util.h"
 #include "../Utils/sys_memory.h"
-
-#if defined(TARGET_MAC)
-//# include <mach/mach.h>
-# define CODE_SECTION_MAC(name)          __attribute__ ((section ("__TEXT, " name)))
-#else
-// No need at the moment for other OS's.
-# define CODE_SECTION_MAC(name)
-#endif
 
 /*!
  * Exit with the specified error message
@@ -42,10 +53,7 @@ int main(int argc, char *argv[])
     cerr << "SMC in the image of the application" << endl;
 
     // buffer to move foo/bar routines into and execute
-    // Starting from macOS 10.15, statically allocated memory doesn't have execute permission and cannot be modified to have
-    // execute permission. Therefore adding compiler annotation to mark this buffer as a text section which will grant him
-    // execute permission.
-    static char staticBuffer[PI_FUNC::MAX_SIZE] CODE_SECTION_MAC("executable_buf");
+    static char staticBuffer[PI_FUNC::MAX_SIZE];
     // Set read-write-execute protection for the buffer 
     size_t pageSize = GetPageSize();
     char * firstPage = (char *)(((size_t)staticBuffer) & ~(pageSize - 1));

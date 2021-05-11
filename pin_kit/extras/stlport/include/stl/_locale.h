@@ -1,19 +1,4 @@
 /*
- * Copyright 2002-2019 Intel Corporation.
- * 
- * This software and the related documents are Intel copyrighted materials, and your
- * use of them is governed by the express license under which they were provided to
- * you ("License"). Unless the License provides otherwise, you may not use, modify,
- * copy, publish, distribute, disclose or transmit this software or the related
- * documents without Intel's prior written permission.
- * 
- * This software and the related documents are provided as is, with no express or
- * implied warranties, other than those that are expressly stated in the License.
- * 
- * This file incorporates work covered by the following copyright and permission notice:
- */
-
-/*
  * Copyright (c) 1999
  * Silicon Graphics Computer Systems, Inc.
  *
@@ -341,13 +326,6 @@ template <class _Facet>
 inline locale::id& _GetFacetId(const _Facet*)
 { return _Facet::id; }
 
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const collate<char>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const ctype<char>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const codecvt<char, char, mbstate_t>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const moneypunct<char, true>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const moneypunct<char, false>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const numpunct<char>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const messages<char>*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const money_get<char, istreambuf_iterator<char, char_traits<char> > >*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const money_put<char, ostreambuf_iterator<char, char_traits<char> > >*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const num_get<char, istreambuf_iterator<char, char_traits<char> > >*);
@@ -356,13 +334,6 @@ _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const time_get<char, istreambu
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const time_put<char, ostreambuf_iterator<char, char_traits<char> > >*);
 
 #ifndef _STLP_NO_WCHAR_T
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const collate<wchar_t>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const ctype<wchar_t>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const codecvt<wchar_t, char, mbstate_t>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const moneypunct<wchar_t, true>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const moneypunct<wchar_t, false>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const numpunct<wchar_t>*);
-_STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const messages<wchar_t>*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const money_get<wchar_t, istreambuf_iterator<wchar_t, char_traits<wchar_t> > >*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const money_put<wchar_t, ostreambuf_iterator<wchar_t, char_traits<wchar_t> > >*);
 _STLP_DECLSPEC locale::id& _STLP_CALL _GetFacetId(const num_get<wchar_t, istreambuf_iterator<wchar_t, char_traits<wchar_t> > >*);

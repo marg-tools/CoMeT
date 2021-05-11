@@ -1,4 +1,4 @@
-break "simple.c":24
+break "simple.c":15
 cont
 cont
 cont

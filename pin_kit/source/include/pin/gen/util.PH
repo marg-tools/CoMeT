@@ -1,4 +1,4 @@
-//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
+//Groups: @ingroup\s+(API_REF|KNOBS|IMG_BASIC_API|INS_BASIC_API|INS_INST_API|INS_BASIC_API_GEN_IA32|INS_BASIC_API_IA32|INS_MOD_API_GEN_IA32|SEC_BASIC_API|RTN_BASIC_API|REG_BASIC_API|REG_CPU_GENERIC|REG_CPU_IA32|TRACE_BASIC_API|BBL_BASIC_API|SYM_BASIC_API|MISC_PRINT|MISC_PARSE|KNOB_API|KNOB_BASIC|KNOB_PRINT|LOCK|PIN_CONTROL|TRACE_VERSION_API|BUFFER_API|PROTO_API|PIN_PROCESS_API|PIN_THREAD_API|PIN_SYSCALL_API|WINDOWS_SYSCALL_API_UNDOC|DEBUG_API|ERROR_FILE_BASIC|TYPE_BASE|INSTLIB|ALARM|CODECACHE_API|CHILD_PROCESS_API|UTILS|MISC|CONTEXT_API|PHYSICAL_CONTEXT_API|PIN_CALLBACKS|EXCEPTION_API|APPDEBUG_API|STOPPED_THREAD_API|BUFFER_API|PROTO|INST_ARGS|DEPRECATED_PIN_API|INTERNAL_EXCEPTION_PRIVATE_UNDOCUMENTED|PIN_THREAD_PRIVATE|CHILD_PROCESS_INTERNAL|BBL_BASIC|ROGUE_BASIC_API|MESSAGE_TYPE|MESSAGE_BASIC|ERRFILE|MISC_BASIC|ITC_INST_API|CONTEXT_API_UNDOC|EXCEPTION_API_UNDOC|UNDOCUMENTED_PIN_API|OPIN|TRACE_VERSIONS
 /* PIN API */
 
 /* THIS FILE IS AUTOMAGICALLY GENERATED - DO NOT CHANGE DIRECTLY*/
@@ -45,7 +45,7 @@ class COMMAND_LINE_ARGUMENTS
     *
     * @param[in]   commandLine     original application's command line represented as string
     */
-    COMMAND_LINE_ARGUMENTS(const std::string & commandLine)
+    COMMAND_LINE_ARGUMENTS(const string & commandLine)
     {
         Enter(commandLine);
     }
@@ -98,7 +98,7 @@ class COMMAND_LINE_ARGUMENTS
      *
      * @return  reference to current object
      */
-    COMMAND_LINE_ARGUMENTS & Insert (const std::string & arg, INT pos = -1);
+    COMMAND_LINE_ARGUMENTS & Insert (const string & arg, INT pos = -1);
 
     /*!
      * Insert a single argument into this set of arguments.
@@ -110,7 +110,7 @@ class COMMAND_LINE_ARGUMENTS
      *
      * @return  reference to current object
      */
-    COMMAND_LINE_ARGUMENTS & InsertAsOneToken (const std::string & arg, INT pos = -1);
+    COMMAND_LINE_ARGUMENTS & InsertAsOneToken (const string & arg, INT pos = -1);
 
     /*!
     * Find an argument by name
@@ -119,7 +119,7 @@ class COMMAND_LINE_ARGUMENTS
     *
     * @return index of argument or -1 if not found
     */
-    INT FindArgument(const std::string& argStr) const;
+    INT FindArgument(const string& argStr) const;
 
     /*!
     * Looks for argument equal to argStr; remove "numOfArgs" arguments starting from the found argument
@@ -129,7 +129,7 @@ class COMMAND_LINE_ARGUMENTS
     *
     * @return  TRUE if numOfArgs were removed from the list
     */
-    BOOL RemoveArguments(const std::string& argStr, INT numOfArgs);
+    BOOL RemoveArguments(const string& argStr, INT numOfArgs);
 
    /*!
     * @return  Argc of current object
@@ -154,7 +154,7 @@ class COMMAND_LINE_ARGUMENTS
     /*!
      * @return string with all command line arguments separated with \" \"
      */
-    std::string String() const;
+    string String() const;
 
    /*!
     * Destructor
@@ -173,7 +173,7 @@ class COMMAND_LINE_ARGUMENTS
    /*!
     * Initialize the object using commandLine string
     */
-    BOOL Enter(const std::string & commandLine);
+    BOOL Enter(const string & commandLine);
 
    /*!
     * Deallocate all resources used by current object
@@ -205,87 +205,93 @@ extern BOOL CharIsSpace(CHAR c);
 extern CHAR CharToUpper(CHAR c);
 
                                                                   /* DO NOT EDIT */
-extern std::string ptrstr(const VOID *val );
+extern string ptrstr(const VOID *val );
 
                                                                   /* DO NOT EDIT */
-extern std::string StringFromAddrint( ADDRINT l);
+extern string StringFromAddrint( ADDRINT l);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringFromUint64( UINT64 l);
+extern string StringFromUint64( UINT64 l);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringDec( UINT64 l, UINT32 digits, CHAR padding);
+extern string StringDec( UINT64 l, UINT32 digits, CHAR padding);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringDecSigned( INT64 l, UINT32 digits, CHAR padding);
+extern string StringDecSigned( INT64 l, UINT32 digits, CHAR padding);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringBignum( INT64 l, UINT32 digits, CHAR padding);
+extern string StringBignum( INT64 l, UINT32 digits, CHAR padding);
 
                                                                   /* DO NOT EDIT */
-extern std::string Reformat(const std::string& s, const std::string& prefix, UINT32 min_line, UINT32 max_line);
+extern string Reformat(const string& s, const string& prefix, UINT32 min_line, UINT32 max_line);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringHex32( UINT32 l, UINT32 digits, BOOL prefix_0x);
+extern string StringHex32( UINT32 l, UINT32 digits, BOOL prefix_0x);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringBool(BOOL b);
+extern string StringFlt(FLT64 val , UINT32 precision, UINT32 width);
 
                                                                   /* DO NOT EDIT */
-extern std::string StringTri(TRI t);
+extern string StringBool(BOOL b);
 
                                                                   /* DO NOT EDIT */
-extern INT32 Int32FromString(const std::string& s);
+extern string StringTri(TRI t);
 
                                                                   /* DO NOT EDIT */
-extern UINT32 Uint32FromString(const std::string& s);
+extern INT32 Int32FromString(const string& s);
 
                                                                   /* DO NOT EDIT */
-extern INT64 Int64FromString(const std::string& s);
+extern UINT32 Uint32FromString(const string& s);
 
                                                                   /* DO NOT EDIT */
-extern UINT64 Uint64FromString(const std::string& s);
+extern INT64 Int64FromString(const string& s);
 
                                                                   /* DO NOT EDIT */
-extern FLT64 FLT64FromString(const std::string& s);
+extern UINT64 Uint64FromString(const string& s);
+
+                                                                  /* DO NOT EDIT */
+extern FLT64 FLT64FromString(const string& s);
 
                                                                   /* DO NOT EDIT */
 extern INT CharToHexDigit(CHAR c);
 
                                                                   /* DO NOT EDIT */
-extern ADDRINT AddrintFromString(const std::string& str);
+extern ADDRINT AddrintFromString(const string& str);
 
                                                                   /* DO NOT EDIT */
-extern std::string ReadLine(std::istream& inputFile, UINT32 *lineNum);
+extern UINT32 BitCount(ADDRINT val);
 
                                                                   /* DO NOT EDIT */
-extern UINT32 Tokenize(const std::string& line, std::string *array, UINT32 n);
+extern string ReadLine(istream& inputFile, UINT32 *lineNum);
 
                                                                   /* DO NOT EDIT */
-inline std::string StringHex( UINT32 l, UINT32 digits, BOOL prefix_0x = TRUE) {return StringHex32(l, digits, prefix_0x);}
+extern UINT32 Tokenize(const string& line, string *array, UINT32 n);
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(INT64 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
+inline string StringHex( UINT32 l, UINT32 digits, BOOL prefix_0x = TRUE) {return StringHex32(l, digits, prefix_0x);}
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(INT32 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
+inline string decstr(INT64 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(INT16 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
+inline string decstr(INT32 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(UINT64 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
+inline string decstr(INT16 val, UINT32 width=0 )  {return StringDecSigned(val,width,' ');}
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(UINT32 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
+inline string decstr(UINT64 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
 
                                                                   /* DO NOT EDIT */
-inline std::string decstr(UINT16 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
+inline string decstr(UINT32 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(INT64 val, UINT32 width=0 )
+inline string decstr(UINT16 val, UINT32 width=0 )  {return StringDec(val,width,' ');}
+
+                                                                  /* DO NOT EDIT */
+inline string hexstr(INT64 val, UINT32 width=0 )
 {
-    std::string ostr;
+    string ostr;
 #if defined(_MSC_VER) && _MSC_VER  >= 1400
     ostr = StringHex( INT32((val >> 16) >> 16), width);
 #else
@@ -297,15 +303,15 @@ inline std::string hexstr(INT64 val, UINT32 width=0 )
 }
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(INT32 val, UINT32 width=0 )  {return StringHex(INT32(val),width);}
+inline string hexstr(INT32 val, UINT32 width=0 )  {return StringHex(INT32(val),width);}
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(INT16 val, UINT32 width=0 )  {return StringHex(INT32(val),width);}
+inline string hexstr(INT16 val, UINT32 width=0 )  {return StringHex(INT32(val),width);}
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(UINT64 val, UINT32 width=0 )
+inline string hexstr(UINT64 val, UINT32 width=0 )
 {
-    std::string ostr;
+    string ostr;
 #if defined(_MSC_VER) && _MSC_VER  >= 1400
     ostr = StringHex( UINT32((val >> 16) >> 16), width);
 #else
@@ -317,7 +323,7 @@ inline std::string hexstr(UINT64 val, UINT32 width=0 )
 }
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(VOID *p, UINT32 width=0 )
+inline string hexstr(VOID *p, UINT32 width=0 )
 {
 #if defined(HOST_IA32E)
     UINT64 val = reinterpret_cast<UINT64>(p);
@@ -329,7 +335,7 @@ inline std::string hexstr(VOID *p, UINT32 width=0 )
 }
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(const VOID *p, UINT32 width=0 )
+inline string hexstr(const VOID *p, UINT32 width=0 )
 {
 #if defined(HOST_IA32E)
     UINT64 val = reinterpret_cast<UINT64>(p);
@@ -341,15 +347,18 @@ inline std::string hexstr(const VOID *p, UINT32 width=0 )
 }
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(UINT32 val, UINT32 width=0 )  {return StringHex(UINT32(val),width);}
+inline string hexstr(UINT32 val, UINT32 width=0 )  {return StringHex(UINT32(val),width);}
 
                                                                   /* DO NOT EDIT */
-inline std::string hexstr(UINT16 val, UINT32 width=0 )  {return StringHex(UINT32(val),width);}
+inline string hexstr(UINT16 val, UINT32 width=0 )  {return StringHex(UINT32(val),width);}
 
                                                                   /* DO NOT EDIT */
-inline std::string ljstr(const std::string& s, UINT32 width, CHAR padding = ' ')
+inline string fltstr(FLT64 val, UINT32 prec=0,UINT32 width=0 )  {return StringFlt(val,prec,width);}
+
+                                                                  /* DO NOT EDIT */
+inline string ljstr(const string& s, UINT32 width, CHAR padding = ' ')
 {
-    std::string  ostr(width,padding);
+    string  ostr(width,padding);
     ostr.replace(0,s.length(),s);
     return ostr;
 }
@@ -358,7 +367,7 @@ inline std::string ljstr(const std::string& s, UINT32 width, CHAR padding = ' ')
 struct DECSTR
 {
     DECSTR(UINT32 width = 0) :_w(width){}
-    template <typename T> std::string operator() (const T & t) const {return decstr(t,_w);}
+    template <typename T> string operator() (const T & t) const {return decstr(t,_w);}
     UINT32 _w;
 };
 
@@ -366,17 +375,26 @@ struct DECSTR
 struct HEXSTR
 {
     HEXSTR(UINT32 width = 0) :_w(width){}
-    template <typename T> std::string operator() (const T & t) const {return hexstr(t,_w);}
+    template <typename T> string operator() (const T & t) const {return hexstr(t,_w);}
+    UINT32 _w;
+};
+
+                                                                  /* DO NOT EDIT */
+struct FLTSTR
+{
+    FLTSTR(UINT32 prec=0,UINT32 width=0) :_p(prec), _w(width) {}
+    template <typename T> string operator() (const T & t) const {return fltstr(t,_p,_w);}
+    UINT32 _p;
     UINT32 _w;
 };
 
                                                                   /* DO NOT EDIT */
 template <typename ITER, typename CONV>
-    std::string StringSequence(ITER begin, ITER end,
+    string StringSequence(ITER begin, ITER end,
                           const CONV & conv,
-                          const std::string & delimiter = std::string(" "))
+                          const string & delimiter = string(" "))
 {
-    std::string str;
+    string str;
 
     for (ITER it = begin;  it != end;  ++it)
     {
@@ -385,9 +403,6 @@ template <typename ITER, typename CONV>
     }
     return str;
 }
-
-                                                                  /* DO NOT EDIT */
-extern UINT32 BitCount(ADDRINT val);
 
                                                                   /* DO NOT EDIT */
 inline VOID * Addrint2VoidStar(ADDRINT addr)
@@ -635,13 +650,13 @@ extern ADDRINT GetPageOfAddr(ADDRINT addr);
 extern ADDRINT ProgramEntry(const ImageLoaderInfo * mainImage, const ImageLoaderInfo * loader);
 
                                                                   /* DO NOT EDIT */
-extern std::string Joinpath(std::string s1, std::string s2);
+extern string Joinpath(string s1, string s2);
 
                                                                   /* DO NOT EDIT */
-extern std::string Basename(const std::string& path);
+extern string Basename(const string& path);
 
                                                                   /* DO NOT EDIT */
-extern CHAR* CreateTmpFileName(const CHAR* fnameTemplate, const UINT32 fnameTemplateSize);
+extern CHAR* CreateTmpFileName(const CHAR* fnameTemplate);
 
                                                                   /* DO NOT EDIT */
 extern const VOID * GetSp();
@@ -701,7 +716,7 @@ class MemRange
     //======= Constructors
 
     //Default constructor
-    MemRange(): m_base(NULL), m_size(0) {}
+    MemRange() {}
     //Construct range with a given base address and size
     MemRange(VOID * base, size_t size) : m_base(base), m_size(size) {}
     MemRange(ADDRINT base, size_t size) : m_base(Addrint2VoidStar(base)), m_size(size) {}
@@ -979,7 +994,7 @@ class MemRange
 };
 
                                                                   /* DO NOT EDIT */
-inline std::string MemRangeToString(const MemRange & range)
+inline string MemRangeToString(const MemRange & range)
 {
     return ("[" + hexstr(range.Base()) + " , " + hexstr(range.End()) + "]");
 }
@@ -1209,21 +1224,6 @@ extern STAT_NORM StatReservedBytes;
 
                                                                   /* DO NOT EDIT */
 extern VOID UpdateRawMmapBytes();
-
-                                                                  /* DO NOT EDIT */
-extern std::string StringFlt(FLT64 val , UINT32 precision, UINT32 width);
-
-                                                                  /* DO NOT EDIT */
-inline std::string fltstr(FLT64 val, UINT32 prec=0,UINT32 width=0 )  {return StringFlt(val,prec,width);}
-
-                                                                  /* DO NOT EDIT */
-struct FLTSTR
-{
-    FLTSTR(UINT32 prec=0,UINT32 width=0) :_p(prec), _w(width) {}
-    template <typename T> std::string operator() (const T & t) const {return fltstr(t,_p,_w);}
-    UINT32 _p;
-    UINT32 _w;
-};
 
                                                                   /* DO NOT EDIT */
 
