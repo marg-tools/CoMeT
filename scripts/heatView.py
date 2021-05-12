@@ -27,7 +27,7 @@ def usage():
      --banks_in_x: Number of memory banks in x dimension (default 4)
      --banks_in_y: Number of memory banks in y dimension (default 4)
      --banks_in_z: Number of memory banks in z dimension (default 8)
-     --arch_type: Architecture type = 3D or no3D (default no3D)
+     --arch_type: Architecture type = 3D, 3Dmem, 2.5D, DDR (default 3Dmem)
      --plot_type: Generated view = 3D or 2D (default 3D)
      --layer_to_view: Layer number to view in 3D plot (starting from 0) (default 0)
      --type_to_view: Layer type to view in 3D plot (CORE or MEMORY) (default MEMORY)
@@ -52,7 +52,7 @@ banks_in_x=4
 banks_in_y=4
 banks_in_z=8
 
-arch_type="2D"        ##option = 3D, other.
+arch_type="3Dmem"        ##option = 3D, other.
 inverted_view=False
 
 plot_type="3D"          ##option = 2D, 3D
@@ -430,7 +430,8 @@ if __name__ == "__main__":
             #art3d.pathpatch_2d_to_3d(p, z=0, zdir = "x")
             #plot_opaque_cube(ax, 0, 0, 0, banks_in_x, banks_in_y, banks_in_z, color='none', alpha=0.05)##
 
-            arch_string = "Core: " + str(cores_in_x) + "x" + str(cores_in_y) + "x" + str(cores_in_z) + ", "
+            arch_string = "Arch. type: " + str(arch_type) + ", "
+            arch_string += "Core: " + str(cores_in_x) + "x" + str(cores_in_y) + "x" + str(cores_in_z) + ", "
             arch_string += "Memory: "+ str(banks_in_x) + "x" + str(banks_in_y) + "x" + str(banks_in_z) 
             plt.annotate(arch_string, xy=(0.13, 0.93), xycoords='figure fraction', fontsize=16)
             plt.annotate("Time step = "+str(count) +" ms", xy=(0.13, 0.85), xycoords='figure fraction', fontsize=19)
