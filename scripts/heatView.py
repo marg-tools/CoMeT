@@ -410,7 +410,10 @@ if __name__ == "__main__":
                     zstart = 0
             else:
                 postprocess=True
-                title_message = "Memory temperature map"
+                if (arch_type == "2.5D"):
+                    title_message = "Memory temperature map"
+                else:
+                    title_message = "Off-chip memory temperature map"
                 ax = fig.add_subplot(gs[1], projection='3d')
             xwidth=1
             ywidth=1
