@@ -3,6 +3,7 @@
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import art3d
 from matplotlib import cm
 from numpy import linspace
 import sys
@@ -10,6 +11,7 @@ import math
 import getopt
 from matplotlib import gridspec
 import shutil, os
+from matplotlib.patches import Rectangle
 
 import numpy as np
 
@@ -131,6 +133,8 @@ if (debug):
     print ("Command line options:")
     print (opts)
 
+if (arch_type == "DDR"):
+    plot_type = "2D"
 
 
 
@@ -180,12 +184,12 @@ def parse_tfile_header(tfilename, orig_line):
         print("    Number banks:%d, number columns:%d" %(total_banks, count_bank_column))
 
 
-def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan'):
+def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan', alpha=1):
 
     if (debug):
         print("DEBUG:: plot_opaque_cube: x=%d,y=%d,z=%d" %(x,y,z))
 
-    kwargs = {'alpha': 1, 'color': color, 'edgecolor': 'k'}
+    kwargs = {'alpha': alpha, 'color': color, 'edgecolor': 'k', 'shade':False}
 
     xx = np.linspace(x, x+dx, 2)
     yy = np.linspace(y, y+dy, 2)
@@ -234,7 +238,7 @@ def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, 
                     offset = 0
                 if offset > color_lvl:
                     offset = color_lvl
-                plot_opaque_cube(ax, 0+xwidth*xx, 0+ywidth*yy-shift_amount*(zz+zstart), 0+zz+zstart, xwidth, ywidth, 0.2, color[offset])
+                plot_opaque_cube(ax, 0+xwidth*xx, 0+ywidth*yy-shift_amount*(zz+zstart), 0+zz+zstart, xwidth, ywidth, 0.2, color[offset], 1)
                 ind += 1
         if (inverted):
             layer_num = zdim-zz-1
@@ -293,18 +297,6 @@ def plot_2D_map(ax, tmin, tmax, xdim, ydim, xwidth, ywidth, title_message, tempe
 ##main function. Script begins from here
 if __name__ == "__main__":
         #    parse_args()
-#    tfilename = str(sys.argv[1])
-#    pngFolder = str(sys.argv[2])
-#    try:
-#        samplingRate = int(sys.argv[3])
-#    except:
-#        samplingRate = 1
-#    try:
-#        tmin = float(sys.argv[4])
-#        tmax = float(sys.argv[5])
-#    except:
-#        tmin = 65.0
-#        tmax = 81.0
 
     print("\n")
     print("Received temperature filename: %s" %tfilename)
@@ -350,7 +342,10 @@ if __name__ == "__main__":
         count+=1
         if (plot_type == "2D"):
             for j in range(cores_in_z):
-                ax = fig.add_subplot(gs[j%MAX_ROWS_2D_PLOT, j/MAX_ROWS_2D_PLOT])
+                xindex = int(j%MAX_ROWS_2D_PLOT)
+                yindex = int(j/MAX_ROWS_2D_PLOT)
+                #print (xindex, yindex)
+                ax = fig.add_subplot(gs[xindex, yindex])
                 xdim = cores_in_x
                 ydim = cores_in_y
                 start_index = j * xdim * ydim
@@ -360,7 +355,10 @@ if __name__ == "__main__":
                 plot_2D_map(ax, tmin, tmax, xdim, ydim, 1, 1, title_message, temperatures)
 
             for j in range(banks_in_z):
-                ax = fig.add_subplot(gs[j%MAX_ROWS_2D_PLOT, cols_cores + j/MAX_ROWS_2D_PLOT])
+                xindex = int(j%MAX_ROWS_2D_PLOT)
+                yindex = cols_cores + int(j/MAX_ROWS_2D_PLOT)
+                #print (xindex, yindex)
+                ax = fig.add_subplot(gs[xindex, yindex])
                 xdim = banks_in_x
                 ydim = banks_in_y
                 start_index = j * xdim * ydim
@@ -391,6 +389,16 @@ if __name__ == "__main__":
                 postprocess=True
                 title_message = "Core temperature map"
             plot_3D_structure(ax, tmin, tmax, cores_in_x, cores_in_y, cores_in_z, zstart, xwidth, ywidth, temperatures_core, title_message, postprocess, inverted_view, "Core ")
+            #ax_h, ax_w = 4, 4##
+#            p = Rectangle((0,0),
+#                           ax_h, ax_w,
+#                           fc = 'none',
+#                           color='red',
+#                           linewidth=5,
+#                           linestyle='dotted')
+#            ax.add_patch(p)
+#            art3d.pathpatch_2d_to_3d(p, z=0, zdir = "x")
+            #plot_opaque_cube(ax, 0, 0, 0, cores_in_x, cores_in_y, cores_in_z, color='none', alpha=0.05)##
 
             #memory
             if (arch_type=="3D"):
@@ -407,6 +415,21 @@ if __name__ == "__main__":
             xwidth=1
             ywidth=1
             plot_3D_structure(ax, tmin, tmax, banks_in_x, banks_in_y, banks_in_z, zstart, xwidth, ywidth, temperatures_bank, title_message, postprocess, inverted_view, "Mem.")
+
+            #ax_h, ax_w = 4, 4 ##
+            #ax_h, ax_w = ax.bbox.height, ax.bbox.width
+            #ax_h = ax.bbox.transformed(fig.gca().transAxes).height
+            #print (ax_h, ax_w)
+            #p = Rectangle((0,0),
+            #               ax_h, ax_w,
+            #               fc = 'none',
+            #               color='red',
+            #               linewidth=5,
+            #               linestyle='dotted')
+            #ax.add_patch(p)
+            #art3d.pathpatch_2d_to_3d(p, z=0, zdir = "x")
+            #plot_opaque_cube(ax, 0, 0, 0, banks_in_x, banks_in_y, banks_in_z, color='none', alpha=0.05)##
+
             arch_string = "Core: " + str(cores_in_x) + "x" + str(cores_in_y) + "x" + str(cores_in_z) + ", "
             arch_string += "Memory: "+ str(banks_in_x) + "x" + str(banks_in_y) + "x" + str(banks_in_z) 
             plt.annotate(arch_string, xy=(0.13, 0.93), xycoords='figure fraction', fontsize=16)
