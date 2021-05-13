@@ -54,7 +54,7 @@ def create_video(run):
         '--banks_in_x', str(config.NUMBER_MEM_BANKS_X),
         '--banks_in_y', str(config.NUMBER_MEM_BANKS_Y),
         '--banks_in_z', str(config.NUMBER_MEM_BANKS_Z),
-        '--arch_type', '3D' if config.ARCH_TYPE_3D else 'no3D',
+        '--arch_type', config.ARCH_TYPE,
         '--plot_type', '3D' if config.VIDEO_PLOT_3D else '2D',
         '--layer_to_view', str(config.VIDEO_BREAKOUT_LAYER),
         '--type_to_view', config.VIDEO_BREAKOUT_TYPE,
