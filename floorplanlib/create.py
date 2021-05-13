@@ -18,6 +18,9 @@ AIR_SPECIFIC_HEAT_CAPACITY = 4e6  # this is currently not the value for air
 AIR_THERMAL_RESISTIVITY = 0.25  # this is currently not the value for air
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
 class Length(object):
     """
     distance stored in exact numbers in micrometers
@@ -119,6 +122,14 @@ Y
 {os.path.abspath(self._get_floorplan_filename(directory))}
 
 '''
+
+    @abc.abstractproperty
+    def total_width(self):
+        return self.elements[0] * self.element_width
+
+    @abc.abstractproperty
+    def total_height(self):
+        return self.elements[1] * self.element_height
 
     @abc.abstractmethod
     def write_floorplan(self, directory):
@@ -291,6 +302,14 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
         self.memory_controllers = MemoryControllerLayer(banks, bank_width, bank_height, name=None, pos_offset=mem_offset)
         self.core_mem_distance = core_mem_distance
 
+    @property
+    def total_width(self):
+        return self.cores.total_width + self.core_mem_distance + self.memory_controllers.total_width
+
+    @property
+    def total_height(self):
+        return max(self.cores.total_height, self.memory_controllers.total_height)
+
     def write_floorplan(self, directory):
         with open(self._get_floorplan_filename(directory), 'w') as f:
             f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
@@ -352,11 +371,19 @@ class PadWithAirLayer(ThermalLayer):
     """ wrap a layer with air to match the given dimension """
     def __init__(self, total_width, total_height, content, force=None):
         super().__init__(name=content.name)
-        self.total_width = total_width
-        self.total_height = total_height
+        self._total_width = total_width
+        self._total_height = total_height
         assert isinstance(content, SimpleLayer)
         self.content = content
         self.force = {'left': False, 'right': False, 'top': False, 'bottom': False} if force is None else force
+
+    @property
+    def total_width(self):
+        return self._total_width
+
+    @property
+    def total_height(self):
+        return self._total_height
 
     def write_floorplan(self, directory):
         with open(self._get_floorplan_filename(directory), 'w') as f:
@@ -435,10 +462,27 @@ class ThermalStack(object):
             for nb, layer in enumerate(self.layers):
                 f.write(layer.get_layer_configuration_string(directory, nb))
 
+    def _write_hotspot_config(self, directory):
+        with open(os.path.join(HERE, 'hotspot.config.tmpl'), 'r') as f:
+            raw_content = f.read()
+        chip_size = max(self.layers[0].total_width, self.layers[0].total_height).meters
+        formatted_content = raw_content.format(
+            s_solder=chip_size + 0.001,
+            s_sub=chip_size + 0.001,
+            s_spreader=chip_size + 0.02,
+            s_sink=chip_size + 0.021,
+        )
+        with open(os.path.join(directory, f'{self.name}_hotspot.config'), 'w') as f:
+            f.write(formatted_content)
+
     def _write_configuration_help(self, directory):
         pass  # TODO: implement
 
     def write_files(self, directory):
+        for l in self.layers[1:]:
+            assert l.total_width == self.layers[0].total_width
+            assert l.total_height == self.layers[1].total_height
+
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -446,11 +490,11 @@ class ThermalStack(object):
             layer.write_floorplan(directory)
             # flp_to_pdf(layer._get_floorplan_filename(directory))  does not work due to fig2ps errors
         self._write_lcf(directory)
+        self._write_hotspot_config(directory)
         self._write_configuration_help(directory)
 
 
 def flp_to_pdf(filename):
-    HERE = os.path.dirname(os.path.abspath(__file__))
     HOTSPOT_PATH = os.path.join(HERE, '..', 'hotspot_tool')
 
     assert filename[-4:] == '.flp'
