@@ -1,4 +1,5 @@
 import datetime
+import difflib
 import math
 import os
 import gzip
@@ -19,27 +20,36 @@ BENCHMARKS = os.path.join(SNIPER_BASE, 'benchmarks')
 BATCH_START = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M')
 
 
-def change_base_configuration(base_configuration):
+def change_configuration_files(configuration_tags):
     seen = set()
-    base_cfg = os.path.join(SNIPER_BASE, 'config/base.cfg')
-    with open(base_cfg, 'r') as f:
-        content = f.read()
-    with open(base_cfg, 'w') as f:
-        for line in content.splitlines():
-            m = re.match('.*cfg:(!?)([a-zA-Z_\\.0-9]+)$', line)
-            if m:
-                inverted = m.group(1) == '!'
-                include = inverted ^ (m.group(2) in base_configuration)
-                included = line[0] != '#'
-                if include and not included:
-                    line = line[1:]
-                elif not include and included:
-                    line = '#' + line
-                if m.group(2) in base_configuration:
-                    seen.add(m.group(2))
-            f.write(line)
-            f.write('\n')
-    not_seen = set(base_configuration) - seen
+    for filename in os.listdir(os.path.join(SNIPER_BASE, 'config')):
+        if filename.endswith('.cfg'):
+            full_filename = os.path.join(SNIPER_BASE, 'config', filename)
+            with open(full_filename, 'r') as f:
+                content = f.read()
+
+            new_content = ''
+            for line in content.splitlines():
+                m = re.match('.*cfg:(!?)([a-zA-Z_\\.0-9]+)$', line)
+                if m:
+                    inverted = m.group(1) == '!'
+                    include = inverted ^ (m.group(2) in configuration_tags)
+                    included = line[0] != '#'
+                    if include and not included:
+                        line = line[1:]
+                    elif not include and included:
+                        line = '#' + line
+                    if m.group(2) in configuration_tags:
+                        seen.add(m.group(2))
+                new_content += line
+                new_content += '\n'
+
+            if content != new_content:
+                print('changing', full_filename)
+                print(''.join(difflib.unified_diff(content.splitlines(keepends=True), new_content.splitlines(keepends=True))), end='')
+                with open(full_filename, 'w') as f:
+                    f.write(new_content)
+    not_seen = set(configuration_tags) - seen
     if not_seen:
         print('WARNING: these configuration options have no match in base.cfg and have no effect: {}'.format(', '.join(not_seen)))
         input('Please press enter to continue...')
@@ -73,11 +83,11 @@ def create_video(run):
     subprocess.check_call(args)
 
 
-def save_output(base_configuration, benchmark, console_output, started, ended):
+def save_output(configuration_tags, benchmark, console_output, started, ended):
     benchmark_text = benchmark
     if len(benchmark_text) > 100:
         benchmark_text = benchmark_text[:100] + '__etc'
-    run = 'results_{}_{}_{}'.format(BATCH_START, '+'.join(base_configuration), benchmark_text)
+    run = 'results_{}_{}_{}'.format(BATCH_START, '+'.join(configuration_tags), benchmark_text)
     directory = os.path.join(config.RESULTS_FOLDER, run)
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -105,12 +115,12 @@ def save_output(base_configuration, benchmark, console_output, started, ended):
     create_video(run)
 
 
-def run(base_configuration, benchmark):
-    print('running {} with configuration {}'.format(benchmark, '+'.join(base_configuration)))
+def run(configuration_tags, benchmark):
+    print('running {} with configuration {}'.format(benchmark, '+'.join(configuration_tags)))
     started = datetime.datetime.now()
-    change_base_configuration(base_configuration)
+    change_configuration_files(configuration_tags)
 
-    args = '-n {number_cores} -c {config} --benchmarks={benchmark} --no-roi --sim-end=last -s memTherm_core' \
+    args = '-n {number_cores} -c {config} --benchmarks={benchmark} --no-roi -s memTherm_core' \
         .format(number_cores=config.NUMBER_CORES,
                 config=config.SNIPER_CONFIG,
                 benchmark=benchmark)
@@ -130,12 +140,12 @@ def run(base_configuration, benchmark):
     if p.returncode != 0:
         raise Exception('return code != 0')
 
-    save_output(base_configuration, benchmark, console_output, started, ended)
+    save_output(configuration_tags, benchmark, console_output, started, ended)
 
 
-def try_run(base_configuration, benchmark):
+def try_run(configuration_tags, benchmark):
     try:
-        run(base_configuration, benchmark)
+        run(configuration_tags, benchmark)
     except KeyboardInterrupt:
         raise
     except Exception as e:
