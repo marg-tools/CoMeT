@@ -29,6 +29,8 @@ class Length(object):
         return self.micrometers == other.micrometers
     def __gt__(self, other):
         return self.micrometers > other.micrometers
+    def __ge__(self, other):
+        return self.micrometers >= other.micrometers
 
     def __mul__(self, v):
         return Length(v * self.micrometers)
@@ -294,7 +296,7 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
             f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
             f.write(self.cores.create_floorplan_elements())
             f.write(self.memory_controllers.create_floorplan_elements())
-            if self.cores.total_height > self.memory_controllers.total_height:
+            if self.cores.total_height >= self.memory_controllers.total_height:
                 # add air blocks below and above memory
                 h = 0.5 * (self.cores.total_height - self.memory_controllers.total_height)
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
@@ -313,7 +315,7 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
                     self.core_mem_distance.meters, self.cores.total_height.meters,
                     self.cores.total_width.meters, 0,
                     AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
-            elif self.cores.total_height < self.memory_controllers.total_height:
+            else:
                 # add air blocks below and above cores
                 h = 0.5 * (self.memory_controllers.total_height - self.cores.total_height)
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
@@ -326,14 +328,6 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
                     self.cores.total_width.meters, h.meters,
                     0, (self.memory_controllers.total_height - h).meters,
                     AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
-                # add air block between cores and memory
-                f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
-                    'X3',
-                    self.core_mem_distance.meters, self.memory_controllers.total_height.meters,
-                    self.cores.total_width.meters, 0,
-                    AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
-            else:
-                # cores and memory have same size
                 # add air block between cores and memory
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
                     'X3',
@@ -356,12 +350,13 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
 
 class PadWithAirLayer(ThermalLayer):
     """ wrap a layer with air to match the given dimension """
-    def __init__(self, total_width, total_height, content):
+    def __init__(self, total_width, total_height, content, force=None):
         super().__init__(name=content.name)
         self.total_width = total_width
         self.total_height = total_height
         assert isinstance(content, SimpleLayer)
         self.content = content
+        self.force = {'left': False, 'right': False, 'top': False, 'bottom': False} if force is None else force
 
     def write_floorplan(self, directory):
         with open(self._get_floorplan_filename(directory), 'w') as f:
@@ -370,7 +365,7 @@ class PadWithAirLayer(ThermalLayer):
 
             content_pos_offset = (Length(0), Length(0)) if self.content.pos_offset is None else self.content.pos_offset
 
-            if content_pos_offset[1] > Length(0):
+            if content_pos_offset[1] > Length(0) or self.force.get('bottom'):
                 # pad bottom
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
                     'X1',
@@ -378,7 +373,7 @@ class PadWithAirLayer(ThermalLayer):
                     content_pos_offset[0].meters, 0,
                     AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
 
-            if content_pos_offset[1] + self.content.total_height < self.total_height:
+            if content_pos_offset[1] + self.content.total_height < self.total_height or self.force.get('top'):
                 # pad top
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
                     'X2',
@@ -386,7 +381,7 @@ class PadWithAirLayer(ThermalLayer):
                     content_pos_offset[0].meters, (content_pos_offset[1] + self.content.total_height).meters,
                     AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
 
-            if content_pos_offset[0] > Length(0):
+            if content_pos_offset[0] > Length(0) or self.force.get('left'):
                 # pad left
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
                     'X3',
@@ -394,7 +389,7 @@ class PadWithAirLayer(ThermalLayer):
                     0, 0,
                     AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
 
-            if content_pos_offset[0] + self.content.total_width < self.total_width:
+            if content_pos_offset[0] + self.content.total_width < self.total_width or self.force.get('right'):
                 # pad right
                 f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
                     'X4',
@@ -550,7 +545,7 @@ def main():
         for i in range(args.banks[2]):
             stack.add_layer(tim)
             mem_banks = MemoryLayer(banks_2d, args.bankx, args.banky, name=f'mem_bank_{i+1}', pos_offset=mem_offset, nb_offset=i*banks_per_layer)
-            stack.add_layer(PadWithAirLayer(total_width, total_height, mem_banks))
+            stack.add_layer(PadWithAirLayer(total_width, total_height, mem_banks, force={'left': True, 'top': True, 'bottom': True}))
         stack.add_layer(tim)
         stack.write_files(args.out)
 
