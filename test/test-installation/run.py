@@ -110,6 +110,12 @@ def test_video_generation_feature(cfg):
     console_output = ''
     test_case_result = ''
     SAMPLING_INTERVAL = 1
+    BANKS_IN_Z = 8
+    ARCH_TYPE = cfg.strip("gainestown_")
+    if ARCH_TYPE == "DDR":
+        BANKS_IN_Z = 1
+    if ARCH_TYPE == "2_5D":
+        ARCH_TYPE = "2.5D"
 
     if ENABLE_VIDEO_GENERATION:   
         if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
@@ -120,10 +126,12 @@ def test_video_generation_feature(cfg):
                 shutil.rmtree(video_dir)
             os.mkdir(video_dir)
     
-            args = '-t {trace_file} -o {video_dest} -s {sampling_interval}'  \
+            args = '-t {trace_file} -o {video_dest} -s {sampling_interval} --arch_type {arch} --banks_in_z {banks_z}'  \
                 .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace'),
                         video_dest=video_dir,
-                        sampling_interval=SAMPLING_INTERVAL)
+                        sampling_interval=SAMPLING_INTERVAL,
+                        arch=ARCH_TYPE,
+                        banks_z=BANKS_IN_Z)
             print('Generating video for {}\n'.format(cfg))
 
             p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
