@@ -1,0 +1,163 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+# Layer "mem_bank_1"
+0
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_1.flp
+
+# Layer "tim"
+1
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_2"
+2
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_2.flp
+
+# Layer "tim"
+3
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_3"
+4
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_3.flp
+
+# Layer "tim"
+5
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_4"
+6
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_4.flp
+
+# Layer "tim"
+7
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_5"
+8
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_5.flp
+
+# Layer "tim"
+9
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_6"
+10
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_6.flp
+
+# Layer "tim"
+11
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_7"
+12
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_7.flp
+
+# Layer "tim"
+13
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "mem_bank_8"
+14
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/mem_bank_8.flp
+
+# Layer "tim"
+15
+Y
+N
+4000000.0
+0.25
+2e-05
+hotspot/3D/tim.flp
+
+# Layer "cores"
+16
+Y
+Y
+1750000.0
+0.01
+5e-05
+hotspot/3D/cores.flp
+
