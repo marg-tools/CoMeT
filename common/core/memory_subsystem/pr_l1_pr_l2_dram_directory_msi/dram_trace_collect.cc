@@ -88,7 +88,7 @@ unsigned long num_of_dram_writes;
     
 #endif
 
-#define ENABLE_CHANNEL_PARTITIONING 1
+#define ENABLE_CHANNEL_PARTITIONING 0
 #define NUM_OF_CHANNELS 16
 
 UInt32 MCP_FLAG;
