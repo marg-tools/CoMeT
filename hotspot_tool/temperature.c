@@ -670,10 +670,12 @@ double calc_core_leakage(int mode, double h, double w, double temp)
 	
 	//printf("Hello\n");	
 	//leakage_power = leak_alpha*h*w*exp(leak_beta*(temp-leak_Tbase)); // Default
-	leakage_power = (4709.086 + (424.8759 - 4709.086)/(1 + pow((temp/368.8059),49.15633)))/1000; // 1Gb Bank. 
+	//leakage_power = (4709.086 + (424.8759 - 4709.086)/(1 + pow((temp/368.8059),49.15633)))/1000; // 1Gb Bank. 
 	//leakage_power = (1005.412 + (67.78504 - 1005.412)/(1 + pow((temp/373.242), 43.36131)))/1000;  //64Mb bank. Check modelling in /home/siddhulokesh/lazy/c/leakage/test.c
 	//leakage_power = 2.21902 + (89242.78 + (-6914.301 - 89242.78)/(1+ pow((temp/596.4987),4.321001)))/1000;
 	//leakage_power = (89242.78 + (-6914.301 - 89242.78)/(1+ pow((temp/596.4987),4.321001)))/1000;
+	leakage_power = (9447.469 + (643.729 - 9447.469)/(1 + pow((temp/373.2385),43.37272)))/1000;
+
 	leakage_power = 1.0 * leakage_power;
 	//printf("leak = %f\n",leakage_power);
 	return leakage_power;	
