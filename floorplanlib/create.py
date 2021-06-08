@@ -14,8 +14,8 @@ TIM_SPECIFIC_HEAT_CAPACITY = 4e6
 TIM_THERMAL_RESISTIVITY = 0.25
 TIM_THICKNESS = 2.0e-05
 
-AIR_SPECIFIC_HEAT_CAPACITY = 4e6  # this is currently not the value for air
-AIR_THERMAL_RESISTIVITY = 0.25  # this is currently not the value for air
+AIR_SPECIFIC_HEAT_CAPACITY = 2875000
+AIR_THERMAL_RESISTIVITY = 0.13
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -438,8 +438,9 @@ class PadWithAirLayer(ThermalLayer):
 
 
 class ThermalStack(object):
-    def __init__(self, name):
+    def __init__(self, name, has_heatsink=True):
         self.name = name
+        self.has_heatsink = has_heatsink
         self.layers = []
 
     def add_layer(self, layer):
@@ -468,9 +469,10 @@ class ThermalStack(object):
         chip_size = max(self.layers[0].total_width, self.layers[0].total_height).meters
         formatted_content = raw_content.format(
             s_solder=chip_size + 0.001,
-            s_sub=chip_size + 0.001,
+            s_sub=chip_size + 0.02,
             s_spreader=chip_size + 0.02,
-            s_sink=chip_size + 0.021,
+            s_sink=chip_size + 0.04,
+            t_sink=0.0069 if self.has_heatsink else 0.00001,
         )
         with open(os.path.join(directory, f'{self.name}_hotspot.config'), 'w') as f:
             f.write(formatted_content)
@@ -533,14 +535,14 @@ def main():
         core.write_files(args.out)
 
         banks_2d = (args.banks[0], args.banks[1])
-        mem = ThermalStack('mem')
+        mem = ThermalStack('mem', has_heatsink=False)
         mem.add_layer(MemoryLayer(args.banks, args.bankx, args.banky, name='mem'))
         mem.add_layer(TIMLayer(banks_2d, args.bankx, args.banky, name='mem_tim'))
         mem.write_files(args.out)
 
     elif args.mode == '3Dmem':
         if len(args.banks) != 3:
-            parser.error('banks must be 3D in DDR mode. Example: --banks 4x4x2')
+            parser.error('banks must be 3D in 3Dmem mode. Example: --banks 4x4x2')
 
         banks_per_layer = args.banks[0] * args.banks[1]
         banks_2d = (args.banks[0], args.banks[1])
@@ -561,7 +563,7 @@ def main():
 
     elif args.mode == '2.5D':
         if len(args.banks) != 3:
-            parser.error('banks must be 3D in DDR mode. Example: --banks 4x4x2')
+            parser.error('banks must be 3D in 2.5D mode. Example: --banks 4x4x2')
 
         cores_width = args.cores[0] * args.corex
         cores_height = args.cores[1] * args.corey
@@ -595,7 +597,7 @@ def main():
 
     elif args.mode == '3D':
         if len(args.banks) != 3:
-            parser.error('banks must be 3D in DDR mode. Example: --banks 4x4x2')
+            parser.error('banks must be 3D in 3D mode. Example: --banks 4x4x2')
         cores_width = args.cores[0] * args.corex
         cores_height = args.cores[1] * args.corey
         mem_width = args.banks[0] * args.bankx
@@ -615,6 +617,11 @@ def main():
         stack.write_files(args.out)
     else:
         raise Exception('unknown mode')
+
+    with open(os.path.join(args.out, 'commandline.txt'), 'w') as f:
+        f.write(f'''\
+# command used to create these files:
+{" ".join(sys.argv)}''')
 
 
 if __name__ == '__main__':
