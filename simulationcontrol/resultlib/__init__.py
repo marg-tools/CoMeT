@@ -170,6 +170,7 @@ def get_cpi_stack_trace_parts(run):
             part = line.split()[0]
             if part not in parts:
                 parts.append(part)
+    assert len(parts) > 0, 'empty PeriodicCPIStack.log'
     return parts
 
 
@@ -238,6 +239,7 @@ def get_core_utilization_traces(run):
                 cpi = part_trace
             else:
                 cpi = _add_traces(cpi, part_trace)
+    assert cpi is not None, 'no valid CPI stack parts found to calculate utilization'
     return _divide_traces(cpi, get_cpi_stack_part_trace(run, 'total'))
 
 
