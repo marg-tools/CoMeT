@@ -21,23 +21,22 @@
 #include "shmem_perf.h"
 
 using namespace std;
-
-#define NUM_OF_BANKS          (128)
+#define MAX_NUM_OF_BANKS (128)
 
 struct read_trace_data
 {
       UInt64 rd_interval_start_time = 0;
       UInt32 read_access_count_per_epoch = 0;
-      UInt32 bank_read_access_count[NUM_OF_BANKS];
+      UInt32 bank_read_access_count[MAX_NUM_OF_BANKS];
 };
 
 struct write_trace_data
 {
       UInt64 wr_interval_start_time = 0;
       UInt32 write_access_count_per_epoch = 0;
-      UInt32 bank_write_access_count[NUM_OF_BANKS];
+      UInt32 bank_write_access_count[MAX_NUM_OF_BANKS];
 };
 
+void read_memory_config(core_id_t requester);
 void dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m_reads);
-
 void dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m_writes);

@@ -17,8 +17,9 @@
 #  define MYLOG(...) {}
 #endif
 
-extern UInt64 read_access_count_export[NUM_OF_BANKS];
-extern UInt64 write_access_count_export[NUM_OF_BANKS];
+extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 NUM_OF_BANKS;
 
 UInt32 stats_initialized=0;
 
@@ -46,8 +47,10 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    registerStatsMetric("dram", memory_manager->getCore()->getId(), "reads", &m_reads);
    registerStatsMetric("dram", memory_manager->getCore()->getId(), "writes", &m_writes);
 
+   read_memory_config(memory_manager->getCore()->getId());
+
    if (stats_initialized == 0) {
-     for (int i=0; i<NUM_OF_BANKS;i++) {
+     for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
        registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
        registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
      }

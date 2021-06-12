@@ -17,8 +17,7 @@
 
 using namespace std;
 
-#define NUM_OF_BANKS          (128)
-
+extern UInt64 NUM_OF_BANKS;
 extern vector<read_trace_data> rdt;
 extern vector<write_trace_data> wrt;
 extern UInt64 read_adv_count;
