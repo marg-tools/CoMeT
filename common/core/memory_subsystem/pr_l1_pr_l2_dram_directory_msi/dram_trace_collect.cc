@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include "config.hpp"
 #include "config.h"
+#include "math.h"
 
 using namespace std;
 
@@ -23,6 +24,7 @@ UInt64 NUM_OF_BANKS;
 UInt64 BANK_ADDRESS_BITS;
 UInt64 BANK_OFFSET_IN_PA;
 UInt64 BANKS_PER_LAYER;
+UInt64 BANKS_PER_CHANNEL;
 UInt64 BANK_MASK;
 UInt64 NUM_OF_CHANNELS;
 String TYPE_OF_STACK;
@@ -59,7 +61,6 @@ UInt64 read_adv_count;
 UInt64 write_adv_count;
 
 #define ENABLE_CHANNEL_PARTITIONING 0
-#define HMC_LAYER_MASK        (7)     // Layers - 1
 #define ACCUMULATION_TIME     (1000)    // Till 200 us bank counts will be accumalated
 
 UInt32 MCP_FLAG;
@@ -69,12 +70,20 @@ UInt32 MCP_FLAG;
 
 void read_memory_config(core_id_t requester)
 {
+    TYPE_OF_STACK = Sim()->getCfg()->getStringArray("memory/type_of_stack", requester);
     NUM_OF_CHANNELS = Sim()->getCfg()->getInt("memory/num_channels");
     NUM_OF_BANKS = Sim()->getCfg()->getInt("memory/num_banks");
-    BANK_ADDRESS_BITS = Sim()->getCfg()->getInt("memory/num_bank_address_bits");
+    //BANK_ADDRESS_BITS = Sim()->getCfg()->getInt("memory/num_bank_address_bits");
+    BANK_ADDRESS_BITS = log2(NUM_OF_BANKS);
     BANK_OFFSET_IN_PA = Sim()->getCfg()->getInt("memory/bank_offset_in_pa");
-    BANKS_PER_LAYER = Sim()->getCfg()->getInt("memory/banks_per_layer");
-    TYPE_OF_STACK = Sim()->getCfg()->getStringArray("memory/type_of_stack", requester);
+    //BANKS_PER_LAYER = Sim()->getCfg()->getInt("memory/banks_per_layer");
+    if (TYPE_OF_STACK == "DDR")
+        BANKS_PER_LAYER = NUM_OF_BANKS;
+    else
+        BANKS_PER_LAYER = NUM_OF_CHANNELS;
+
+    //BANKS_PER_CHANNEL = Sim()->getCfg()->getInt("memory/banks_per_channel");
+    BANKS_PER_CHANNEL = (NUM_OF_BANKS/NUM_OF_CHANNELS) - 1;
     BANK_MASK = (((1<<(BANK_ADDRESS_BITS))-1) << BANK_OFFSET_IN_PA);
 }
 void 
@@ -107,13 +116,13 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
 
         ++total_access_count;
         
-        //read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+        //read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
         
         if(TYPE_OF_STACK ==  "3Dmem" || TYPE_OF_STACK == "2.5D") {
             if(ENABLE_CHANNEL_PARTITIONING)
-                read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
             else {
-                read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
+                read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
                 MCP_FLAG++;
                 if(MCP_FLAG == NUM_OF_CHANNELS)
                     MCP_FLAG = 0;
@@ -122,11 +131,11 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
         else {
             if(TYPE_OF_STACK == "3D") {
                 if(ENABLE_CHANNEL_PARTITIONING)
-                    read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                    read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
                 else {
-                    read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*4);
+                    read_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*1);
                     MCP_FLAG++;
-                    if(MCP_FLAG == (NUM_OF_CHANNELS*4))
+                    if(MCP_FLAG == (NUM_OF_CHANNELS*1))
                         MCP_FLAG = 0;
                 }  
             }
@@ -217,13 +226,13 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
 
         ++total_access_count;
         
-        //write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+        //write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
 
         if(TYPE_OF_STACK ==  "3Dmem" || TYPE_OF_STACK == "2.5D") {
             if(ENABLE_CHANNEL_PARTITIONING)
-                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
             else {
-                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
+                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
                 MCP_FLAG++;
                 if(MCP_FLAG == NUM_OF_CHANNELS)
                     MCP_FLAG = 0;
@@ -232,11 +241,11 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
         else {
             if(TYPE_OF_STACK == "3D") {
                 if(ENABLE_CHANNEL_PARTITIONING)
-                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
                 else {
-                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & HMC_LAYER_MASK) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*4);
+                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*1);
                     MCP_FLAG++;
-                    if(MCP_FLAG == (NUM_OF_CHANNELS*4))
+                    if(MCP_FLAG == (NUM_OF_CHANNELS*1))
                         MCP_FLAG = 0;
                 }
             }
