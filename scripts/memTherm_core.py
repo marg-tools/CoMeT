@@ -467,7 +467,7 @@ class memTherm:
         banks_per_layer = banks_in_x*banks_in_y
         mem_data_split = []
         for layer in range(banks_in_z):
-            start_index = layer*(banks_per_layer+4)         # +4 corresponds to X0,X1,X2,X3
+            start_index = layer*(banks_per_layer+3)         # +4 corresponds to X1,X2,X3
             mem_data_split.extend(mem_portion[start_index:start_index+banks_per_layer])
         mem_data = "\t".join(mem_data_split)
 
