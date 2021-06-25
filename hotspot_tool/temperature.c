@@ -972,24 +972,24 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
                             if(strcmp(model->config->type,"3Dmem")==0 || strcmp(model->config->type,"DDR")==0){
                                 printf("Memory type 3Dmem/DDR: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
-				 // printf("k=%d\n",k);					
+				 //printf("k=%d\n",k);					
 					if(model->grid->layers[k].has_power)
 						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
-				 			// printf("j=%d,",j);					
+				 			//printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else
-										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
 										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1014,7 +1014,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 							if (leakage[j] == 0)
 								power_new[base+j] = 0;
 							else{	
-									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 		 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1039,13 +1039,13 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
-									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);										//printf("%f ", power[base+j]);
+									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1071,14 +1071,14 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 									power_new[base+j] = power[base+j];
 								else{
 									if ( (j>=0) && (j<=15) )	// Leakage for Host core
-										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 									else				// Leakage for 3Dmem logic core
 									{
 										if (leakage[j-16] == 0)
 											power_new[base+j] = 0;
 										else
-											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
 									}
 								}						
 							}
@@ -1089,7 +1089,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 										if (leakage[j] == 0)
 											power_new[base+j] = 0;
 										else	
-											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 								}						
 							}
@@ -1102,7 +1102,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
                         }//end of if memory type
 
 			// printf("Calling compute_temp_grid\n");					
-			compute_temp_grid(model->grid, power_new, temp, time_elapsed);
+			compute_temp_grid(model->grid, power_new, temp_first_time, time_elapsed);
 			// temp_first_time will hold the value of temperature for the last iteration. 
 			// printf("temp=%u\n",temp);
 			// printf("Returned compute_temp_grid\n");	
