@@ -845,10 +845,10 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in 3Dmem is an SRAM layer its leakage model is different.
-								if ( (j==34) || (j==33) || (j==32) )	// No leakeage in air
+								if ( (j==22) || (j==21) || (j==20) )	// No leakeage in air
 									power_new[base+j] = 0;
 								else{
-									if ( (j>=0) && (j<=15) )	// Leakage for Host core
+									if ( (j>=0) && (j<=3) )	// Leakage for Host core
 										{power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 				 						//printf("YES calc_core_leakage, power = %f, power_new[%d + %d] = %f\n", power[base+j], base, j, power_new[base+j]);
 				 					}
@@ -1067,15 +1067,15 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in 3Dmem is an SRAM layer its leakage model is different.
-								if ( (j==34) || (j==33) || (j==32) )	// No leakeage in air
+								if ( (j==22) || (j==21) || (j==20) )	// No leakeage in air. Assuming 4 cores + 16 LC
 									power_new[base+j] = power[base+j];
 								else{
-									if ( (j>=0) && (j<=15) )	// Leakage for Host core
+									if ( (j>=0) && (j<=3) )	// Leakage for Host core. Assuming 4 cores
 										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 									else				// Leakage for 3Dmem logic core
 									{
-										if (leakage[j-16] == 0)
+										if (leakage[j-4] == 0)
 											power_new[base+j] = 0;
 										else
 											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
@@ -1093,6 +1093,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 				 					// printf("YES");
 								}						
 							}
+                                                        //printf ("\nPower: %.3f, Power_calc: %.3f, j: %d", power[base+j], power_new[base+j], j);
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
 						}
 					base += model->grid->layers[k].flp->n_units;	
