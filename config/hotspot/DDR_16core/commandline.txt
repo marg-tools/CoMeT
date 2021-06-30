@@ -1,0 +1,2 @@
+# command used to create these files:
+floorplanlib/create.py --mode DDR --cores 4x4 --corex 2.876mm --corey 2.876mm --banks 4x4 --bankx 1.707mm --banky 1.707mm --out config/hotspot/DDR_16core/
