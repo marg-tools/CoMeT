@@ -21,8 +21,8 @@ def usage():
   print ('Usage:')
   print ('  %s  -t <tracefile> -o <output directory> -s <sampling rate>  ' % sys.argv[0])
   print ('''Detailed options: \n
-     --cores_in_x: Number of cores in x dimension (default 4)
-     --cores_in_y: Number of cores in y dimension (default 4)
+     --cores_in_x: Number of cores in x dimension (default 2)
+     --cores_in_y: Number of cores in y dimension (default 2)
      --cores_in_z: Number of cores in z dimension (default 1)
      --banks_in_x: Number of memory banks in x dimension (default 4)
      --banks_in_y: Number of memory banks in y dimension (default 4)
@@ -44,8 +44,8 @@ def usage():
   sys.exit(2)
         
 
-cores_in_x=4
-cores_in_y=4
+cores_in_x=2
+cores_in_y=2
 cores_in_z=1
 
 banks_in_x=4
