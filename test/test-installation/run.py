@@ -17,7 +17,7 @@ ENABLE_VIDEO_GENERATION = 1
 if not os.path.exists(CoMeT_RESULTS):
     os.mkdir(CoMeT_RESULTS)
 
-NUMBER_CORES = 16
+NUMBER_CORES = 4
 CONFIG_DDR = 'gainestown_DDR'
 CONFIG_3Dmem = 'gainestown_3Dmem'
 CONFIG_2_5D = 'gainestown_2_5D'
