@@ -794,7 +794,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							if (leakage[j] == 0)
 								power_new[base+j] = 0;
 							else	
-								power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+								power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 		 					// printf("YES");
 							
 							temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -817,7 +817,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
-									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);										//printf("%f ", power[base+j]);
+									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
@@ -849,7 +849,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 									power_new[base+j] = 0;
 								else{
 									if ( (j>=0) && (j<=3) )	// Leakage for Host core
-										{power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+										{power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 				 						//printf("YES calc_core_leakage, power = %f, power_new[%d + %d] = %f\n", power[base+j], base, j, power_new[base+j]);
 				 					}
 									else				// Leakage for 3Dmem logic core
@@ -1014,7 +1014,8 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 							if (leakage[j] == 0)
 								power_new[base+j] = 0;
 							else{	
-									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+									//printf("volt[j] = %d\n", volt[j]);
+									power_new[base+j] = power[base+j] +  ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 		 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1039,7 +1040,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
-									power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);										//printf("%f ", power[base+j]);
+									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
@@ -1071,7 +1072,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 									power_new[base+j] = power[base+j];
 								else{
 									if ( (j>=0) && (j<=3) )	// Leakage for Host core. Assuming 4 cores
-										power_new[base+j] = power[base+j] + calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+										power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
 				 					// printf("YES");
 									else				// Leakage for 3Dmem logic core
 									{

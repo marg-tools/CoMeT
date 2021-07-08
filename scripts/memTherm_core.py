@@ -369,7 +369,7 @@ class memTherm:
     f.close()
     return power_trace
 
-  def execute_core_hotspot(self):
+  def execute_core_hotspot(self, vdd_str):
      #the function to execute core hotspot separately. It is called only for 3Dmem and 2D arch.
     c_executable = hotspot_path + 'hotspot'
  #  hotspot_steady_temp_file = config.get('hotspot_c/hotspot_steady_temp_file')
@@ -397,6 +397,7 @@ class memTherm:
                     + ' -type Core ' \
                     + ' -sampling_intvl ' + str(interval_sec) \
                     + ' -grid_layer_file ' + c_hotspot_layer_file \
+                    + ' -v ' + vdd_str \
                     + ' -detailed_3D on'
                     #+ ' -f ' + c_hotspot_floorplan_file \
      if (c_init_file_external!= "None") or (not first_run):
@@ -484,6 +485,20 @@ class memTherm:
         f.write("%s\n" %(final_data))
     f.close()
 
+  def get_core_vdd_for_hotspot(self):
+    lfreq = [ sim.dvfs.get_frequency(core) for core in range(sim.config.ncores) ]
+    lvdd = [ self.ES.get_vdd_from_freq(f) for f in lfreq ]
+    lvdd = [ v/1.2 for v in lvdd ]          #normalize to 1.2 volts
+    lvdd = [ round(v, 1) for v in lvdd ]    #round to 1 digit decimal
+    vdd_str = ""
+    for v in lvdd:
+        vdd_str += str(v)
+        vdd_str += ","
+    vdd_str = vdd_str[:-1]         #remove last comma as it is extra
+    #print lvdd
+    #print vdd_str
+    return vdd_str
+
 
 
   # invokes hotspot to generate the temperature trace
@@ -491,13 +506,16 @@ class memTherm:
 #   print power_trace
     #invoke energystats function to compute core power trace
     self.ES.periodic(time, time_delta)
+    vdd_string = self.get_core_vdd_for_hotspot()     #used to scale core leakage power in hotspot
+
     #execute hotspot separately for core in case of 3Dmem and 2D memories
     if (core_thermal_enabled == 'true' and (type_of_stack=="3Dmem" or type_of_stack=="DDR")):
-        self.execute_core_hotspot()
+        self.execute_core_hotspot(vdd_string)
      #calculate memory power trace (combines with core trace in case of 3D and 2.5D within function)
     self.calc_power_trace(time, time_delta)
      #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
     hcmd = hotspot_command
+    hcmd += ' -v ' + vdd_string
     first_run = (sum(1 for linee in open(combined_temperature_trace_file, 'r')) == 1) 
     if (init_file_external!= "None") or (not first_run):
         hcmd += ' -init_file ' + init_file
@@ -614,11 +632,12 @@ vdd[] = %s
 
     configfile = self.gen_config(outputbase)
 
-    os.system('unset PYTHONHOME; %s -d %s -o %s -c %s --partial=%s:%s --no-graph --no-text' % (
+    os.system('unset PYTHONHOME; %s -d %s -o %s -c %s -t %s --partial=%s:%s --no-graph --no-text' % (
       os.path.join(os.getenv('SNIPER_ROOT'), 'tools/mcpat.py'),
       sim.config.output_dir,
       outputbase,
       configfile,
+      'dynamic',
       name0, name1
     ))
 

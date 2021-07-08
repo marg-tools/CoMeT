@@ -65,7 +65,7 @@
 
 void usage(int argc, char **argv)
 {
-  fprintf(stdout, "Usage: %s -f <file> -p <file> [-o <file>] [-c <file>] [-d <file>] [-l <leakage_vector>] [options]\n", argv[0]);
+  fprintf(stdout, "Usage: %s -f <file> -p <file> [-o <file>] [-c <file>] [-d <file>] [-l <leakage_vector>] [-v <volt_vector>] [options]\n", argv[0]);
   fprintf(stdout, "A thermal simulator that reads power trace from a file and outputs temperatures.\n");
   fprintf(stdout, "Options:(may be specified in any order, within \"[]\" means optional)\n");
   fprintf(stdout, "   -f <file>\tfloorplan input file (e.g. ev6.flp) - overridden by the\n");
@@ -76,6 +76,8 @@ void usage(int argc, char **argv)
   fprintf(stdout, "            \tsteady state temperatures are output to stdout\n");
   fprintf(stdout, "  [-c <file>]\tinput configuration parameters from file (e.g. hotspot.config)\n");
   fprintf(stdout, "  [-d <file>]\toutput configuration parameters to file\n");
+  fprintf(stdout, "  [-l <file>]\tEnable/Disable leakage\n");
+  fprintf(stdout, "  [-v <file>]\tNormalized voltage\n");
   fprintf(stdout, "  [options]\tzero or more options of the form \"-<name> <value>\",\n");
   fprintf(stdout, "           \toverride the options from config file. e.g. \"-model_type block\" selects\n");
   fprintf(stdout, "           \tthe block model while \"-model_type grid\" selects the grid model\n");
@@ -131,7 +133,9 @@ void global_config_from_strs(global_config_t *config, str_pair *table, int size)
   } else {
       strcpy(config->detailed_3D, "off");
   }
-   if ((idx = get_str_index(table, size, "l")) >= 0) {
+  
+
+  if ((idx = get_str_index(table, size, "l")) >= 0) {
       printf("idx = %u\n", idx);
       printf("table[idx].value = %s\n", table[idx].value);
       if(sscanf(table[idx].value, "%s", leakage_vector) != 1)
@@ -139,6 +143,18 @@ void global_config_from_strs(global_config_t *config, str_pair *table, int size)
    } else {
        strcpy(leakage_vector, "");
    }
+
+
+  if ((idx = get_str_index(table, size, "v")) >= 0) {
+      printf("idx = %u\n", idx);
+      printf("table[idx].value = %s\n", table[idx].value);
+      if(sscanf(table[idx].value, "%s", volt_vector) != 1)
+        fatal("invalid format for volt_vector\n");
+   } else {
+       strcpy(volt_vector, "");
+   }
+
+
 }
 
 /* 
@@ -147,7 +163,7 @@ void global_config_from_strs(global_config_t *config, str_pair *table, int size)
  */
 int global_config_to_strs(global_config_t *config, str_pair *table, int max_entries)
 {
-  if (max_entries < 6)
+  if (max_entries < 7)
     fatal("not enough entries in table\n");
 
   sprintf(table[0].name, "f");
@@ -164,6 +180,7 @@ int global_config_to_strs(global_config_t *config, str_pair *table, int max_entr
   sprintf(table[4].value, "%s", config->dump_config);
   sprintf(table[5].value, "%s", config->detailed_3D);
   sprintf(table[6].value, "%s", leakage_vector);
+  sprintf(table[7].value, "%s", volt_vector);
 
   return 6;
 }
@@ -348,12 +365,42 @@ for (i = 0; i < length_lv; ++i)
     continue;
 }
 
+
+  int length_v = strlen(volt_vector);
+//  printf("length_v = %d\n", length_v);  
+
+//for (i = 0; i < (int)(length_v+1)/4; ++i)
+for (i = 0; i < 4; ++i)
+    volt[i] = 10;
+
+for (i = 0; i < length_v; ++i)
+{
+  if (i==2)
+  {
+    volt[0] = 10 * (volt_vector[0] - '0') + (volt_vector[2] - '0');
+    continue;
+  }
+  if (i>2 && volt_vector[i-3] == ',')
+//    printf ("i = %d", i);
+    volt[(int)i/4] = 10 * (volt_vector[i-2] - '0') + (volt_vector[i] - '0');      
+}
+
+
+
 //   printf("LOKESH leakage\n", leakage[i]);
 
 // for (i = 0; i < 16; ++i)
 // {
 //   printf("%d,", leakage[i]);
 // }
+
+//   printf("LOKESH volt\n");
+
+// for (i = 0; i < (int)(length_v+1)/4; ++i)
+// {
+//   printf("%d,", volt[i]);
+// }
+
   /* no transient simulation, only steady state	*/
   if(!strcmp(global_config.t_outfile, NULLFILE))
     do_transient = FALSE;
