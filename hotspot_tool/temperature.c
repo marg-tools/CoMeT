@@ -854,7 +854,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				 					}
 									else				// Leakage for 3Dmem logic core
 									{
-										if (leakage[j-16] == 0)
+										if (leakage[j-4] == 0)
 										 	{ power_new[base+j] = 0; //printf("NO lc_leakage\n");
 											}
 										else
