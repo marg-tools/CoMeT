@@ -34,18 +34,17 @@ def example2():
 
 
 def example():
-    """
-    NOTICE: this function assumes open scheduler to be configured.
-    Change in base.cfg:
-        [scheduler]
-        type = open
-    """
     for freq in (1, 2, 3, 4):  # when adding a new frequency level, make sure that it is also added in base.cfg
         runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
 
 
+def case_study():
+    runlib.run(['open', 'ondemand'], runlib.get_instance('parsec-swaptions', parallelism=4, input_set='medium'))
+
+
 def main():
     example()
+    case_study()
 
 
 if __name__ == '__main__':
