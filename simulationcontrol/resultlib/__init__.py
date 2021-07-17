@@ -141,11 +141,25 @@ def get_core_power_traces(run):
     return traces[:count_cores(run)]
 
 
+def get_memory_power_traces(run):
+    header = _get_header(run, 'combined_power.trace')
+    assert all(h.startswith('B') for h in header[count_cores(run):])  # simple check for order or header
+    traces = _get_traces(run, 'combined_power.trace')
+    return traces[count_cores(run):]
+
+
 def get_core_temperature_traces(run):
     header = _get_header(run, 'combined_temperature.trace')
     assert all(h.startswith('C') for h in header[:count_cores(run)])  # simple check for order or header
     traces = _get_traces(run, 'combined_temperature.trace')
     return traces[:count_cores(run)]
+
+
+def get_memory_temperature_traces(run):
+    header = _get_header(run, 'combined_temperature.trace')
+    assert all(h.startswith('B') for h in header[count_cores(run):])  # simple check for order or header
+    traces = _get_traces(run, 'combined_temperature.trace')
+    return traces[count_cores(run):]
 
 
 def get_core_peak_temperature_traces(run):
