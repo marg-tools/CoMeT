@@ -1,0 +1,2 @@
+# command used to create these files:
+floorplanlib/create.py --mode 3Dmem --cores 1x1 --corex 2.876mm --corey 2.876mm --banks 1x1x8 --bankx 1.707mm --banky 1.707mm --out config/hotspot/3Dmem_1core_1ch
