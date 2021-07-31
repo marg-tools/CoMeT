@@ -1,4 +1,6 @@
 FROM ubuntu:20.04
+#ENV http_proxy='<ADD_PROXY_SERVER>'
+#ENV https_proxy='<ADD_PROXY_SERVER>'
 # Necessary for tzdata
 ENV DEBIAN_FRONTEND=noninteractive
 ARG TZ_ARG=UTC
