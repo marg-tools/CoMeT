@@ -56,7 +56,7 @@ arch_type="3Dmem"        ##option = 3D, other.
 inverted_view=False
 
 plot_type="3D"          ##option = 2D, 3D
-MAX_ROWS_2D_PLOT=4
+MAX_ROWS_2D_PLOT=3
 
 #for 3D plot
 layer_to_view=0
@@ -216,7 +216,7 @@ def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan', al
     #plt.title("Cube")
     #plt.show()
 
-def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core"):
+def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core", adjust=0):
     if (debug):
         print ("DEBUG:: plot_3D_structure: xwidth = %f" %xwidth)
     color_lvl = 200
@@ -245,8 +245,9 @@ def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, 
         else:
             layer_num = zz
         annotate_text = layer_type + " L"+ str(layer_num)
-        ax.text(xx+2,-0.6,zz+zstart+0.5,annotate_text,(0,1,0), verticalalignment='center')
-#        ax.annotate("Time step = "+str(count) +" ms", xy=(xx+1, 0), xycoords='axes points', fontsize=19)
+        if (zdim > 1 or zstart > 0):
+            ax.text(xx+3,-1.2+adjust,zz+zstart+1.0,annotate_text,(0,1,0), verticalalignment='center', fontsize=17)
+#        ax.annotate("Time step = "+str(count) +" ms", xy=(xx+1, 0), xycoords='axes points', fontsize=21)
 
     if (axes_postprocess==True):        #true only for the last plot in 3D.
         yint = []
@@ -260,7 +261,7 @@ def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, 
         for each in locs:
             yint.append(int(each))
         plt.xticks(yint)
-        plt.title(title_message, y=-0.01, fontsize=19)
+        plt.title(title_message, y=-0.01, fontsize=21)
         if (xdim > ydim):
             ax.set_ylim(0, xdim)
         elif (ydim > xdim):
@@ -287,7 +288,7 @@ def plot_2D_map(ax, tmin, tmax, xdim, ydim, xwidth, ywidth, title_message, tempe
     plt.pcolormesh( arr1, cmap = cmap, norm=norm, edgecolor='k') 
     #plt.grid(color='k', linewidth=2)
     plt.axis('off')
-    plt.title(title_message, fontsize=19)
+    plt.title(title_message, fontsize=21)
     ax.set_aspect('equal')
     ax.invert_yaxis()
 
@@ -330,7 +331,7 @@ if __name__ == "__main__":
         elif (arch_type == "3D"):
             gs = gridspec.GridSpec(nrows=1, ncols=2, width_ratios=[3, 1]) 
         else:
-            gs = gridspec.GridSpec(nrows=1, ncols=3, width_ratios=[1, 2, 0.7]) 
+            gs = gridspec.GridSpec(nrows=1, ncols=3, width_ratios=[1, 1, 0.5]) 
 
         parse_tfile(tfilename, line)
         if (debug):
@@ -364,7 +365,7 @@ if __name__ == "__main__":
                 start_index = j * xdim * ydim
                 end_index = start_index + xdim * ydim
                 temperatures = temperatures_bank[start_index : end_index]
-                title_message = "MEMORY layer " + str(j)
+                title_message = "MEM. layer " + str(j)
                 plot_2D_map(ax, tmin, tmax, xdim, ydim, 1, 1, title_message, temperatures)
 
         #beginning of 3D plotting
@@ -382,13 +383,15 @@ if __name__ == "__main__":
                     zstart = banks_in_z
                 postprocess=False
                 title_message = None
+                adj=0.0   #adjust annotation
             else:
                 xwidth=1
                 ywidth=1
                 zstart = 0
                 postprocess=True
                 title_message = "Core temperature map"
-            plot_3D_structure(ax, tmin, tmax, cores_in_x, cores_in_y, cores_in_z, zstart, xwidth, ywidth, temperatures_core, title_message, postprocess, inverted_view, "Core ")
+                adj=0
+            plot_3D_structure(ax, tmin, tmax, cores_in_x, cores_in_y, cores_in_z, zstart, xwidth, ywidth, temperatures_core, title_message, postprocess, inverted_view, "Core ", adj)
             #ax_h, ax_w = 4, 4##
 #            p = Rectangle((0,0),
 #                           ax_h, ax_w,
@@ -408,16 +411,18 @@ if __name__ == "__main__":
                     zstart = cores_in_z
                 else:
                     zstart = 0
+                adj=0.7   #adjust annotation
             else:
                 postprocess=True
                 if (arch_type == "2.5D"):
-                    title_message = "Memory temperature map"
+                    title_message = "Mem. temperature map"
                 else:
-                    title_message = "Off-chip memory temperature map"
+                    title_message = "Off-chip mem. temp. map"
                 ax = fig.add_subplot(gs[1], projection='3d')
+                adj=0
             xwidth=1
             ywidth=1
-            plot_3D_structure(ax, tmin, tmax, banks_in_x, banks_in_y, banks_in_z, zstart, xwidth, ywidth, temperatures_bank, title_message, postprocess, inverted_view, "Mem.")
+            plot_3D_structure(ax, tmin, tmax, banks_in_x, banks_in_y, banks_in_z, zstart, xwidth, ywidth, temperatures_bank, title_message, postprocess, inverted_view, "Mem.", adj)
 
             #ax_h, ax_w = 4, 4 ##
             #ax_h, ax_w = ax.bbox.height, ax.bbox.width
@@ -436,14 +441,14 @@ if __name__ == "__main__":
             arch_string = "Arch. type: " + str(arch_type) + ", "
             arch_string += "Core: " + str(cores_in_x) + "x" + str(cores_in_y) + "x" + str(cores_in_z) + ", "
             arch_string += "Memory: "+ str(banks_in_x) + "x" + str(banks_in_y) + "x" + str(banks_in_z) 
-            plt.annotate(arch_string, xy=(0.13, 0.93), xycoords='figure fraction', fontsize=16)
-            plt.annotate("Time step = "+str(count) +" ms", xy=(0.13, 0.85), xycoords='figure fraction', fontsize=19)
+            plt.annotate(arch_string, xy=(0.13, 0.93), xycoords='figure fraction', fontsize=21)
+            plt.annotate("Time step = "+str(count) +" ms", xy=(0.13, 0.85), xycoords='figure fraction', fontsize=21)
             if (inverted_view):
                 #plt.axhline(0.03, color='r')
-                plt.annotate("Heat Sink at bottom", xy=(0.13, 0.15), xycoords='figure fraction', fontsize=15)
+                plt.annotate("Heat Sink at bottom", xy=(0.13, 0.15), xycoords='figure fraction', fontsize=21)
             else:
                 #plt.axhline(0.85, color='r')
-                plt.annotate("Heat Sink at top", xy=(0.13, 0.75), xycoords='figure fraction', fontsize=15)
+                plt.annotate("Heat Sink at top", xy=(0.13, 0.75), xycoords='figure fraction', fontsize=21)
 
 
 
@@ -476,7 +481,7 @@ if __name__ == "__main__":
                 start_index = layer_to_view * xdim * ydim
                 end_index = start_index + xdim * ydim
                 temperatures = temperatures_bank[start_index : end_index]
-                title_message = "MEMORY layer " + str(layer_to_view)
+                title_message = "MEM. layer " + str(layer_to_view)
             else:
                 print ("\nERROR:: INVALID type_to_view parameter. Should be CORE or MEMORY\n")
                 exit()
@@ -492,7 +497,7 @@ if __name__ == "__main__":
 
         ##Adding colorbar
         #add_axes(left,bottom,width,height)
-        ax1 = fig.add_axes([0.92, 0.30, 0.03, 0.35])
+        ax1 = fig.add_axes([0.92, 0.20, 0.03, 0.55])
         cmap = mpl.cm.RdYlBu_r
         norm = mpl.colors.Normalize(vmin=tmin, vmax=tmax)
         # ColorbarBase derives from ScalarMappable and puts a colorbar
@@ -503,7 +508,8 @@ if __name__ == "__main__":
         cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
                                         norm=norm,
                                         orientation='vertical')
-        cb1.set_label('Temperature (in deg C)')
+        cb1.set_label('Temperature (in deg C)', size=21)
+        cb1.ax.tick_params(labelsize=18)
 
     
 
@@ -553,3 +559,4 @@ os.system("ffmpeg -framerate 1 -i " + image_files + " -start_number 1 -c:v mpeg4
 ##        plt.annotate("Bottom layer\ncross section", xy=(0.73, 0.65), xycoords='figure fraction')
 ##
 ##
+
