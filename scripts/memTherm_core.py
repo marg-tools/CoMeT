@@ -218,10 +218,12 @@ def gen_ptrace_header():
                 ptrace_header=ptrace_header + "X" + str(x) + "\t" 
     
     if type_of_stack=="3D":
-        for x in range(0,cores_in_x):
-            for y in range(0,cores_in_y):
-                ptrace_header=ptrace_header + "C_" + str(x*cores_in_y + y) + "\t" 
-                #ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
+        for z in range(0,cores_in_z):
+            for x in range(0,cores_in_x):
+                for y in range(0,cores_in_y):
+                    core_number = z*cores_in_x*cores_in_y + x*cores_in_y + y
+                    ptrace_header=ptrace_header + "C_" + str(core_number) + "\t" 
+                    #ptrace_header=ptrace_header + "C" + str(x) + "_" + str(y) + "\t" 
 
     with open("%s" %(power_trace_file), "w") as f:
         f.write("%s\n" %(ptrace_header))
