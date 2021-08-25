@@ -216,7 +216,7 @@ def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan', al
     #plt.title("Cube")
     #plt.show()
 
-def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core", adjust=0):
+def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core", adjust=0, z_adjust=0):
     if (debug):
         print ("DEBUG:: plot_3D_structure: xwidth = %f" %xwidth)
     color_lvl = 200
@@ -246,7 +246,7 @@ def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, 
             layer_num = zz
         annotate_text = layer_type + " L"+ str(layer_num)
         if (zdim > 1 or zstart > 0):
-            ax.text(xx+3,-1.2+adjust,zz+zstart+1.0,annotate_text,(0,1,0), verticalalignment='center', fontsize=17)
+            ax.text(xx+3,-1.2+adjust,zz+zstart+z_adjust,annotate_text,(0,1,0), verticalalignment='center', fontsize=17)
 #        ax.annotate("Time step = "+str(count) +" ms", xy=(xx+1, 0), xycoords='axes points', fontsize=21)
 
     if (axes_postprocess==True):        #true only for the last plot in 3D.
@@ -384,6 +384,7 @@ if __name__ == "__main__":
                 postprocess=False
                 title_message = None
                 adj=0.0   #adjust annotation
+                z_adj=0       #z needs adjustment for 3D-stacked for core
             else:
                 xwidth=1
                 ywidth=1
@@ -391,7 +392,8 @@ if __name__ == "__main__":
                 postprocess=True
                 title_message = "Core temperature map"
                 adj=0
-            plot_3D_structure(ax, tmin, tmax, cores_in_x, cores_in_y, cores_in_z, zstart, xwidth, ywidth, temperatures_core, title_message, postprocess, inverted_view, "Core ", adj)
+                z_adj=1.0
+            plot_3D_structure(ax, tmin, tmax, cores_in_x, cores_in_y, cores_in_z, zstart, xwidth, ywidth, temperatures_core, title_message, postprocess, inverted_view, "Core ", adj, z_adj)
             #ax_h, ax_w = 4, 4##
 #            p = Rectangle((0,0),
 #                           ax_h, ax_w,
@@ -412,6 +414,7 @@ if __name__ == "__main__":
                 else:
                     zstart = 0
                 adj=0.7   #adjust annotation
+                z_adj = 1.0
             else:
                 postprocess=True
                 if (arch_type == "2.5D"):
@@ -420,9 +423,10 @@ if __name__ == "__main__":
                     title_message = "Off-chip mem. temp. map"
                 ax = fig.add_subplot(gs[1], projection='3d')
                 adj=0
+                z_adj = 1.0
             xwidth=1
             ywidth=1
-            plot_3D_structure(ax, tmin, tmax, banks_in_x, banks_in_y, banks_in_z, zstart, xwidth, ywidth, temperatures_bank, title_message, postprocess, inverted_view, "Mem.", adj)
+            plot_3D_structure(ax, tmin, tmax, banks_in_x, banks_in_y, banks_in_z, zstart, xwidth, ywidth, temperatures_bank, title_message, postprocess, inverted_view, "Mem.", adj, z_adj)
 
             #ax_h, ax_w = 4, 4 ##
             #ax_h, ax_w = ax.bbox.height, ax.bbox.width
