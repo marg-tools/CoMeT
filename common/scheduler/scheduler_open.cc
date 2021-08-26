@@ -52,15 +52,9 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	numberOfTasks = Sim()->getCfg()->getInt("traceinput/num_apps");
 	numberOfCores = Sim()->getConfig()->getApplicationCores();
 
-	coreRows = (int)sqrt(numberOfCores);
-	while ((numberOfCores % coreRows) != 0) {
-		coreRows -= 1;
-	}
-	coreColumns = numberOfCores / coreRows;
-	if (coreRows * coreColumns != numberOfCores) {
-		cout<<"\n[Scheduler] [Error]: Invalid system size: " << numberOfCores << ", expected rectangular-shaped system." << endl;
-		exit (1);
-	}
+	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");
+	coresInY = Sim()->getCfg()->getInt("memory/cores_in_y");
+	coresInZ = Sim()->getCfg()->getInt("memory/cores_in_z");
 
 	performanceCounters = new PerformanceCounters(
 		Sim()->getCfg()->getString("hotspot/log_files/combined_instpower_trace_file").c_str(),
@@ -143,7 +137,7 @@ void SchedulerOpen::initMappingPolicy(String policyName) {
 				break;
 			}
 		}
-		mappingPolicy = new MapFirstUnused(coreRows, coreColumns, preferredCoresOrder);
+		mappingPolicy = new MapFirstUnused(numberOfCores, preferredCoresOrder);
 	} //else if (policyName ="XYZ") {... } //Place to instantiate a new mapping logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Mapping Algorithm" << endl;
@@ -161,7 +155,7 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 	} else if (policyName == "constFreq") {
 		int activeCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/active_core_freq") + 0.5);
 		int idleCoreFreq = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/constFreq/idle_core_freq") + 0.5);
-		dvfsPolicy = new DVFSConstFreq(performanceCounters, coreRows, coreColumns, activeCoreFreq, idleCoreFreq);
+		dvfsPolicy = new DVFSConstFreq(performanceCounters, numberOfCores, activeCoreFreq, idleCoreFreq);
 	} else if (policyName == "ondemand") {
 		float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
 		float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
@@ -169,8 +163,7 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/dtm_recovered_temperature");
 		dvfsPolicy = new DVFSOndemand(
 			performanceCounters,
-			coreRows,
-			coreColumns,
+			numberOfCores,
 			minFrequency,
 			maxFrequency,
 			frequencyStepSize,
@@ -446,12 +439,12 @@ void SchedulerOpen::migrateThread(thread_id_t thread_id, core_id_t core_id)
 /** getCoreNb
  * Return the number of the core at the given coordinates.
  */
-int SchedulerOpen::getCoreNb(int y, int x) {
-	if ((y < 0) || (y >= coreRows) || (x < 0) || (x >= coreColumns)) {
-		cout << "[Scheduler][getCoreNb][Error]: Invalid core coordinates: " << y << ", " << x << endl;
+int SchedulerOpen::getCoreNb(int x, int y, int z) {
+	if ((x < 0) || (x >= coresInX) || (y < 0) || (y >= coresInY) || (z < 0) || (z >= coresInX)) {
+		cout << "[Scheduler][getCoreNb][Error]: Invalid core coordinates: " << x << ", " << y << ", " << z << endl;
 		exit (1);
 	}
-	return y * coreColumns + x;
+	return (z * coresInY + y) * coresInX + x;
 }
 
 /** isAssignedToTask
@@ -1011,39 +1004,44 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 
 		cout << "[Scheduler]: Current mapping:" << endl;
 
-		for (int y = 0; y < coreRows; y++) {
-			for (int x = 0; x < coreColumns; x++) {
-				if (x > 0) {
-					cout << " ";
-				}
-				int coreId = getCoreNb(y, x);
-				if (!isAssignedToTask(coreId)) {
-					cout << "  . ";
-				} else {
-					if (systemCores[coreId].assignedTaskID < 10) {
+		for (int z = 0; z < coresInZ; z++) {
+			if (coresInZ > 1) {
+				cout << "Core layer " << z << ":" << endl;
+			}
+			for (int y = 0; y < coresInY; y++) {
+				for (int x = 0; x < coresInX; x++) {
+					if (x > 0) {
 						cout << " ";
 					}
-
-					char marker1 = '?';
-					char marker2 = '?';
-					if (isAssignedToThread(coreId)) {
-						Core::State state = m_thread_manager->getThreadState(systemCores[coreId].assignedThreadID);
-						if (state == Core::State::RUNNING) {
-							marker1 = '*';
-							marker2 = '*';
-						} else {
-							marker1 = '-';
-							marker2 = '-';
-						}
+					int coreId = getCoreNb(x, y, z);
+					if (!isAssignedToTask(coreId)) {
+						cout << "  . ";
 					} else {
-						marker1 = '(';
-						marker2 = ')';
-					}
+						if (systemCores[coreId].assignedTaskID < 10) {
+							cout << " ";
+						}
 
-					cout << marker1 << systemCores[coreId].assignedTaskID << marker2;
+						char marker1 = '?';
+						char marker2 = '?';
+						if (isAssignedToThread(coreId)) {
+							Core::State state = m_thread_manager->getThreadState(systemCores[coreId].assignedThreadID);
+							if (state == Core::State::RUNNING) {
+								marker1 = '*';
+								marker2 = '*';
+							} else {
+								marker1 = '-';
+								marker2 = '-';
+							}
+						} else {
+							marker1 = '(';
+							marker2 = ')';
+						}
+
+						cout << marker1 << systemCores[coreId].assignedTaskID << marker2;
+					}
 				}
+				cout << endl;
 			}
-			cout << endl;
 		}
 	}
 

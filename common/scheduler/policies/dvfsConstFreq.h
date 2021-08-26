@@ -11,14 +11,13 @@
 
 class DVFSConstFreq : public DVFSPolicy {
 public:
-    DVFSConstFreq(const PerformanceCounters *performanceCounters, int coreRows, int coreColumns, int activeCoreFreq, int idleCoreFreq);
+    DVFSConstFreq(const PerformanceCounters *performanceCounters, int numberOfCores, int activeCoreFreq, int idleCoreFreq);
     virtual std::vector<int> getFrequencies(const std::vector<int> &oldFrequencies, const std::vector<bool> &activeCores);
 
 private:
     const PerformanceCounters *performanceCounters;
 
-    unsigned int coreRows;
-    unsigned int coreColumns;
+    unsigned int numberOfCores;
     int activeCoreFreq;
     int idleCoreFreq;
 };

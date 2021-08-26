@@ -4,15 +4,15 @@
 
 using namespace std;
 
-DVFSConstFreq::DVFSConstFreq(const PerformanceCounters *performanceCounters, int coreRows, int coreColumns, int activeCoreFreq, int idleCoreFreq)
-	: performanceCounters(performanceCounters), coreRows(coreRows), coreColumns(coreColumns), activeCoreFreq(activeCoreFreq), idleCoreFreq(idleCoreFreq) {
+DVFSConstFreq::DVFSConstFreq(const PerformanceCounters *performanceCounters, int numberOfCores, int activeCoreFreq, int idleCoreFreq)
+	: performanceCounters(performanceCounters), numberOfCores(numberOfCores), activeCoreFreq(activeCoreFreq), idleCoreFreq(idleCoreFreq) {
 
 }
 
 std::vector<int> DVFSConstFreq::getFrequencies(const std::vector<int> &oldFrequencies, const std::vector<bool> &activeCores) {
-	std::vector<int> frequencies(coreRows * coreColumns);
+	std::vector<int> frequencies(numberOfCores);
 
-	for (unsigned int coreCounter = 0; coreCounter < coreRows * coreColumns; coreCounter++) {
+	for (unsigned int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
 		if (activeCores.at(coreCounter)) {
 			float power = performanceCounters->getPowerOfCore(coreCounter);
 			float temperature = performanceCounters->getTemperatureOfCore(coreCounter);

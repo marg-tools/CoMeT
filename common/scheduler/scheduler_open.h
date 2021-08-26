@@ -54,8 +54,9 @@ class SchedulerOpen : public SchedulerPinnedBase {
 	private:
 		int numberOfTasks;
 		int numberOfCores;
-		int coreRows;
-		int coreColumns;
+		int coresInX;
+		int coresInY;
+		int coresInZ;
 
 		PerformanceCounters *performanceCounters;
 
@@ -82,7 +83,7 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		long mappingEpoch;
 		void initMappingPolicy(String policyName);
 		bool executeMappingPolicy(int taskID, SubsecondTime time);
-		int getCoreNb(int y, int x);
+		int getCoreNb(int x, int y, int z);
 		bool isAssignedToTask(int coreId);
 		bool isAssignedToThread(int coreId);
 

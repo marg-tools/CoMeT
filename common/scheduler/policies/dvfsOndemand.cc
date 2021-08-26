@@ -6,8 +6,7 @@ using namespace std;
 
 DVFSOndemand::DVFSOndemand(
         const PerformanceCounters *performanceCounters,
-        int coreRows,
-        int coreColumns,
+        int numberOfCores,
         int minFrequency,
         int maxFrequency,
         int frequencyStepSize,
@@ -15,9 +14,8 @@ DVFSOndemand::DVFSOndemand(
         float downThreshold,
         float dtmCriticalTemperature,
         float dtmRecoveredTemperature)
-	: performanceCounters(performanceCounters),
-      coreRows(coreRows),
-      coreColumns(coreColumns),
+    : performanceCounters(performanceCounters),
+      numberOfCores(numberOfCores),
       minFrequency(minFrequency),
       maxFrequency(maxFrequency),
       frequencyStepSize(frequencyStepSize),
@@ -30,13 +28,13 @@ DVFSOndemand::DVFSOndemand(
 
 std::vector<int> DVFSOndemand::getFrequencies(const std::vector<int> &oldFrequencies, const std::vector<bool> &activeCores) {
     if (throttle()) {
-    	std::vector<int> minFrequencies(coreRows * coreColumns, minFrequency);
+        std::vector<int> minFrequencies(numberOfCores, minFrequency);
         cout << "[Scheduler][ondemand-DTM]: in throttle mode -> return min. frequencies" << endl;
         return minFrequencies;
     } else {
-    	std::vector<int> frequencies(coreRows * coreColumns);
+        std::vector<int> frequencies(numberOfCores);
 
-        for (unsigned int coreCounter = 0; coreCounter < coreRows * coreColumns; coreCounter++) {
+        for (unsigned int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
             if (activeCores.at(coreCounter)) {
                 float power = performanceCounters->getPowerOfCore(coreCounter);
                 float temperature = performanceCounters->getTemperatureOfCore(coreCounter);
@@ -78,7 +76,7 @@ std::vector<int> DVFSOndemand::getFrequencies(const std::vector<int> &oldFrequen
             }
         }
 
-	    return frequencies;
+        return frequencies;
     }
 }
 

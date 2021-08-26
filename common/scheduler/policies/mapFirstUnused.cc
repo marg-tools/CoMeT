@@ -4,9 +4,9 @@
 #include <map>
 #include <set>
 
-MapFirstUnused::MapFirstUnused(unsigned int coreRows, unsigned int coreColumns, std::vector<int> preferredCoresOrder)
-	: coreRows(coreRows), coreColumns(coreColumns), preferredCoresOrder(preferredCoresOrder) {
-	for (unsigned int i = 0; i < coreRows * coreColumns; i++) {
+MapFirstUnused::MapFirstUnused(unsigned int numberOfCores, std::vector<int> preferredCoresOrder)
+	: numberOfCores(numberOfCores), preferredCoresOrder(preferredCoresOrder) {
+	for (unsigned int i = 0; i < numberOfCores; i++) {
 		if (std::find(this->preferredCoresOrder.begin(), this->preferredCoresOrder.end(), i) == this->preferredCoresOrder.end()) {
 			this->preferredCoresOrder.push_back(i);
 		}

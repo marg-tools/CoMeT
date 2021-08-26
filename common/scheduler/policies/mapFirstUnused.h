@@ -9,12 +9,11 @@
 
 class MapFirstUnused : public MappingPolicy {
 public:
-    MapFirstUnused(unsigned int coreRows, unsigned int coreColumns, std::vector<int> preferredCoresOrder);
+    MapFirstUnused(unsigned int numberOfCores, std::vector<int> preferredCoresOrder);
     virtual std::vector<int> map(String taskName, int taskCoreRequirement, const std::vector<bool> &availableCores, const std::vector<bool> &activeCores);
 
 private:
-    unsigned int coreRows;
-    unsigned int coreColumns;
+    unsigned int numberOfCores;
     std::vector<int> preferredCoresOrder;
 };
 

@@ -17,8 +17,7 @@ class DVFSOndemand : public DVFSPolicy {
 public:
     DVFSOndemand(
         const PerformanceCounters *performanceCounters,
-        int coreRows,
-        int coreColumns,
+        int numberOfCores,
         int minFrequency,
         int maxFrequency,
         int frequencyStepSize,
@@ -31,8 +30,7 @@ public:
 private:
     const PerformanceCounters *performanceCounters;
 
-    unsigned int coreRows;
-    unsigned int coreColumns;
+    unsigned int numberOfCores;
     int minFrequency;
     int maxFrequency;
     int frequencyStepSize;
