@@ -22,10 +22,12 @@ CONFIG_DDR = 'gainestown_DDR'
 CONFIG_3Dmem = 'gainestown_3Dmem'
 CONFIG_2_5D = 'gainestown_2_5D'
 CONFIG_3D = 'gainestown_3D'
+CONFIG_3D_8_CORES = 'gainestown_3D_8core_2L'
+CONFIG3Dmem_8_CORES = 'gainestown_3Dmem_8core_2L'
 
 test_summary = ''
 pass_count = 0
-test_configs = [CONFIG_3Dmem, CONFIG_DDR, CONFIG_2_5D, CONFIG_3D]
+test_configs = [CONFIG_3Dmem, CONFIG_DDR, CONFIG_2_5D, CONFIG_3D, CONFIG_3D_8_CORES, CONFIG3Dmem_8_CORES]
 
 
 
@@ -111,11 +113,18 @@ def test_video_generation_feature(cfg):
     test_case_result = ''
     SAMPLING_INTERVAL = 1
     BANKS_IN_Z = 8
+    CORES_IN_Z = 1
     ARCH_TYPE = cfg.strip("gainestown_")
     if ARCH_TYPE == "DDR":
         BANKS_IN_Z = 1
     if ARCH_TYPE == "2_5D":
         ARCH_TYPE = "2.5D"
+    if ARCH_TYPE == "3D_8core_2L":
+        CORES_IN_Z = 2
+        ARCH_TYPE = "3D"
+    if ARCH_TYPE == "3Dmem_8core_2L":
+        CORES_IN_Z = 2
+        ARCH_TYPE = "3Dmem"
 
     if ENABLE_VIDEO_GENERATION:   
         if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
@@ -126,12 +135,13 @@ def test_video_generation_feature(cfg):
                 shutil.rmtree(video_dir)
             os.mkdir(video_dir)
     
-            args = '-t {trace_file} -o {video_dest} -s {sampling_interval} --arch_type {arch} --banks_in_z {banks_z}'  \
+            args = '-t {trace_file} -o {video_dest} -s {sampling_interval} --arch_type {arch} --banks_in_z {banks_z} --cores_in_z {cores_z}'  \
                 .format(trace_file=os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace'),
                         video_dest=video_dir,
                         sampling_interval=SAMPLING_INTERVAL,
                         arch=ARCH_TYPE,
-                        banks_z=BANKS_IN_Z)
+                        banks_z=BANKS_IN_Z,
+                        cores_z=CORES_IN_Z)
             print('Generating video for {}\n'.format(cfg))
 
             p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
@@ -178,7 +188,7 @@ def auto_test():
     f.write("Summary of CoMet Features\n")
     f.write("=========================\n")
     f.write(test_summary)
-    f.write("\n{} of 8 cases passed".format(pass_count))
+    f.write("\n{} of 12 cases passed".format(pass_count))
 
     print('\nTest for all four configurations and video generation completed. Please check test_summary for details\n')
     print('Simulation results and videos stored in comet_results.\n')
