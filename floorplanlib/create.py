@@ -102,6 +102,17 @@ def dimension_2d_or_3d(s):
             raise argparse.ArgumentTypeError('invalid format. Valid examples: 4x4, 8x8x1')
 
 
+def dimension_extend_to_3d(s):
+    try:
+        return dimension_3d(s)
+    except argparse.ArgumentTypeError:
+        try:
+            a, b = dimension_2d(s)
+            return a, b, 1
+        except argparse.ArgumentTypeError:
+            raise argparse.ArgumentTypeError('invalid format. Valid examples: 4x4, 8x8x1')
+
+
 class ThermalLayer(abc.ABC):
     """ base class for all thermal layers """
     def __init__(self, name):
@@ -514,7 +525,7 @@ def main():
     required = parser.add_argument_group('required named arguments')
     required.add_argument("--mode", help="chip architecture", choices=('DDR', '3Dmem', '2.5D', '3D'), required=True)
     cores = parser.add_argument_group('cores')
-    cores.add_argument("--cores", help="number of cores", type=dimension_2d, required=True)
+    cores.add_argument("--cores", help="number of cores", type=dimension_extend_to_3d, required=True)
     cores.add_argument("--corex", help="size of each core (in dimension x)", type=length, required=True)
     cores.add_argument("--corey", help="size of each core (in dimension y)", type=length, required=True)
     banks = parser.add_argument_group('memory banks')
@@ -525,13 +536,17 @@ def main():
     required.add_argument("--out", help="directory in which the floorplan is stored", required=True)
     args = parser.parse_args()    
 
+    cores_per_layer = args.cores[0] * args.cores[1]
+    cores_2d = (args.cores[0], args.cores[1])
+
     if args.mode == 'DDR':
         if len(args.banks) != 2:
             parser.error('banks must be 2D in DDR mode. Example: --banks 4x4')
 
         core = ThermalStack('cores')
-        core.add_layer(CoreLayer(args.cores, args.corex, args.corey, name='cores'))
-        core.add_layer(TIMLayer(args.cores, args.corex, args.corey, name='core_tim'))
+        for i in range(args.cores[2]):
+            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, name='core_tim'))
         core.write_files(args.out)
 
         banks_2d = (args.banks[0], args.banks[1])
@@ -548,8 +563,9 @@ def main():
         banks_2d = (args.banks[0], args.banks[1])
 
         core = ThermalStack('cores')
-        core.add_layer(CoreLayer(args.cores, args.corex, args.corey, name='cores'))
-        core.add_layer(TIMLayer(args.cores, args.corex, args.corey, name='core_tim'))
+        for i in range(args.cores[2]):
+            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, name='core_tim'))
         core.write_files(args.out)
 
         mem = ThermalStack('mem')
@@ -564,6 +580,9 @@ def main():
     elif args.mode == '2.5D':
         if len(args.banks) != 3:
             parser.error('banks must be 3D in 2.5D mode. Example: --banks 4x4x2')
+
+        if args.cores[2] != 1:
+            parser.error(f'2.5D currently only supports 1 core layer (requested {args.cores[2]})')
 
         cores_width = args.cores[0] * args.corex
         cores_height = args.cores[1] * args.corey
@@ -580,7 +599,7 @@ def main():
         tim = TIMLayer((1, 1), total_width, total_height, name='tim')
         stack.add_layer(tim)
         stack.add_layer(CoreAndMemoryControllerLayer(
-            args.cores, args.corex, args.corey,
+            cores_2d, args.corex, args.corey,
             banks_2d, args.bankx, args.banky,
             args.core_mem_distance,
             name='core_and_mem_ctrl'))
@@ -613,7 +632,11 @@ def main():
         for i in range(args.banks[2]):
             stack.add_layer(MemoryLayer(banks_2d, args.bankx, args.banky, name=f'mem_bank_{i+1}', nb_offset=i*banks_per_layer))
             stack.add_layer(tim)
-        stack.add_layer(CoreLayer(args.cores, args.corex, args.corey, name='cores'))
+
+        for i in range(args.cores[2]):
+            stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            stack.add_layer(tim)
+
         stack.write_files(args.out)
     else:
         raise Exception('unknown mode')
