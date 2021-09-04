@@ -1,4 +1,4 @@
-# 3D-Mem-Therm-I
+# CoMeT -- Core and Memory Thermal simulator
 
 With the growing power density in both processors and memories (esp. 3D), thermal issues significantly impact application performance. Thus, increasingly researchers have become interested in understanding the performance, power, and thermal effects of the proposed changes in hardware and software.
 
