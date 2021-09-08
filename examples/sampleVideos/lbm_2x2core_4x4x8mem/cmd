@@ -5,3 +5,5 @@ python3 heatView.py -t DDR/combined_temperature.trace --tmin 65 --tmax 78 --arch
 
 python3 heatView.py -t 2.5D/combined_temperature.trace --tmin 65 --tmax 78 --arch_type 2.5D -o maps_2.5D_2D -c --plot_type 2D
 
+python3 heatView.py -t 3D_8core_2L/combined_temperature.trace --tmin 65 --tmax 78 --arch_type 3D-stacked -o maps_3D_8core_2L -c --cores_in_z 2
+
