@@ -1,184 +1,384 @@
-# CoMeT -- Integrated Core and Memory Thermal simulator
+# *CoMeT*: Integrated <ins>Co</ins>re and <ins>Me</ins>mory <ins>T</ins>hermal Simulation Toolchain for 2D, 2.5D, and 3D Processors
 
-With the growing power density in both processors and memories (esp. 3D), thermal issues significantly impact application performance. Thus, increasingly researchers have become interested in understanding the performance, power, and thermal effects of the proposed changes in hardware and software.
+With the growing power density in both cores and memories (esp. 3D), thermal issues significantly impact performance and reliability. Thus, increasingly researchers have become interested in understanding the performance, power, and thermal effects of the proposed changes in hardware and software. *CoMeT* is an integrated thermal simulation toolchain, providing performance, power, and temperature parameters at regular intervals (epoch) for both cores and memory. It enables computer architects to evaluate various core and main memory integration options (3D, 2.5D, 2D) and analyze runtime management policies. 
 
-3D-Mem-Therm-I is an architectural simulation tool for processors and memory. It supports various main memory types and its integration to processors (2D DDR, 3D memory, 2.5D integration, and 3D integration of core and memory). It integrates Sniper (performance simulator for x86), McPAT (power model for processors), CACTI3DD (power model for memory), and HotSpot (thermal simulator) to periodically provide designers - performance, power, and thermal information for processor and memory.  
+*CoMeT* extends the Sniper multicore performance simulator's source code to provide DRAM access information per memory bank (at regular intervals). It emits the access count for reads and writes separately, which can be helpful for memories having asymmetric read/write energy and delay (e.g., NVM). Periodically, using McPAT and CACTI, the core and memory power are computed and fed to HotSpot for (temperature-dependent leakage power-aware) thermal analysis. A thermal management policy monitors the temperature and, in the case of core or memory heating, it redistributes/reduces the power, then the performance simulation is resumed.
 
-# Part 1
-- We have extended the source code of Sniper multicore simulator developed by the Performance Lab research group at Ghent University, Belgium. This code extension provides us with DRAM access information per memory bank at a periodic interval (unlike Sniper which gives a total count of DRAM accesses). It emits the access count for read and write separately, which can be useful for memories having asymmetric read/write energy and delay (e.g., NVM).
-- We also integrated it to periodically invoke HotSpot thermal simulator (leakage aware and supports 2D/3D memory as well). The access trace of memory is passed to HotSpot, which generates the temperature trace of the 3D memory. The core is also simulated for temperature.
-- The tool also generates a video showing the thermal pattern for various time steps.
+## Features
+[//]: # "(*CoMeT* is an integrated thermal simulation toolchain for cores and memory. It integrates Sniper (performance simulator for x86), McPAT (power model for cores), CACTI3DD (power model for memory), and HotSpot (thermal simulator) to provide designers - performance, power, and thermal information, at regular intervals for both core and memory." 
 
-# Getting Started
+Following are the salient features:
+1. Supports various main memory types and their integration to cores (2D off-chip DDR, 3D off-chip memory, 2.5D integration, and 3D stacking of core and memory).
+2. Has a built-in temperature video generation tool, namely *HeatView*, which supports all core-memory configurations. Additionally, for 3D architectures, a video with a layer-wise 2D view is generated.
+3. A default thermal management policy with an *OnDemand governer* and *open scheduler* is included to quick-start the design process. Designers can easily modify the default policy and evaluate different thermal management approaches.
+4. To ease user development and reduce debugging, *CoMET* provides an automatic build verification test suite (smoke testing) that checks critical functionalities across various architectures. Users can easily add test cases to the smoke tests.
+5. Provides an automated grid-based floorplan generator (*floorplanlib*), which supports the generation of 2D, 2.5D, and 3D floorplans.
+6. Supports PARSEC, SPLASH-2, and SPEC CPU2017 benchmark suites. Users can also run their benchmarks.
+7. Using the *SimulationControl* feature, users can run simulations in batch mode, taking the list of workloads (mixes of benchmarks) and configurations as input. Further, to enable detailed output analysis, *SimulationControl* generates additional outputs, such as performance, power, temperature variation (versus time) graphs, and detailed CPI bar charts. 
 
-- Installation
-	- sudo dpkg --add-architecture i386
-	- sudo apt-get install binutils build-essential curl git libboost-dev libbz2-dev libc6:i386 libncurses5:i386 libsqlite3-dev libstdc++6:i386 python wget zlib1g-dev
-	- sudo apt-get install ffmpeg python-matplotlib (optional step - if thermal trace video generation is required)
 
-- Compile
-	- In the main folder, make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
-	- Go to the hotspot\_tool folder and run 'make' to compile the hotspot tool for memory temperature estimation
-	- Go to the hotspot\_c\_tool folder and run 'make' to compile the hotspot tool for core temperature estimation
-	- Configure the path of the hotspot tool and config directory in the config file (search for tool\_path and config\_path variables)
 
-- Running an application 
-	- cd test/app\_name
-	- make run
 
-- To see the DRAM accesses per memory bank, please use the application my\_test\_case inside test folder
-	- To use this feature the application should be long enough to run for atleast 1 ms.
-	- cd test/dram-access-trace
-	- make run
-- Sample output: Apart from Sniper messages and commandline, we see a detailed bank level trace for DRAM accesses. Please note the output like shown below in the terminal output.
+## 1 - Getting Started (Installation)
+
+
+### Installing Basic Tools
+
+`sudo apt install git make python gcc` 
+
+### Cloning the repo
+
+`git clone https://github.com/marg-tools/CoMeT.git` 
+
+### PinPlay
+Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
+```sh
+wget https://software.intel.com/content/dam/develop/external/us/en/protected/pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
+tar xf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
+mv pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux pin_kit
+```
+
+### Docker
+*CoMeT* compiles and runs inside a Docker container. Therefore, we need to download & install Docker. For more info: https://docs.docker.com/engine/install/ubuntu/
+
+### Running a Docker image
+After installing Docker, let us now create a `container` using the `Dockerfile`.
+```sh
+cd docker
+make # build the Docker image
+make run # starts running the Docker image. Please ignore "docker groups: cannot find name for group id 1000"
+cd .. # return to the base Sniper directory (while running inside of Docker)
+```
+
+### Compiling Sniper
+```sh
+make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
+```
+
+
+### Compiling HotSpot
+Let us compile the [HotSpot] simulator, which shipped with *CoMeT*.
+```sh
+cd hotspot_tool/
+make
+cd ..
+```
+
+## 2 - Running an Application
+
+
+```sh
+cd test/thermal_example
+make run # Runs application, displays DRAM bank accesses, outputs temperature files
+```
+
+<!-- - To see the DRAM accesses per memory bank, please use the application my\_test\_case inside test folder
+    - To use this feature, the application should to run for atleast 1 ms as we collect trace at every 1 ms.
+    - cd test/dram-access-trace
+    - make run
+-->
+
+- The output of `make run` displays the time interval or epoch (in µs) in which DRAM access was made, #reads and #writes, and reports the number of DRAM accesses directed to a particular bank. Further, detailed power, temperature traces at epoch level are generated. 
+
+- To enable the above performance, power, and temperature outputs, we have added `-s memTherm_core` and `-c gainestown_3D` in the Sniper run command (please see *Makefile*). The above flags can be used to enable *CoMeT* simulation for any Sniper compatible executable.
+
+
+- **Sample output:** Apart from Sniper messages and command line, we see a detailed bank-level trace for DRAM accesses. Please note the terminal output with the default epoch of 1 ms (= 1000 µs) shown below.
+
+```sh
+    Time    #READs  #WRITEs #Access Address     #BANK   Bank Counters
+
+@&  1000    10455   8710    19165       144, 132, 151, 162, 149, 160, 144, 130, 145, 140, 143, 164, 147, 158, 145, 133, 142, 131, 148, 156, 144, 155, 140, 134, 147, 129, 143, 162, 147, 167, 139, 129, 140, 130, 156, 155, 144, 153, 144, 138, 156, 137, 155, 157, 150, 169, 145, 142, 152, 137, 156, 157, 144, 156, 138, 136, 147, 127, 142, 160, 147, 160, 142, 129, 138, 133, 151, 156, 145, 155, 143, 135, 145, 129, 144, 157, 143, 162, 143, 130, 144, 129, 149, 170, 147, 164, 144, 128, 145, 132, 144, 155, 149, 164, 146, 133, 275, 254, 280, 282, 143, 163, 150, 134, 152, 125, 146, 166, 141, 164, 143, 126, 142, 130, 146, 153, 139, 156, 144, 136, 150, 126, 139, 156, 148, 165, 148, 130, 
+
+@&  2000    15742   12212   27954       206, 188, 225, 249, 240, 267, 197, 164, 229, 219, 201, 225, 193, 196, 244, 235, 205, 191, 226, 246, 241, 264, 196, 167, 229, 217, 202, 220, 193, 196, 244, 235, 205, 191, 226, 246, 241, 264, 196, 167, 236, 218, 208, 225, 196, 205, 248, 240, 212, 193, 233, 251, 241, 267, 197, 165, 230, 215, 202, 223, 193, 199, 245, 233, 206, 189, 226, 249, 241, 267, 197, 165, 230, 220, 202, 218, 188, 202, 250, 230, 211, 196, 223, 251, 241, 265, 200, 170, 229, 222, 203, 216, 190, 203, 255, 236, 215, 193, 231, 250, 244, 264, 199, 167, 234, 215, 197, 229, 194, 196, 244, 236, 204, 191, 228, 247, 242, 264, 196, 168, 233, 211, 199, 227, 196, 200, 249, 239, 
+.
+.
+.
+.
+Total number of DRAM read requests = 48989 
+
+Total number of DRAM write requests = 32774
+```
+- Sum of DRAM read requests and write requests equals *num dram accesses* in *sim.out* file.
+    - You can also specify --roi flag in config file to obtain DRAM access trace for a region of interest.
+
+- **Selected useful files:** Multiple files containing simulation outputs will be generated (*sim.cfg*, *sim.out*, etc.), but the useful ones are described below, these files would have \_mem and\_core suffix (instead of prefix *combined_*) to indicate if they are for memory or core temperature simulation:
+    - *combined_temperature.trace* - the temperature trace of core and memory at periodic intervals combined together.
+    - *combined_power.trace* - the power trace of core and memory at periodic intervals combined together.
+    - *full_temperature.trace* (core and mem) - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory. core trace is not generated in case of a 2.5D and 3D architecture.
+    - *logfile* - the simulation output from the terminal. bank\_access\_counter lists the access counts for different banks.
+
+*If you are able to verify this, then you have **successfully run** an application.*
+
+<!-- 
+## 3 - Understanding the *CoMeT* output
+
+- To see the output corresponding to number of DRAM read/write accesses per bank, the application should run for atleast 1 ms. This is due to length of epoch that we use for counting the DRAM accesses and some other delays.
+
+ -->
+
+## 3 - *CoMeT* Features
+
+
+### 3.1 Support for various Core-Memory Integrations
+
+<details>
+<summary>Click here to open details</summary>
+
+*CoMeT* can be configured for various memory and core configurations. 
+
+We show changing input configuration, from stacked (core + 3D memory) to off-chip 3D memory, for the *thermal_example* test case. 
+
+
+`#Change to appropriate working directory`
+`cd test/thermal_example`
+` `
+`#Change configuration from gainestown_3D to gainestown_3Dmem. Can be done in a text editor also.`
+`sed -i 's/-c gainestown_3D/-c gainestown_3Dmem/g' Makefile` 
+` `
+`#Running CoMeT`
+`make run > logfile`
+
+
+- **Setting up input configuration:** Open Makefile and change the config file used (specified with -c option in the sniper command). The options are as follows:
+
+    - gainestown_DDR - 2x2 core and an external 4x4 bank DDR main memory (2D memory).<!--It invokes two different hotspot runs to estimate temperatures for core and memory separately.-->
+    - gainestown_3Dmem - 2x2 core and an external 4x4x8 banks 3D main memory.<!-- It invokes two different hotspot runs to estimate temperatures for core and memory separately.-->
+    - gainestown_2_5D - 2x2 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture).<!-- It invokes a single hotspot run and simulates core and memory together.-->
+    - gainestown_3D - 2x2 core on top of a 4x4x8 banks 3D main memory.<!-- It invokes a single hotspot run and simulates core and memory together.-->
+
+<!-- 
+Open Makefile and use appropriate config file (pre-designed) as per the following descriptions. The parameter `type_of_stack` in the config file controls the architecture type.
+    - gainestown_DDR - 2x2 core and an external 4x4 bank DDR main memory (2D memory). It invokes two different hotspot runs to estimate temperatures for core and memory separately.
+    - gainestown_3Dmem - 2x2 core and an external 4x4x8 banks 3D main memory. It invokes two different hotspot runs to estimate temperatures for core and memory separately.
+    - gainestown_2_5D - 2x2 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture). It invokes a single hotspot run and simulates core and memory together.
+    - gainestown_3D - 2x2 core on top of a 4x4x8 banks 3D main memory. It invokes a single hotspot run and simulates core and memory together.
+     -->
+
+</details>
+
+
+### 3.2 HeatView: A temperature video generation tool
+
+<details>
+<summary>Click here to open details</summary>
+
+- To generate the thermal trace video (for stacked 4-core and 3D, 8 layer, 128 bank memory architechure), please run `python3 ../../../scripts/heatView.py --cores_in_x 2 --cores_in_y 2 --cores_in_z 1 --banks_in_x 4 --banks_in_y 4 --banks_in_z 8 --arch_type 3D --traceFile combined_temperature.trace --output maps`. The video will be an avi file generated in the maps folder using the *combined_temperature.trace*. Detailed command line arguments for *HeatView* are given below.
 
 ```
-   	Time	#READs	#WRITEs	#Access		Bank Counters
-
-
-@& 	1000	8368	0	8368		1044, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1043, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1044, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1050, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1046, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1049, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-
-@& 	2000	8010	0	8010		1002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-
-
+Usage: python3 heatView.py arguments
+Switches and command-line arguments: 
+     --cores_in_x: Number of cores in x dimension (default 4)
+     --cores_in_y: Number of cores in y dimension (default 4)
+     --cores_in_z: Number of cores in z dimension (default 1)
+     --banks_in_x: Number of memory banks in x dimension (default 4)
+     --banks_in_y: Number of memory banks in y dimension (default 4)
+     --banks_in_z: Number of memory banks in z dimension (default 8)
+     --arch_type: Architecture type = 3D or no3D (default no3D)
+     --plot_type: Generated view = 3D or 2D (default 3D)
+     --layer_to_view: Layer number to view in 3D plot (starting from 0) (default 0)
+     --type_to_view: Layer type to view in 3D plot (CORE or MEMORY) (default MEMORY)
+     --verbose (or -v): Enable verbose output
+     --inverted_view (or -i): Enable inverted view (heat sink on bottom)
+     --debug: Enable debug priting
+     --tmin: Minimum temperature to use for scale (default 65 deg C)
+     --tmax: Maximum temperature to use for scale (default 81 deg C)
+     --samplingRate (or -s): Sampling rate, specify an integer (default 1)
+     --traceFile (or -t): Input trace file (no default value)
+     --output (or -o): output directory (default maps)
+     --clean (or -c): Clean if directory exists
 ```
-	- Multiple files containing simulation outputs will be generated (sim.cfg, sim.out etc)
-	- If we sum the #Access per epoch, the number is same as "num dram accesses" under "DRAM summary" in sim.out file
-	- If you are able to verify this, then you have successfully setup the system.
+</details>
 
+### 3.3 Dynamic Thermal Management
 
-- To run the application on 32/48 cores with 16 channels
-	- Use gainestown\_16channel\_32cores.cfg and gainestown\_16channel\_48cores.cfg respectively
-	- For 32 cores, we are required to launch n=32 application instances so we collect and play back traces simultaneously on 32 different cores
-	- To run on 32 cores with 16 DRAM channels architecture
-		- cd test/multiple\_core
-		- make run
-		- The total number of DRAM accesses in detailed trace should match with number of DRAM accesses in sim.out file
+<details>
+<summary>Click here to open details</summary>
 
-- Understanding the output
-	- To see the output corresponding to number of DRAM read/write accesses per bank, the application should run for atleast 1 ms. This is due to length of epoch that we use for counting the DRAM accesses and some other delays.
-	- The output of `make run` displays the time interval in which a DRAM access was made, #reads and #writes and also reports the number of DRAM accesses directed to a particular bank.
-
-
-- An example testcase which calls the thermal simulation periodically using hotspot is also created in the thermal\_example folder. The simulation can be configured for various memory and core configurations
-	- cd test/thermal\_example
-	- open Makefile and use appropriate config file (pre-designed) as per the following descriptions. The parameter `type\_of\_stack` in the config file controls the architecture type.
-		- gainestown_DDR - 4x4 core and an external 4x4 bank DDR main memory (2D memory). It invokes two different hotspot runs to estimate temperatures for core and memory separately.
-		- gainestown_3Dmem - 4x4 core and an external 4x4x8 banks 3D main memory. It invokes two different hotspot runs to estimate temperatures for core and memory separately.
-		- gainestown_2_5D - 4x4 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture). It invokes a single hotspot run and simulates core and memory together.
-		- gainestown_3D - 4x4 core on top of a 4x4x8 banks 3D main memory. It invokes a single hotspot run and simulates core and memory together.
-	- `make run > logfile`
-	- To generate the thermal trace video, please run `../../scripts/heatView.sh full_temperature_mem.trace maps` . The video will be an avi file generated in the maps folder. Currently the script works only for 3Dmem architecture.
-	
-    - Multiple files would be generated, but the useful ones are described below (these files would have \_mem and\_core suffix to indicate if they are for memory or core temperature simulation):
-	- full\_temperature.trace - the temperature trace at periodic intervals for various banks and logic cores in the 3D memory. core trace is not generated in case of a 2.5D and 3D architecture.
-	- logfile - the simulation output from the terminal. bank\_access\_counter lists the access counts for different banks
-
-# Open Scheduler
+Open Scheduler
 
 - features
-	- random arrival times of workloads (open system)
-	- API for application mapping and DVFS policies
+    - random arrival times of workloads (open system)
+    - API for application mapping and DVFS policies
 - enable with `type=open` in base.cfg
 
-## Configuration Help for Open Scheduler
+Configuration Help for Open Scheduler
 
 - task arrival times: use the config parameters in `scheduler/open` in `base.cfg`
 - mapping: select logic with `scheduler/open/logic` and configure with additional parameters (`core_mask`, `preferred_core`)
 - DVFS: select logic with `scheduler/open/dvfs/logic` and configure accordingly
 
-# Simulation Control Package
+These policies are implemented in `common/scheduler/policies`.
+Mapping policies derive from `MappingPolicy`, DVFS policies derive from `DVFSPolicy`.
+After implementing your policy, instantiate it in `SchedulerOpen::initMappingPolicy` / `SchedulerOpen::initDVFSPolicy`.
 
-- features
-	- batch run many simulations with different configurations
-		- annotate configuration options in `base.cfg` with tags following the format `# cfg:<TAG>` (ONLY `base.cfg` supported at the moment)
-		- specify list of tags per run in `run.py`. Only the associated configuration options will be enabled
-		- for an example: see `example` function in `run.py` and `scheduler/open/dvfs/constFreq` in `base.cfg` to run an application at different frequencies
-		- IMPORTANT: make sure that all your configuration options have a match in `base.cfg`
-	- create plots of temperature, power, etc. over time
-	- API to automatically parse finished runs (`resultlib`)
-- usage
-	- configure basic settings in `simulationcontrol/config.py`
-	- specify your runs in `simulationcontrol/run.py`
-	- `python3 run.py`
-	- print overview of finished simulations: `python3 parse_results.py`
 
-# Floorplan Creation Helpers (floorplanlib)
+### 3.4 Build verification test suite
 
-## General Usage
+- Running automated test suite to ensure working of different features of *CoMeT*
+```sh
+cd test/test-installation
+make run
+```
+- As each system configuration is successfully simulated, you will see messages as below
+    - Running test case with configuration gainestown_3D
+    - Finished running test case with configuration gainestown_3D.cfg
+    - Test case passed for configuration gainestown_3D.cfg
+    - OR Test case failed for configuration gainestown_3D.cfg. Please check test/test-installation/comet_results/gainestown_3D/error_log for details.
+    - Video for gainestown_3D saved in test/test-installation/comet_results/gainestown_3D/maps
+    - OR Video generation failed for configuration gainestown_3D.cfg. Check test/test-installation/comet_results/gainestown_3D/video_gen_error.log for details.
+    - Result saved in test/test-installation/comet_results/gainestown_3D
+    - make clean
+
+- After the test finishes successfully, a folder "comet\_results" will be created in the same folder
+    - It contains sub-folders, one for each system configurations (DDR, 3Dmem, 3D and 2\_5\_D)
+    - Each sub-folder contains architecture simulation files and thermal simulation files for the test case
+    - For per epoch DRAM access trace and Sniper log of test case, please refer simulation\_log file
+    - For thermal simulation results, please refer to full\_temperature.trace file and other related files
+
+- Video generation
+    - If the simulation for a configuration finishes successfully and pre-requisites for generating videos are installed in your host machine, then the video is generated inside "video" folder of that configuration.
+    - If the simulation for a configuration crashes, no video is generated. Further, an error\_log is generated for that configuration stating why simulation failed.
+    - If the simulation finishes successfully but pre-requisites for generating videos are not met, a file named video\_gen\_error.log is generated to report the error for that configuration.
+
+- Test summary
+    - The complete summary of the running the test suite is written to a file named test\_summary.
+    - Also, some logs are printed during the execution of test\_suite.
+
+</details>
+
+### 3.5 Automated floorplan generator (floorplanlib)
+
+<details>
+<summary>Click here to open details</summary>
+
+### General Usage
 
 The floorplan creation helpers are an optional tool, you can also use your custom floorplans instead.
 Usage:
-- create floorplans (and layer configuration files)
+- create floorplans (and layer configuration files, HotSpot configuration files)
 - change configuration to reference to the created files (for an example see gainestown_*)
 
-## Examples
+#### Examples
 
-### off-chip 2D
+##### off-chip 2D
 ```bash
 python3 floorplanlib/create.py \
-	--mode DDR \
-	--cores 4x4 --corex 1mm --corey 1mm \
-	--banks 8x8 --bankx 0.9mm --banky 0.9mm \
-	--out my_2d_floorplan
+    --mode DDR \
+    --cores 4x4 --corex 1mm --corey 1mm \
+    --banks 8x8 --bankx 0.9mm --banky 0.9mm \
+    --out my_2d_floorplan
 ```
 
-### off-chip 3D memory
+##### off-chip 3D memory
 ```bash
 python3 floorplanlib/create.py \
-	--mode 3Dmem \
-	--cores 4x4 --corex 1mm --corey 1mm \
-	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
-	--out my_3d_oc_floorplan
+    --mode 3Dmem \
+    --cores 4x4 --corex 1mm --corey 1mm \
+    --banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+    --out my_3d_oc_floorplan
 ```
 
-### 2.5D (3D memory and 2D core on the same interposer)
+##### 2.5D (3D memory and 2D core on the same interposer)
 ```bash
 python3 floorplanlib/create.py \
-	--mode 2.5D \
-	--cores 4x4 --corex 1mm --corey 1mm \
-	--banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
-	--core_mem_distance 7mm \
-	--out my_2.5d_floorplan
+    --mode 2.5D \
+    --cores 4x4 --corex 1mm --corey 1mm \
+    --banks 8x8x2 --bankx 0.9mm --banky 0.9mm \
+    --core_mem_distance 7mm \
+    --out my_2.5d_floorplan
 ```
 
-### 3D (fully-integrated 3D stack of cores and memory)
+##### 3D (fully-integrated 3D stack of cores and memory)
 ```bash
 python3 floorplanlib/create.py \
-	--mode 3D \
-	--cores 4x4 --corex 0.9mm --corey 0.9mm \
-	--banks 8x8x4 --bankx 0.45mm --banky 0.45mm \
-	--out my_3d_floorplan
+    --mode 3D \
+    --cores 4x4 --corex 0.9mm --corey 0.9mm \
+    --banks 8x8x4 --bankx 0.45mm --banky 0.45mm \
+    --out my_3d_floorplan
 ```
 
-# Automated Test Suite
+</details>
 
-- Test suite location
-	- cd test/test-installation
 
-- Running automated test suite to ensure working of different features of CoMeT
-	- make run
-	- As each system configuration is successfully simulated, you will see messages as below
-		- Running test case with configuration gainestown_3D
-		- Finished running test case with configuration gainestown_3D.cfg
-		- Test case passed for configuration gainestown_3D.cfg
-			- OR Test case failed for configuration gainestown_3D.cfg. Please check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/error_log for details.
-		- Video for gainestown_3D saved in /3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/maps
-			- OR Video generation failed for configuration gainestown_3D.cfg. Check 3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D/video_gen_error.log for details.
-		- Result saved in path-to-3D-Mem-Therm-I/test/test-installation/comet_results/gainestown_3D
-	- make clean
+### 3.6 Supports PARSEC, SPLASH-2, SPEC
 
-- After the test finishes successfully, a folder "comet\_results" will be created in the same folder
-	- It contains sub-folders, one for each system configurations (DDR, 3Dmem, 3D and 2\_5\_D)
-	- Each sub-folder contains architecture simulation files and thermal simulation files for the test case
-	- For per epoch DRAM access trace and Sniper log of test case, please refer simulation\_log file
-	- For thermal simulation results, please refer to full\_temperature.trace file and other related files
+<details>
+<summary>Click here to open details</summary>
 
-- Video generation
-	- If the simulation for a configuration finishes successfully and pre-requisites for generating videos are installed in your host machine, then the video is generated inside "maps" folder of that configuration.
-	- If the simulation for a configuration crashes, no video is generated. Further, an error\_log is generated for that configuration stating why simulation failed.
-	- If the simulation finishes successfully but pre-requisites for generating videos are not met, a file named video\_gen\_error.log is generated to report the error for that configuration.
+- Compiling the Benchmarks:
+```sh
+#setting $GRAPHITE_ROOT to HotSniper7's root directory
+export GRAPHITE_ROOT=$(pwd)
+cd benchmarks
+#setting $BENCHMARKS_ROOT to the benchmarks directory
+export BENCHMARKS_ROOT=$(pwd)
+#compiling the benchmarks
+make
+#Running the benchmarks
+make run
+```
+- You are required to 'make' twice for correct compilation
+- Also, you will see that compilation only passes for PARSEC and SPLASH benchmarks, and fails for SPEC benchmarks.
+- Ignore the failed compilation for SPEC benchmarks.
+- SPEC 2017 benchmark
+    - Download the pinballs from the below link
+        - https://www.spec.org/cpu2017/research/simpoint.html
+    - Create a folder "SPEC" inside test folder
+    - Extract the pinballs inside test/SPEC 
+    - Run the benchmark
+    ```
+    cd test/SPEC
+    ../../../../../run-sniper -v -s memTherm_core -c gainestown_3Dmem -n 4 --pinballs $SIM_PATH,$SIM_PATH,$SIM_PATH,$SIM_PATH
+    ```
+    - $SIM\_PATH represents path of pinballs for each SPEC benchmarks, where each benchmark in SPEC suite has multiple address files
 
-- Test summary
-	- The complete summary of the running the test suite is written to a file named test\_summary.
-	- Also, some logs are printed during the execution of test\_suite.
+</details>
+
+### 3.7 Simulation Control
+<details>
+<summary>Click here to open details</summary>
+
+- features
+    - batch run many simulations with different configurations
+        - annotate configuration options in config files (e.g., in `base.cfg` or `gainestown_3D.cfg`) with tags following the format `# cfg:<TAG>`
+        - specify list of tags per run in `run.py`. Only the associated configuration options will be enabled
+        - for an example: see `example` function in `run.py` and `scheduler/open/dvfs/constFreq` in `base.cfg` to run an application at different frequencies
+        - IMPORTANT: make sure that all your configuration options have a match in `base.cfg`
+    - create plots of temperature, power, etc. over time
+    - create video of temperature (with HeatView)
+    - API to automatically parse finished runs (`resultlib`)
+- usage
+    - configure basic settings in `simulationcontrol/config.py`
+    - specify your runs in `simulationcontrol/run.py`
+    - `python3 run.py`
+    - print overview of finished simulations: `python3 parse_results.py`
+
+Quickly list the finished simulations:
+```sh
+cd simulationcontrol
+PYTHONIOENCODING="UTF-8" python3 parse_results.py
+```
+
+Each run is stored in a separate directory in the results directory (see 4).
+For quick visual check, many plots are automatically generated for you (IPS, power, etc).
+
+To do your own (automated) evaluations, see the `simulationcontrol.resultlib` package for a set of helper functions to parse the results. See the source code of `parse_results.py` for a few examples.
+</details>
+
+## Code Acknowledgements
+
+  Sniper: http://snipersim.org
+  
+  McPat: https://www.hpl.hp.com/research/mcpat/
+  
+  HotSpot: http://lava.cs.virginia.edu/HotSpot/
+  
+  MatEx: http://ces.itec.kit.edu/846.php
+  
+  thermallib: https://github.com/ma-rapp/thermallib
+
+
+
+
+
