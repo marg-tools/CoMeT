@@ -130,16 +130,16 @@ Total number of DRAM write requests = 32774
 
 We show changing input configuration, from stacked (core + 3D memory) to off-chip 3D memory, for the *thermal_example* test case. 
 
+```sh
+#Change to appropriate working directory
+cd test/thermal_example
 
-`#Change to appropriate working directory`
-`cd test/thermal_example`
-` `
-`#Change configuration from gainestown_3D to gainestown_3Dmem. Can be done in a text editor also.`
-`sed -i 's/-c gainestown_3D/-c gainestown_3Dmem/g' Makefile` 
-` `
-`#Running CoMeT`
-`make run > logfile`
+#Change configuration from gainestown_3D to gainestown_3Dmem. Can be done in a text editor also.
+sed -i 's/-c gainestown_3D/-c gainestown_3Dmem/g' Makefile
 
+#Running CoMeT
+make run > logfile
+```
 
 - **Setting up input configuration:** Open Makefile and change the config file used (specified with -c option in the sniper command). The options are as follows:
 
