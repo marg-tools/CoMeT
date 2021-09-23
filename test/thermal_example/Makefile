@@ -17,7 +17,7 @@ run_$(TARGET):
 	#- gainestown_2_5D - 4x4 core and a 4x4x8 banks 3D main memory integrated on the same die (2.5D architecture). It invokes a single hotspot run and simulates core and memory together.
 	#- gainestown_3D - 4x4 core on top of a 4x4x8 banks 3D main memory. It invokes a single hotspot run and simulates core and memory together.
 	
-	../../run-sniper -v -s memTherm_core -n 16 -c gainestown_3D -- ./$(TARGET) -p 16
+	../../run-sniper -v -s memTherm_core -n 4 -c gainestown_3D -- ./$(TARGET) -p 4
 	#../../run-sniper -v -s memTherm -s energystats -n 64 -c gainestown_my3D -- ./$(TARGET) -p 16
 
 CLEAN_EXTRA=viz hotspot/ *.log *.init energystats-temp.* *.trace tmp
