@@ -70,7 +70,7 @@ cd ..
 
 ```sh
 cd test/thermal_example
-make run # Runs application, displays DRAM bank accesses, outputs temperature files
+make run | tee logfile # Runs application, displays DRAM bank accesses, outputs temperature files
 ```
 
 <!-- - To see the DRAM accesses per memory bank, please use the application my\_test\_case inside test folder
