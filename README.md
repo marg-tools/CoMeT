@@ -212,8 +212,12 @@ These policies are implemented in `common/scheduler/policies`.
 Mapping policies derive from `MappingPolicy`, DVFS policies derive from `DVFSPolicy`.
 After implementing your policy, instantiate it in `SchedulerOpen::initMappingPolicy` / `SchedulerOpen::initDVFSPolicy`.
 
+</details>
 
 ### 3.4 Build verification test suite
+
+<details>
+<summary>Click here to open details</summary>
 
 - Running automated test suite to ensure working of different features of *CoMeT*
 ```sh
