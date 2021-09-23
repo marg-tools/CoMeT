@@ -305,14 +305,14 @@ python3 floorplanlib/create.py \
 </details>
 
 
-### 3.6 Supports PARSEC, SPLASH-2, SPEC
+### 3.6 Supports PARSEC, SPLASH-2, SPEC 2017
 
 <details>
 <summary>Click here to open details</summary>
 
 - Compiling the Benchmarks:
 ```sh
-#setting $GRAPHITE_ROOT to HotSniper7's root directory
+#setting $GRAPHITE_ROOT to CoMeT's root directory
 export GRAPHITE_ROOT=$(pwd)
 cd benchmarks
 #setting $BENCHMARKS_ROOT to the benchmarks directory
@@ -322,20 +322,19 @@ make
 #Running the benchmarks
 make run
 ```
-- You are required to 'make' twice for correct compilation
-- Also, you will see that compilation only passes for PARSEC and SPLASH benchmarks, and fails for SPEC benchmarks.
-- Ignore the failed compilation for SPEC benchmarks.
-- SPEC 2017 benchmark
+<!-- - You are required to 'make' twice for correct compilation -->
+- You will see that compilation only passes for PARSEC and SPLASH benchmarks, and fails for SPEC benchmarks. Ignore the failed compilation for SPEC benchmarks.
+- For the SPEC 2017 benchmarks,
     - Download the pinballs from the below link
         - https://www.spec.org/cpu2017/research/simpoint.html
     - Create a folder "SPEC" inside test folder
     - Extract the pinballs inside test/SPEC 
-    - Run the benchmark
+    - Run the benchmark. Given below is an example for a 4-core simulation.
     ```
     cd test/SPEC
     ../../../../../run-sniper -v -s memTherm_core -c gainestown_3Dmem -n 4 --pinballs $SIM_PATH,$SIM_PATH,$SIM_PATH,$SIM_PATH
     ```
-    - $SIM\_PATH represents path of pinballs for each SPEC benchmarks, where each benchmark in SPEC suite has multiple address files
+    - $SIM\_PATH represents path of a specific *.address* for the SPEC benchmark 
 
 </details>
 
