@@ -1,36 +1,28 @@
-# YAML 1.2
----
-authors: 
-  -
-    family-names: Siddhu
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Siddhu
     given-names: Lokesh
-  -
-    family-names: Kedia
+  - family-names: Kedia
     given-names: Rajesh
-  -
-    family-names: Pandey
+  - family-names: Pandey
     given-names: Shailja
-  -
-    family-names: Rapp
+  - family-names: Rapp
     given-names: Martin
-  -
-    family-names: Pathania
+  - family-names: Pathania
     given-names: Anuj
-  -
-    family-names: Henkel
-    given-names: Joerg
-  -
-    family-names: Panda
+  - family-names: Henkel
+    given-names: "Jörg"
+  - family-names: Panda
     given-names: "Preeti Ranjan"
-cff-version: "1.1.0"
-date-released: 2021-09-25
-message: "If you use this software, please cite it using these metadata."
-doi: "http://arxiv.org/abs/2109.12405"
-journal: IEEE
-month: 9
-start: 1 # First page number
-end: 23 # Last page number
-title: "CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems"
-issue: 1
-volume: 1
-year: 2021
+  doi: "http://arxiv.org/abs/2109.12405"
+  journal: arXiv
+  month: 9
+  start: 1 # First page number
+  end: 23 # Last page number
+  title: "CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems"
+  issue: 2
+  volume: 11
+  year: 2019
