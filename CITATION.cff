@@ -26,4 +26,7 @@ cff-version: "1.1.0"
 date-released: 2021-09-25
 message: "If you use this software, please cite it using these metadata."
 title: "CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems"
+doi: "http://arxiv.org/abs/2109.12405"
+journal: "arXiv"
+year: 2021
 ...
