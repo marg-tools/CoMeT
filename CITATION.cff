@@ -23,6 +23,6 @@ preferred-citation:
   start: 1 # First page number
   end: 23 # Last page number
   title: "CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems"
-  issue: 2
-  volume: 11
-  year: 2019
+  issue: 1
+  volume: 1
+  year: 2021
