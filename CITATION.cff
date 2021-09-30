@@ -17,7 +17,7 @@ preferred-citation:
     given-names: "Jörg"
   - family-names: Panda
     given-names: "Preeti Ranjan"
-  doi: "http://arxiv.org/abs/2109.12405"
+  url: "http://arxiv.org/abs/2109.12405"
   journal: arXiv
   month: 9
   start: 1 # First page number
