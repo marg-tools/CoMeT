@@ -183,9 +183,9 @@ class SimpleLayer(ThermalLayer):
 
     def create_floorplan_elements(self):
         elements = []
-        for y in range(self.elements[0]):
-            for x in range(self.elements[1]):
-                element_nb = self.nb_offset + y * self.elements[1] + x
+        for y in range(self.elements[1]):
+            for x in range(self.elements[0]):
+                element_nb = self.nb_offset + y * self.elements[0] + x
                 element_id = f'{self._get_element_identifier()}_{element_nb}'
                 left = x * self.element_width + self.pos_offset[0]
                 bottom = y * self.element_height + self.pos_offset[1]
