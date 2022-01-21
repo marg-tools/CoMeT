@@ -52,6 +52,10 @@ class Length(object):
     def __repr__(self):
         return f'Length({self.meters:.6f}m)'
 
+    @classmethod
+    def from_meters(self, v):
+        return Length(v * 1e6)
+
 
 def length(s):
     """ Parse length units. """
@@ -111,6 +115,65 @@ def dimension_extend_to_3d(s):
             raise argparse.ArgumentTypeError('invalid format. Valid examples: 4x4, 8x8x1')
 
 
+class FloorplanComponent(object):
+    def __init__(self, name, width, height, left, bottom):
+        self.name = name
+        self.width = width
+        self.height = height
+        self.left = left
+        self.bottom = bottom
+
+    def format(self, endline=False):
+        s = '{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}'.format(
+            self.name, self.width.meters, self.height.meters, self.left.meters, self.bottom.meters)
+        if endline:
+            s += '\n'
+        return s
+
+
+class Floorplan(object):
+    def __init__(self, components):
+        self.components = components
+
+    @property
+    def width(self):
+        return max(c.left + c.width for c in self.components) - self.left
+
+    @property
+    def height(self):
+        return max(c.bottom + c.height for c in self.components) - self.bottom
+
+    @property
+    def left(self):
+        return min(c.left for c in self.components)
+
+    @property
+    def bottom(self):
+        return min(c.bottom for c in self.components)
+
+
+def floorplan_file(s):
+    components = []
+    if not os.path.exists(s):
+        raise argparse.ArgumentTypeError('file does not exist')
+    with open(s) as f:
+        for nb, line in enumerate(f):
+            if line.strip().startswith('#'):
+                continue
+            else:
+                pat = re.compile(r"([A-Za-z\-_0-9]+)\t(\d+\.\d+)\t(\d+\.\d+)\t(\d+\.\d+)\t(\d+\.\d+)")
+                m = pat.match(line)
+                if not m:
+                    raise argparse.ArgumentTypeError(f'invalid floorplan file, parsing error on line {nb+1}')
+                name = m.group(1)
+                width = Length.from_meters(float(m.group(2)))
+                height = Length.from_meters(float(m.group(3)))
+                left = Length.from_meters(float(m.group(4)))
+                bottom = Length.from_meters(float(m.group(5)))
+                components.append(FloorplanComponent(name, width, height, left, bottom))
+    return Floorplan(components)
+
+
 class ThermalLayer(abc.ABC):
     """ base class for all thermal layers """
     def __init__(self, name):
@@ -163,7 +226,7 @@ Y
 
 class SimpleLayer(ThermalLayer):
     """ base class for simple layers containing only one rectangular grid """
-    def __init__(self, elements, element_width, element_height, thickness, name, nb_offset=0, pos_offset=None):
+    def __init__(self, elements, element_width, element_height, thickness, name, nb_offset=0, pos_offset=None, subcomponent_template=None):
         super().__init__(name=name)
         self.elements = elements
         self.element_width = element_width
@@ -171,6 +234,10 @@ class SimpleLayer(ThermalLayer):
         self.thickness = thickness
         self.nb_offset = nb_offset
         self.pos_offset = pos_offset if pos_offset is not None else (Length(0), Length(0))
+        if subcomponent_template is not None:
+            assert (subcomponent_template.left, subcomponent_template.bottom) == (Length(0), Length(0))
+            assert (subcomponent_template.width, subcomponent_template.height) == (self.element_width, self.element_height)
+        self.subcomponent_template = subcomponent_template
 
     @property
     def total_width(self):
@@ -191,9 +258,25 @@ class SimpleLayer(ThermalLayer):
                 element_id = f'{self._get_element_identifier()}_{element_nb}'
                 left = x * self.element_width + self.pos_offset[0]
                 bottom = y * self.element_height + self.pos_offset[1]
-                elements.append('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\n'.format(
-                    element_id, self.element_width.meters, self.element_height.meters, left.meters, bottom.meters))
-        return ''.join(elements)
+                if self.subcomponent_template is None:
+                    elements.append(
+                        FloorplanComponent(
+                            element_id,
+                            self.element_width,
+                            self.element_height,
+                            left,
+                            bottom))
+                else:
+                    for component in self.subcomponent_template.components:
+                        subcomponent_id = f'{element_id}_{component.name}'
+                        elements.append(
+                            FloorplanComponent(
+                                subcomponent_id,
+                                component.width,
+                                component.height,
+                                left + component.left,
+                                bottom + component.bottom))
+        return ''.join(e.format(endline=True) for e in elements)
 
     def write_floorplan(self, directory):
         with open(self._get_floorplan_filename(directory), 'w') as f:
@@ -282,7 +365,7 @@ class InterposerLayer(SimpleLayer):
 
 class CoreAndMemoryControllerLayer(ThermalLayer):
     """ first layer in 2.5D containing cores and memory controllers """
-    def __init__(self, cores, core_width, core_height, banks, bank_width, bank_height, thickness, core_mem_distance, name):
+    def __init__(self, cores, core_width, core_height, banks, bank_width, bank_height, thickness, core_mem_distance, name, subcore_template):
         super().__init__(name=name)
         cores_width = cores[0] * core_width
         cores_height = cores[1] * core_width
@@ -296,7 +379,7 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
             cores_width + core_mem_distance,  # x
             Length(0) if mem_height > cores_height else 0.5 * (cores_height - mem_height)  # y
         )
-        self.cores = CoreLayer(cores, core_width, core_height, thickness, name=None, pos_offset=cores_offset)
+        self.cores = CoreLayer(cores, core_width, core_height, thickness, name=None, pos_offset=cores_offset, subcomponent_template=subcore_template)
         self.memory_controllers = MemoryControllerLayer(banks, bank_width, bank_height, thickness, name=None, pos_offset=mem_offset)
         self.core_mem_distance = core_mem_distance
         self.thickness = thickness
@@ -517,6 +600,7 @@ def main():
     cores.add_argument("--corex", help="size of each core (in dimension x)", type=length, required=True)
     cores.add_argument("--corey", help="size of each core (in dimension y)", type=length, required=True)
     cores.add_argument("--core_thickness", help="thickness of the core silicon layer", type=length, required=False, default='50um')
+    cores.add_argument("--subcore-template", help="template for sub-core components", type=floorplan_file, required=False)
     banks = parser.add_argument_group('memory banks')
     banks.add_argument("--banks", help="number of memory banks", type=dimension_2d_or_3d, required=True)
     banks.add_argument("--bankx", help="size of each memory bank (in dimension x)", type=length, required=True)
@@ -531,13 +615,19 @@ def main():
     cores_per_layer = args.cores[0] * args.cores[1]
     cores_2d = (args.cores[0], args.cores[1])
 
+    if args.subcore_template is not None:
+        if args.subcore_template.left != Length(0) or args.subcore_template.bottom != Length(0):
+            parser.error('subcore-template must be positioned bottom left')
+        if args.subcore_template.width != args.corex or args.subcore_template.height != args.corey:
+            parser.error('subcore-template must be same size as a single core')
+
     if args.mode == 'DDR':
         if len(args.banks) != 2:
             parser.error('banks must be 2D in DDR mode. Example: --banks 4x4')
 
         core = ThermalStack('cores')
         for i in range(args.cores[2]):
-            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
             core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim'))
         core.write_files(args.out)
 
@@ -556,7 +646,7 @@ def main():
 
         core = ThermalStack('cores')
         for i in range(args.cores[2]):
-            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
             core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim'))
         core.write_files(args.out)
 
@@ -597,7 +687,8 @@ def main():
             cores_2d, args.corex, args.corey,
             banks_2d, args.bankx, args.banky, args.bank_thickness,
             args.core_mem_distance,
-            name='core_and_mem_ctrl'))
+            name='core_and_mem_ctrl',
+            subcore_template=args.subcore_template))
         mem_offset = (
             cores_width + args.core_mem_distance,  # x
             Length(0) if mem_height > cores_height else 0.5 * (cores_height - mem_height)  # y
@@ -629,7 +720,7 @@ def main():
             stack.add_layer(tim)
 
         for i in range(args.cores[2]):
-            stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer))
+            stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
             stack.add_layer(tim)
 
         stack.write_files(args.out)
