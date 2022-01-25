@@ -24,7 +24,7 @@ class Length(object):
     distance stored in exact numbers in micrometers
     """
     def __init__(self, micrometers):
-        self.micrometers = int(micrometers)
+        self.micrometers = int(micrometers + 0.5)
 
     def __eq__(self, other):
         return self.micrometers == other.micrometers
