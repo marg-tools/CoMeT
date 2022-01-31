@@ -685,7 +685,7 @@ def main():
         stack.add_layer(tim)
         stack.add_layer(CoreAndMemoryControllerLayer(
             cores_2d, args.corex, args.corey,
-            banks_2d, args.bankx, args.banky, args.bank_thickness,
+            banks_2d, args.bankx, args.banky, args.core_thickness,
             args.core_mem_distance,
             name='core_and_mem_ctrl',
             subcore_template=args.subcore_template))
