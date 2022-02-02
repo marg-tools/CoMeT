@@ -393,6 +393,7 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     def getcomponent(suffix):
       if key: return scale_power(suffix, powers.get(key+'/'+suffix, 0), size_nm)
       else: return scale_power(suffix, powers.get(suffix, 0), size_nm)        
+    #print(powers)          #needed for debug
     if powertype == 'dynamic':
       return getcomponent('Runtime Dynamic')
     elif powertype == 'static':
@@ -457,66 +458,133 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     Headings += "L3\t" # Private L3
 
   for core in power_dat['Core']:
+#   if sniper_config.get_config_bool(cfg, "core_power/l2"):  
+#    Headings += "Core"+str(id)+"-L2\t" # Private L2
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/is"):
+#    Headings += "Core"+str(id)+"-IS\t" # Instruction Scheduler
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/rf"):
+#    Headings += "Core"+str(id)+"-RF\t" # Register Files
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/rbb"):
+#    Headings += "Core"+str(id)+"-RBB\t" # Result Broadcast Bus
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/ru"):
+#    Headings += "Core"+str(id)+"-RU\t" # Renaming Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/bp"):
+#    Headings += "Core"+str(id)+"-BP\t" # Branch Predictor
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/btb"):
+#    Headings += "Core"+str(id)+"-BTB\t" # Branch Target Buffer
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/ib"):
+#    Headings += "Core"+str(id)+"-IB\t" # Instruction Buffer
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/id"):
+#    Headings += "Core"+str(id)+"-ID\t" # Instruction Decoder
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/ic"):
+#    Headings += "Core"+str(id)+"-IC\t" # Instruction Cache
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/dc"):
+#    Headings += "Core"+str(id)+"-DC\t" # Data Cache
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/calu"):
+#    Headings += "Core"+str(id)+"-CALU\t" # Complex ALU
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/falu"):
+#    Headings += "Core"+str(id)+"-FALU\t" # Floating Point ALU
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/ialu"):
+#    Headings += "Core"+str(id)+"-IALU\t" # Integer ALU
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/lu"):
+#    Headings += "Core"+str(id)+"-LU\t" # Load Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/su"):
+#    Headings += "Core"+str(id)+"-SU\t" # Store Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/mmu"):
+#    Headings += "Core"+str(id)+"-MMU\t" # Memory Management Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/ifu"):
+#    Headings += "Core"+str(id)+"-IFU\t" # Instruction Fetch Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/lsu"):
+#    Headings += "Core"+str(id)+"-LSU\t" # Load Store Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/eu"):
+#    Headings += "Core"+str(id)+"-EU\t" # Execution Unit
+#   
+#   if sniper_config.get_config_bool(cfg, "core_power/tp"):
+#    #Headings += "Core"+str(id)+"-TP\t" # Total Power
+#    Headings += "C_"+str(id)+"\t" # Total Power
+
    
-   if sniper_config.get_config_bool(cfg, "core_power/l2"):  
-    Headings += "Core"+str(id)+"-L2\t" # Private L2
-   
-   if sniper_config.get_config_bool(cfg, "core_power/is"):
-    Headings += "Core"+str(id)+"-IS\t" # Instruction Scheduler
-   
-   if sniper_config.get_config_bool(cfg, "core_power/rf"):
-    Headings += "Core"+str(id)+"-RF\t" # Register Files
+   if sniper_config.get_config_bool(cfg, "core_power/fpu"):
+    Headings += "C_"+str(id)+"_FPU\t" # Floating Point Unit
    
    if sniper_config.get_config_bool(cfg, "core_power/rbb"):
-    Headings += "Core"+str(id)+"-RBB\t" # Result Broadcast Bus
+    Headings += "C_"+str(id)+"_RBB\t" # Result Broadcast Bus
    
-   if sniper_config.get_config_bool(cfg, "core_power/ru"):
-    Headings += "Core"+str(id)+"-RU\t" # Renaming Unit
-   
-   if sniper_config.get_config_bool(cfg, "core_power/bp"):
-    Headings += "Core"+str(id)+"-BP\t" # Branch Predictor
-   
-   if sniper_config.get_config_bool(cfg, "core_power/btb"):
-    Headings += "Core"+str(id)+"-BTB\t" # Branch Target Buffer
-   
-   if sniper_config.get_config_bool(cfg, "core_power/ib"):
-    Headings += "Core"+str(id)+"-IB\t" # Instruction Buffer
-   
-   if sniper_config.get_config_bool(cfg, "core_power/id"):
-    Headings += "Core"+str(id)+"-ID\t" # Instruction Decoder
-   
-   if sniper_config.get_config_bool(cfg, "core_power/ic"):
-    Headings += "Core"+str(id)+"-IC\t" # Instruction Cache
-   
-   if sniper_config.get_config_bool(cfg, "core_power/dc"):
-    Headings += "Core"+str(id)+"-DC\t" # Data Cache
-   
-   if sniper_config.get_config_bool(cfg, "core_power/calu"):
-    Headings += "Core"+str(id)+"-CALU\t" # Complex ALU
-   
-   if sniper_config.get_config_bool(cfg, "core_power/falu"):
-    Headings += "Core"+str(id)+"-FALU\t" # Floating Point ALU
-   
-   if sniper_config.get_config_bool(cfg, "core_power/ialu"):
-    Headings += "Core"+str(id)+"-IALU\t" # Integer ALU
-   
-   if sniper_config.get_config_bool(cfg, "core_power/lu"):
-    Headings += "Core"+str(id)+"-LU\t" # Load Unit
-   
-   if sniper_config.get_config_bool(cfg, "core_power/su"):
-    Headings += "Core"+str(id)+"-SU\t" # Store Unit
+   if sniper_config.get_config_bool(cfg, "core_power/ren"):
+    Headings += "C_"+str(id)+"_REN\t" # Renaming Unit
    
    if sniper_config.get_config_bool(cfg, "core_power/mmu"):
-    Headings += "Core"+str(id)+"-MMU\t" # Memory Management Unit
+    Headings += "C_"+str(id)+"_MMU\t" # Memory Management Unit
    
-   if sniper_config.get_config_bool(cfg, "core_power/ifu"):
-    Headings += "Core"+str(id)+"-IFU\t" # Instruction Fetch Unit
+   if sniper_config.get_config_bool(cfg, "core_power/other"):
+    Headings += "C_"+str(id)+"_Other\t" # Memory Management Unit
    
-   if sniper_config.get_config_bool(cfg, "core_power/lsu"):
-    Headings += "Core"+str(id)+"-LSU\t" # Load Store Unit
+   if sniper_config.get_config_bool(cfg, "core_power/iw"):
+    Headings += "C_"+str(id)+"_IW\t" # Instruction Window
    
-   if sniper_config.get_config_bool(cfg, "core_power/eu"):
-    Headings += "Core"+str(id)+"-EU\t" # Execution Unit
+   if sniper_config.get_config_bool(cfg, "core_power/fpiw"):
+    Headings += "C_"+str(id)+"_FPIW\t" # FP Instruction Window
+   
+   if sniper_config.get_config_bool(cfg, "core_power/rob"):
+    Headings += "C_"+str(id)+"_ROB\t" # Reorder Buffer
+   
+   if sniper_config.get_config_bool(cfg, "core_power/irf"):
+    Headings += "C_"+str(id)+"_IRF\t" # Integer Register Files
+   
+   if sniper_config.get_config_bool(cfg, "core_power/fprf"):
+    Headings += "C_"+str(id)+"_FPRF\t" # FP Register Files
+   
+   if sniper_config.get_config_bool(cfg, "core_power/calu"):
+    Headings += "C_"+str(id)+"_CALU\t" # Complex ALU
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ialu"):
+    Headings += "C_"+str(id)+"_IALU\t" # Integer ALU
+   
+   if sniper_config.get_config_bool(cfg, "core_power/btb"):
+    Headings += "C_"+str(id)+"_BTB\t" # Branch Target Buffer
+   
+   if sniper_config.get_config_bool(cfg, "core_power/bp"):
+    Headings += "C_"+str(id)+"_BP\t" # Branch Predictor
+   
+   if sniper_config.get_config_bool(cfg, "core_power/lq"):
+    Headings += "C_"+str(id)+"_LQ\t" # Load Queue
+   
+   if sniper_config.get_config_bool(cfg, "core_power/sq"):
+    Headings += "C_"+str(id)+"_SQ\t" # Store Queue
+   
+   if sniper_config.get_config_bool(cfg, "core_power/dc"):
+    Headings += "C_"+str(id)+"_DC\t" # Data Cache
+   
+   if sniper_config.get_config_bool(cfg, "core_power/id"):
+    Headings += "C_"+str(id)+"_ID\t" # Instruction Decoder
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ib"):
+    Headings += "C_"+str(id)+"_IB\t" # Instruction Buffer
+   
+   if sniper_config.get_config_bool(cfg, "core_power/ic"):
+    Headings += "C_"+str(id)+"_IC\t" # Instruction Cache
+   
+   if sniper_config.get_config_bool(cfg, "core_power/l2"):  
+    Headings += "C_"+str(id)+"_L2\t" # Private L2
    
    if sniper_config.get_config_bool(cfg, "core_power/tp"):
     #Headings += "Core"+str(id)+"-TP\t" # Total Power
@@ -549,46 +617,59 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     LSUPower =  getpower(core, 'Load Store Unit/Data Cache') + getpower(core, 'Load Store Unit/LoadQ') + getpower(core, 'Load Store Unit/StoreQ')
     EUPower = getpower(core, 'Execution Unit/Instruction Scheduler') + getpower(core, 'Execution Unit/Register Files') + getpower(core, 'Execution Unit/Results Broadcast Bus') + getpower(core, 'Execution Unit/Complex ALUs') + getpower(core, 'Execution Unit/Floating Point Units') + getpower(core, 'Execution Unit/Integer ALUs')
 
+    OtherPower = totalPower - (getpower(core, 'Execution Unit')
+                               + getpower(core, 'Instruction Fetch Unit')
+                               + getpower(core, 'Load Store Unit') 
+                               + getpower(core, 'Renaming Unit') 
+                               + getpower(core, 'Memory Management Unit') 
+                               + getpower(core, 'L2') 
+                               )
+    OtherPower = max(0, OtherPower)         #zero out small negative values
+
+    if sniper_config.get_config_bool(cfg, "core_power/fpu"):
+      power_local = str(getpower(core, 'Execution Unit/Floating Point Units'))+"\t"  # Floating Point ALU
+      Readings += str(getpower(core, 'Execution Unit/Floating Point Units'))+"\t"  # Floating Point ALU
+    if sniper_config.get_config_bool(cfg, "core_power/rbb"):
+      Readings += str(getpower(core, 'Execution Unit/Results Broadcast Bus'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/ren"):
+      Readings += str(getpower(core, 'Renaming Unit'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/mmu"): 
+      Readings += str(getpower(core, 'Memory Management Unit'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/other"): 
+      Readings += str(OtherPower)+"\t"       #other
+    if sniper_config.get_config_bool(cfg, "core_power/iw"): 
+      Readings += str(getpower(core, 'Execution Unit/Instruction Scheduler/Instruction Window'))+"\t"
+    if sniper_config.get_config_bool(cfg, "core_power/fpiw"): 
+      Readings += str(getpower(core, 'Execution Unit/Instruction Scheduler/FP Instruction Window'))+"\t"
+    if sniper_config.get_config_bool(cfg, "core_power/rob"): 
+      Readings += str(getpower(core, 'Execution Unit/Instruction Scheduler/ROB'))+"\t"
+    if sniper_config.get_config_bool(cfg, "core_power/irf"):
+      Readings += str(getpower(core, 'Execution Unit/Register Files/Integer RF'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/fprf"):
+      Readings += str(getpower(core, 'Execution Unit/Register Files/Floating Point RF'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/calu"):
+      Readings += str(getpower(core, 'Execution Unit/Complex ALUs'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/ialu"):
+      Readings += str(getpower(core, 'Execution Unit/Integer ALUs'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/btb"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Target Buffer'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/bp"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Predictor'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/lq"): 
+      Readings += str(getpower(core, 'Load Store Unit/LoadQ'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/sq"):  
+      Readings += str(getpower(core, 'Load Store Unit/StoreQ'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/dc"):
+      Readings += str(getpower(core, 'Load Store Unit/Data Cache'))+"\t"
+    if sniper_config.get_config_bool(cfg, "core_power/id"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Decoder'))+"\t"  
+    if sniper_config.get_config_bool(cfg, "core_power/ib"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Buffer'))+"\t" 
+    if sniper_config.get_config_bool(cfg, "core_power/ic"):
+      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Cache'))+"\t"  
     if sniper_config.get_config_bool(cfg, "core_power/l2"):  
       Readings += str(getpower(core, 'L2'))+"\t"  # Private L2
-    if sniper_config.get_config_bool(cfg, "core_power/is"):
-      Readings += str(getpower(core, 'Execution Unit/Instruction Scheduler'))+"\t" # Instruction Scheduler
-    if sniper_config.get_config_bool(cfg, "core_power/rf"):
-      Readings += str(getpower(core, 'Execution Unit/Register Files'))+"\t"  # Register Files
-    if sniper_config.get_config_bool(cfg, "core_power/rbb"):
-      Readings += str(getpower(core, 'Execution Unit/Results Broadcast Bus'))+"\t"  # Result Broadcast Bus
-    if sniper_config.get_config_bool(cfg, "core_power/ru"):
-      Readings += str(getpower(core, 'Renaming Unit'))+"\t" # Renaming Unit
-    if sniper_config.get_config_bool(cfg, "core_power/bp"):
-      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Predictor'))+"\t"  # Branch Predictor
-    if sniper_config.get_config_bool(cfg, "core_power/btb"):
-      Readings += str(getpower(core, 'Instruction Fetch Unit/Branch Target Buffer'))+"\t"  # Branch Target Buffer
-    if sniper_config.get_config_bool(cfg, "core_power/ib"):
-      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Buffer'))+"\t" # Instruction Buffer
-    if sniper_config.get_config_bool(cfg, "core_power/id"):
-      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Decoder'))+"\t"  # Instruction Decoder
-    if sniper_config.get_config_bool(cfg, "core_power/ic"):
-      Readings += str(getpower(core, 'Instruction Fetch Unit/Instruction Cache'))+"\t"  # Instruction Cache
-    if sniper_config.get_config_bool(cfg, "core_power/dc"):
-      Readings += str(getpower(core, 'Load Store Unit/Data Cache'))+"\t" # Data Cache 
-    if sniper_config.get_config_bool(cfg, "core_power/calu"):
-      Readings += str(getpower(core, 'Execution Unit/Complex ALUs'))+"\t"  # Complex ALU
-    if sniper_config.get_config_bool(cfg, "core_power/falu"):
-      Readings += str(getpower(core, 'Execution Unit/Floating Point Units'))+"\t"  # Floating Point ALU
-    if sniper_config.get_config_bool(cfg, "core_power/ialu"):
-      Readings += str(getpower(core, 'Execution Unit/Integer ALUs'))+"\t"  # Integer ALU
-    if sniper_config.get_config_bool(cfg, "core_power/lu"): # Load Unit
-      Readings += str(getpower(core, 'Load Store Unit/LoadQ'))+"\t" 
-    if sniper_config.get_config_bool(cfg, "core_power/su"):  # Store Unit
-      Readings += str(getpower(core, 'Load Store Unit/StoreQ'))+"\t"  
-    if sniper_config.get_config_bool(cfg, "core_power/mmu"): # Memory Management Unit
-      Readings += str(getpower(core, 'Memory Management Unit'))+"\t"  # Memory Management Unit
-    if sniper_config.get_config_bool(cfg, "core_power/ifu"):
-      Readings += str(IFUPower) +"\t" # Instruction Fetch Unit
-    if sniper_config.get_config_bool(cfg, "core_power/lsu"):
-      Readings += str(LSUPower) +"\t"  # Load Store Unit
-    if sniper_config.get_config_bool(cfg, "core_power/eu"):
-      Readings += str(EUPower) +"\t"  # Execution Unit
+
     if sniper_config.get_config_bool(cfg, "core_power/tp"):
       Readings += str(totalPower) +"\t" # Total Power
 
