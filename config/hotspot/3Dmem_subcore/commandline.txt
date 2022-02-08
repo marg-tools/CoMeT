@@ -1,2 +1,2 @@
 # command used to create these files:
-floorplanlib/create.py --mode 3Dmem --cores 2x2 --corex 4.31mm --corey 2.08mm --banks 4x4x8 --bankx 1.707mm --banky 1.707mm --out config/hotspot/3Dmem_subcore --subcore-template floorplanlib/comet.flp
+floorplanlib/create.py --mode 3Dmem --cores 2x2 --corex 4.31mm --corey 2.08mm --banks 4x4x8 --bankx 1.707mm --banky 1.707mm --out config/hotspot/3Dmem_subcore --subcore-template config/hotspot/3Dmem_subcore/template.flp
