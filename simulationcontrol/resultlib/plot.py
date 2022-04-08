@@ -41,7 +41,7 @@ def plot_core_trace(run, name, title, ylabel, traces_function, active_cores, yMi
         except KeyboardInterrupt:
             raise
         return collections.OrderedDict(('Core {}'.format(core), traces[core]) for core in active_cores)
-    plot_named_traces(run, name, title, f, yMin=yMin, yMax=yMax, smooth=smooth, force_recreate=force_recreate)
+    plot_named_traces(run, name, title, ylabel, f, yMin=yMin, yMax=yMax, smooth=smooth, force_recreate=force_recreate)
 
 
 def plot_named_traces(run, name, title, ylabel, traces_function, yMin=None, yMax=None, smooth=None, force_recreate=False):
