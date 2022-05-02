@@ -1,9 +1,12 @@
+#include <iostream>
+using namespace std;
 #include "dram_perf_model_variable.h"
 #include "simulator.h"
 #include "config.h"
 #include "config.hpp"
 #include "stats.h"
 #include "shmem_perf.h"
+
 
 DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
       UInt32 cache_block_size):
@@ -13,7 +16,8 @@ DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
    m_total_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+
    m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
@@ -71,6 +75,13 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    m_num_accesses ++;
    m_total_access_latency += access_latency;
    m_total_queueing_delay += queue_delay;
+   // cout << "from the cfg           " << Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal") << "\n";
+   // cout << "from the cfg converted " << TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal")) << "\n";
+   // cout << "lowpower from the cfg           " << Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower") << "\n";
+   // cout << "lowpower from the cfg converted " << TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower")) << "\n";
 
+   cout << "using variable dram perf model\n";
+   cout << "dram access cost is " << m_dram_access_cost << "\n";
+   cout << "access latency is " << access_latency << "\n";
    return access_latency;
 }
