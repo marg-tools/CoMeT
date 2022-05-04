@@ -80,8 +80,8 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    // cout << "lowpower from the cfg           " << Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower") << "\n";
    // cout << "lowpower from the cfg converted " << TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower")) << "\n";
 
-   cout << "using variable dram perf model\n";
-   cout << "dram access cost is " << m_dram_access_cost << "\n";
-   cout << "access latency is " << access_latency << "\n";
+   // cout << "using variable dram perf model\n";
+   // cout << "dram access cost is " << m_dram_access_cost << "\n";
+   // cout << "access latency is " << access_latency << "\n";
    return access_latency;
 }
