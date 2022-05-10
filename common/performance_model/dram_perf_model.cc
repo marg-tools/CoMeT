@@ -9,6 +9,7 @@
 
 DramPerfModel* DramPerfModel::createDramPerfModel(core_id_t core_id, UInt32 cache_block_size)
 {
+   std::cout << "making a dram perf model\n";
    String type = Sim()->getCfg()->getString("perf_model/dram/type");
 
    if (type == "constant")
@@ -29,6 +30,7 @@ DramPerfModel* DramPerfModel::createDramPerfModel(core_id_t core_id, UInt32 cach
    }
    else if (type == "variable")
    {
+      std::cout << "made a variable perf model for core id " << core_id << "\n"; // TODO remove comment Leo
       return new DramPerfModelVariable(core_id, cache_block_size);
    }
    else
