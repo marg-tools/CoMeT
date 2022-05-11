@@ -1055,6 +1055,13 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDramPolicy();
+		cout << "[Scheduler]: current bank status\n";
+		for (int i = 0; i < numberOfBanks; i++)
+		{
+			cout  << Sim()->m_bank_status_map[i] << " ";
+		}
+		cout << "\n";
+
 	}
 
 	if (time.getNS () % mappingEpoch == 0) {
