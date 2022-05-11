@@ -112,6 +112,15 @@ double PerformanceCounters::getTemperatureOfCore(int coreId) const {
 	return getTemperatureOfComponent(component);
 }
 
+/** getTemperatureOfBank
+ * Leo: Not sure about the second part of the following line.
+ * Return the latest temperature of the given memory bank. Requires "tp" (total power) to be tracked in base.cfg. Return -1 if power is not tracked.
+ */
+double PerformanceCounters::getTemperatureOfBank(int bankId) const {
+	string component = "B_" + std::to_string(bankId);
+	return getTemperatureOfComponent(component);
+}
+
 vector<string> PerformanceCounters::getCPIStackParts() const {
 	ifstream cpiStackLogFile(instCPIStackFileName);
     string line;

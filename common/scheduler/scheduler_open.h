@@ -14,6 +14,8 @@
 #include "policies/dvfspolicy.h"
 #include "policies/mappingpolicy.h"
 #include "policies/migrationpolicy.h"
+#include "policies/dramLowpower.h"
+#include "policies/drampolicy.h"
 
 
 //This data structure maintains the state of the tasks.
@@ -57,6 +59,7 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int coresInX;
 		int coresInY;
 		int coresInZ;
+		int numberOfBanks;
 
 		PerformanceCounters *performanceCounters;
 
@@ -96,6 +99,13 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int minFrequency;
 		int maxFrequency;
 		int frequencyStepSize;
+
+		// Dram
+		DramPolicy *dramPolicy = NULL;
+		long dramEpoch;
+		void initDramPolicy(String policyName);
+		void executeDramPolicy();
+		void setMemBankStatus(int bankNr, int status);
 
 		// migration
 		MigrationPolicy *migrationPolicy = NULL;

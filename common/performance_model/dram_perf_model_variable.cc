@@ -23,10 +23,10 @@ DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
    // TODO added by Leo to keep track of memory banks
    read_memory_config(core_id); // also added by leo
 
-   for (int i = 0; i < aNUM_OF_BANKS; i++)
-   {
-      m_bank_status_map[i] = 1; // all banks are on
-   }
+   // for (int i = 0; i < aNUM_OF_BANKS; i++)
+   // {
+   //    m_bank_status_map[i] = 1; // all banks are on
+   // }
 
 
    m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
@@ -68,9 +68,6 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
 
 
 
-
-
-
    SubsecondTime processing_time = m_dram_bandwidth.getRoundedLatency(8 * pkt_size); // bytes to bits
 
    // Compute Queue Delay
@@ -91,7 +88,7 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    // cout << "getting the access latency for bank " << bank << "\n";
 
    // LEO get the status for this bank
-   int bank_status = m_bank_status_map[bank_nr];
+   int bank_status = Sim()->m_bank_status_map[bank_nr];
 
    SubsecondTime access_latency;
 
@@ -104,7 +101,7 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
       access_latency = queue_delay + processing_time + m_dram_access_cost;
       
    }
-   cout << "bank " << bank_nr << " status is " << bank_status << ".\t Access latency is " << access_latency << "\n";
+   //cout << "bank " << bank_nr << " status is " << bank_status << ".\t Access latency is " << access_latency << "\n"; //LEO
 
 
 

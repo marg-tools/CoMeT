@@ -17,6 +17,8 @@
 #include "policies/dvfsOndemand.h"
 #include "policies/mapFirstUnused.h"
 
+#include "policies/dramLowpower.h"
+
 #include <iomanip>
 #include <random>
 
@@ -36,6 +38,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/max_frequency") + 0.5);
 	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/frequency_step_size") + 0.5);
 	dvfsEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dvfs/dvfs_epoch").c_str());
+	dramEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dram/dram_epoch").c_str()); // TODO LEO
 
 	migrationEpoch = atol(Sim()->getCfg()->getString("scheduler/open/migration/epoch").c_str());
 
@@ -51,6 +54,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	arrivalInterval = atoi (Sim()->getCfg()->getString("scheduler/open/arrivalInterval").c_str());
 	numberOfTasks = Sim()->getCfg()->getInt("traceinput/num_apps");
 	numberOfCores = Sim()->getConfig()->getApplicationCores();
+	numberOfBanks = Sim()->getCfg()->getInt("memory/num_banks"); // TODO ADDED BY LEO
 
 	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");
 	coresInY = Sim()->getCfg()->getInt("memory/cores_in_y");
@@ -120,6 +124,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
 	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
 	initMigrationPolicy(Sim()->getCfg()->getString("scheduler/open/migration/logic").c_str());
+	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/logic").c_str()); // LEO
 }
 
 /** initMappingPolicy
@@ -879,6 +884,7 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
  * Set DVFS levels according to the used policy.
  */
 void SchedulerOpen::executeDVFSPolicy() {
+	
 	std::vector<int> oldFrequencies;
 	std::vector<bool> activeCores;
 	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
@@ -891,6 +897,60 @@ void SchedulerOpen::executeDVFSPolicy() {
 	}
 	performanceCounters->notifyFreqsOfCores(frequencies);
 }
+
+/** initDramPolicy
+ * TODO LEO ADAPT THIS TO DRAM
+ * Initialize the Dram policy to the policy with the given name
+ */
+void SchedulerOpen::initDramPolicy(String policyName) {
+	cout << "[Scheduler] [Info]: Initializing Dram policy" << endl;
+	if (policyName == "off") {
+		dramPolicy = NULL;
+	} else if (policyName == "lowPower") {
+		// float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
+		// float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm_recovered_temperature");
+		dramPolicy = new DramLowpower(
+			performanceCounters,
+			numberOfBanks,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
+	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
+	else {
+		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
+ 		exit (1);
+	}
+}
+
+
+void SchedulerOpen::executeDramPolicy()
+{
+	// TODO Leo
+	
+	
+	std::map<int,int> new_bank_status_map = dramPolicy->getMemStatus();
+
+    for (int i = 0; i < numberOfBanks; i++)
+	{
+		setMemBankStatus(i, new_bank_status_map[i]);
+	}
+	
+
+}
+
+
+
+
+//TODO LEO
+void SchedulerOpen::setMemBankStatus(int bankNr, int status)
+{
+	Sim()->m_bank_status_map[bankNr] = status;
+}
+
+
+
 
 /** executeMigrationPolicy
  * Perform migration according to the used policy.
@@ -988,6 +1048,13 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "\n[Scheduler]: DVFS Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDVFSPolicy();
+	}
+
+	// TODO or maybe I should addd a function for dram dtm policy here
+		if ((dramPolicy != NULL) && (time.getNS() % dramEpoch == 0)) {
+		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
+
+		executeDramPolicy();
 	}
 
 	if (time.getNS () % mappingEpoch == 0) {

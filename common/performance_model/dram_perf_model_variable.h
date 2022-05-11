@@ -22,7 +22,7 @@ class DramPerfModelVariable : public DramPerfModel
       SubsecondTime m_total_queueing_delay;
       SubsecondTime m_total_access_latency;
 
-      std::map<int, int> m_bank_status_map; // TODO to keep track of memory bank status
+      //std::map<int, int> m_bank_status_map; // TODO to keep track of memory bank status
 
 
 

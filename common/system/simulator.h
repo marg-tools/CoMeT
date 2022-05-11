@@ -44,6 +44,8 @@ public:
    static void allocate();
    static void release();
 
+   std::map<int, int> m_bank_status_map; // TODO LEO
+
    SyscallServer* getSyscallServer() { return m_syscall_server; }
    SyncServer* getSyncServer() { return m_sync_server; }
    MagicServer* getMagicServer() { return m_magic_server; }
@@ -71,7 +73,7 @@ public:
    RoutineTracer *getRoutineTracer() { return m_rtn_tracer; }
    MemoryTracker *getMemoryTracker() { return m_memory_tracker; }
    void setMemoryTracker(MemoryTracker *memory_tracker) { m_memory_tracker = memory_tracker; }
-
+ 
    bool isRunning() { return m_running; }
    static void enablePerformanceModels();
    static void disablePerformanceModels();
@@ -106,6 +108,7 @@ private:
    FaultinjectionManager *m_faultinjection_manager;
    RoutineTracer *m_rtn_tracer;
    MemoryTracker *m_memory_tracker;
+   int m_leo; //TODO LEO
 
    bool m_running;
    bool m_inst_mode_output;
