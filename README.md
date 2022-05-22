@@ -34,7 +34,7 @@ Following are the salient features:
 ### PinPlay
 Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
 ```sh
-wget https://software.intel.com/content/dam/develop/external/us/en/protected/pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
+wget --user-agent="Mozilla"  https://www.intel.com/content/dam/develop/external/us/en/protected/pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 tar xf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 mv pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux pin_kit
 ```
