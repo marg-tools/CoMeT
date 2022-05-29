@@ -142,6 +142,24 @@ def main():
             ]
         ),
         FloorplanTestConfig(
+            name='3d_stacked_cache',
+            commandline_args=[
+                '--mode', '3D',
+                '--cores', '4x4', '--corex', '0.9mm', '--corey', '0.9mm',
+                '--banks', '8x8x4', '--bankx', '0.45mm', '--banky', '0.45mm',
+                '--cache_L3', 'stacked', '--cachex', '3.6mm', '--cachey', '3.6mm'
+            ]
+        ),
+        FloorplanTestConfig(
+            name='3d_non-stacked_cache',
+            commandline_args=[
+                '--mode', '3D',
+                '--cores', '4x4', '--corex', '0.45mm', '--corey', '0.9mm',
+                '--banks', '8x8x4', '--bankx', '0.45mm', '--banky', '0.45mm',
+                '--cache_L3', 'non-stacked', '--cachex', '1.8mm', '--cachey', '3.6mm'
+            ]
+        ),
+        FloorplanTestConfig(
             name='2d_subcore',
             commandline_args=[
                 '--mode', 'DDR',

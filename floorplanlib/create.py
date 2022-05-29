@@ -332,7 +332,6 @@ class MemoryControllerLayer(SimpleLayer):
     def _thermal_resistivity(self):
         return SILICON_THERMAL_RESISTIVITY
 
-
 class TIMLayer(SimpleLayer):
     """ a rectangular layer of TIM """
     def _get_element_identifier(self):
@@ -362,6 +361,48 @@ class InterposerLayer(SimpleLayer):
     def _thermal_resistivity(self):
         return SILICON_THERMAL_RESISTIVITY
 
+
+class L3CacheLayer(SimpleLayer):
+    """ a layer with a single l3 cache used for 3D-stacking cache """
+    def __init__(self, width, height, thickness, name, pos_offset=None):
+        super().__init__((1,1), width, height, thickness, name=name, pos_offset=pos_offset)
+
+    def _get_element_identifier(self):
+        return 'L3'
+
+    def _has_power_consumption(self):
+        return True
+
+    def _specific_heat_capacity(self):
+        return SILICON_SPECIFIC_HEAT_CAPACITY
+
+    def _thermal_resistivity(self):
+        return SILICON_THERMAL_RESISTIVITY
+
+    def create_floorplan_elements(self):
+        component = FloorplanComponent(self._get_element_identifier(), self.element_width, self.element_height, self.pos_offset[0], self.pos_offset[1])
+        return component.format(endline=True)
+        
+        
+class CoreAndL3CacheLayer(CoreLayer):
+    """ a layer with cores on the left and a single L3 cache on the right """
+    def __init__(self, cores, core_width, core_height, cache_width, cache_height, thickness, name, subcomponent_template=None, nb_offset=0):
+        super().__init__(cores, core_width, core_height, thickness, name=name, nb_offset=nb_offset, subcomponent_template=subcomponent_template)
+        # offset cache to the right
+        cache_offset = (cores[0] * core_width, Length(0))
+        self.cache = L3CacheLayer(cache_width, cache_height, thickness, name=None, pos_offset=cache_offset)
+        self.thickness = thickness
+
+    @property
+    def total_width(self):
+        return super().total_width + self.cache.total_width
+
+    def write_floorplan(self, directory):
+        with open(self._get_floorplan_filename(directory), 'w') as f:
+            f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
+            f.write(super().create_floorplan_elements())
+            f.write(self.cache.create_floorplan_elements())
+    
 
 class CoreAndMemoryControllerLayer(ThermalLayer):
     """ first layer in 2.5D containing cores and memory controllers """
@@ -564,6 +605,7 @@ class ThermalStack(object):
 
     def write_files(self, directory):
         for l in self.layers[1:]:
+            print(l.total_width, self.layers[0].total_width)
             assert l.total_width == self.layers[0].total_width
             assert l.total_height == self.layers[1].total_height
 
@@ -606,6 +648,11 @@ def main():
     banks.add_argument("--bankx", help="size of each memory bank (in dimension x)", type=length, required=True)
     banks.add_argument("--banky", help="size of each memory bank (in dimension y)", type=length, required=True)
     banks.add_argument("--bank_thickness", help="thickness of the bank silicon layer", type=length, required=False, default='50um')
+    cache = parser.add_argument_group('cache')
+    cache.add_argument("--cache_L3", help="only 3D: add L3 cache on a seperate layer", choices=('stacked', 'non-stacked', 'none'), required=False, default='none')
+    cache.add_argument("--cachex", help="size of each memory bank (in dimension x)", type=length, required=False, default='0mm')
+    cache.add_argument("--cachey", help="size of each memory bank (in dimension y)", type=length, required=False, default='0mm')
+    cache.add_argument("--cache_thickness", help="only 3D: thickness of the cache silicon layer", type=length, required=False, default='50um')
     parser.add_argument("--core_mem_distance", help="only 2.5D: distance between cores and memory on interposer (default: 7mm)", type=length, required=False, default='7mm')
     parser.add_argument("--tim_thickness", help="thickness of the TIM", type=length, required=False, default='20um')
     parser.add_argument("--interposer_thickness", help="only 2.5D: thickness of the interposer", type=length, required=False, default='50um')
@@ -707,7 +754,8 @@ def main():
         cores_height = args.cores[1] * args.corey
         mem_width = args.banks[0] * args.bankx
         mem_height = args.banks[1] * args.banky
-        if (cores_width, cores_height) != (mem_width, mem_height):
+        cores_and_l3_width = cores_width + args.cachex if args.cache_L3 == 'non-stacked' else cores_width
+        if (cores_and_l3_width, cores_height) != (mem_width, mem_height):
             parser.error('cores and banks must cover the same area in 3D mode')
 
         banks_per_layer = args.banks[0] * args.banks[1]
@@ -719,8 +767,15 @@ def main():
             stack.add_layer(MemoryLayer(banks_2d, args.bankx, args.banky, args.bank_thickness, name=f'mem_bank_{i+1}', nb_offset=i*banks_per_layer))
             stack.add_layer(tim)
 
+        if args.cache_L3 == 'stacked':
+            stack.add_layer(L3CacheLayer(cores_width, cores_height, args.cache_thickness, name='l3_cache'))
+            stack.add_layer(tim)
+
         for i in range(args.cores[2]):
-            stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
+            if args.cache_L3 == 'non-stacked':
+                stack.add_layer(CoreAndL3CacheLayer(cores_2d, args.corex, args.corey, args.cachex, args.cachey, args.core_thickness, name=f'cores_L3_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
+            else:
+                stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
             stack.add_layer(tim)
 
         stack.write_files(args.out)
