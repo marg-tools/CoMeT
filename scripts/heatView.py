@@ -27,6 +27,9 @@ def usage():
      --banks_in_x: Number of memory banks in x dimension (default 4)
      --banks_in_y: Number of memory banks in y dimension (default 4)
      --banks_in_z: Number of memory banks in z dimension (default 8)
+     --cache_l3: Enable L3 cache (default False)
+     --cache_l3_stacked: Put L3 cache on seperate layer (default True)
+     --cache_l3_width: Width of the L3 cache, only needed with non-stacked L3 (default 0)
      --arch_type: Architecture type = 3D, 3Dmem, 2.5D, DDR (default 3Dmem)
      --plot_type: Generated view = 3D or 2D (default 3D)
      --layer_to_view: Layer number to view in 3D plot (starting from 0) (default 0)
@@ -51,6 +54,10 @@ cores_in_z=1
 banks_in_x=4
 banks_in_y=4
 banks_in_z=8
+
+cache_l3=False
+cache_l3_stacked=False
+cache_l3_width=0
 
 arch_type="3Dmem"        ##option = 3D, other.
 inverted_view=False
@@ -77,13 +84,13 @@ cleanDir=False
 if not sys.argv[1:]:
   usage()
 
-opts_passthrough = [ 'cores_in_x=', 'cores_in_y=', 'cores_in_z=', 'banks_in_x=', 'banks_in_y=', 'banks_in_z=', 'arch_type=', 'plot_type=', 'layer_to_view=', 'type_to_view=', 'verbose', 'inverted_view', 'debug', 'tmin=', 'tmax=', 'samplingRate=', 'traceFile=', 'output=', 'clean' ]
+opts_passthrough = [ 'cores_in_x=', 'cores_in_y=', 'cores_in_z=', 'banks_in_x=', 'banks_in_y=', 'banks_in_z=', 'cache_l3', 'cache_l3_stacked', 'cache_l3_width=', 'arch_type=', 'plot_type=', 'layer_to_view=', 'type_to_view=', 'verbose', 'inverted_view', 'debug', 'tmin=', 'tmax=', 'samplingRate=', 'traceFile=', 'output=', 'clean' ]
 
 try:
   #                     arguments,  shortopts,  longopts
   opts, args = getopt.getopt(sys.argv[1:], "hvidcs:t:o:", opts_passthrough)
 
-except: #getopt.GetoptError, e:
+except getopt.GetoptError as e:
   # print help information and exit:
   print (e)
   usage()
@@ -108,6 +115,12 @@ for o, a in opts:
     banks_in_y = int(a)
   if o == '--banks_in_z':
     banks_in_z = int(a)
+  if o == '--cache_l3':
+    cache_l3 = True
+  if o == '--cache_l3_stacked':
+    cache_l3_stacked = True
+  if o == '--cache_l3_width':
+    cache_l3_width = float(a)
   if o == '--arch_type':
     arch_type = a
   if o == '--plot_type':
@@ -145,24 +158,32 @@ if (arch_type == "DDR"):
 total_cores = cores_in_x*cores_in_y*cores_in_z
 total_banks = banks_in_x*banks_in_y*banks_in_z
 
+temperature_l3 = [0]
 temperatures_core = [0] * total_cores
 temperatures_bank = [0] * total_banks
 
 def parse_tfile(tfilename, orig_line):
     line=orig_line.rstrip()
     line=line.split('\t')
-    i = 0
     if (debug):
         print ("DEBUG::Temperature trace:\n%s" %line)
-    for value in line[0:total_cores]:
+
+    col = 0
+    if cache_l3:
+        value = line[col]
+        temperature_l3[0] = float(value)
+        col += 1
+    i = 0
+    for value in line[col:col+total_cores]:
         temperatures_core[i] = float(value)
         i+=1
     i = 0
-    for value in line[total_cores:]:
+    for value in line[col+total_cores:]:
         temperatures_bank[i] = float(value)
         i+=1
 
 def parse_tfile_header(tfilename, orig_line):
+    count_L3_column=0
     count_core_column=0
     count_bank_column=0
     column=0
@@ -170,6 +191,9 @@ def parse_tfile_header(tfilename, orig_line):
     if (debug):
         print ("DEBUG::Temperature trace file header:\n%s" %line)
 
+    while (line[column].startswith('L3')):
+        count_L3_column+=1
+        column+=1
     while (line[column].startswith('C')):
         count_core_column+=1
         column+=1
@@ -189,7 +213,7 @@ def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan', al
     if (debug):
         print("DEBUG:: plot_opaque_cube: x=%d,y=%d,z=%d" %(x,y,z))
 
-    kwargs = {'alpha': alpha, 'color': color, 'edgecolor': 'k', 'shade':False}
+    kwargs = {'alpha': alpha, 'color': color, 'edgecolor': 'k', 'shade':False, 'zorder':1/(z+1)}
 
     xx = np.linspace(x, x+dx, 2)
     yy = np.linspace(y, y+dy, 2)
@@ -216,7 +240,7 @@ def plot_opaque_cube(ax, x=10, y=20, z=30, dx=40, dy=50, dz=60, color='cyan', al
     #plt.title("Cube")
     #plt.show()
 
-def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core", adjust=0):
+def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, temperatures, title_message, axes_postprocess=True, inverted=False, layer_type="Core", adjust=0, xstart=0, ystart=0):
     if (debug):
         print ("DEBUG:: plot_3D_structure: xwidth = %f" %xwidth)
     color_lvl = 200
@@ -238,14 +262,14 @@ def plot_3D_structure(ax, tmin, tmax, xdim, ydim, zdim, zstart, xwidth, ywidth, 
                     offset = 0
                 if offset > color_lvl:
                     offset = color_lvl
-                plot_opaque_cube(ax, 0+xwidth*xx, 0+ywidth*yy-shift_amount*(zz+zstart), 0+zz+zstart, xwidth, ywidth, 0.2, color[offset], 1)
+                plot_opaque_cube(ax, xstart+xwidth*xx, ystart+ywidth*yy-shift_amount*(zz+zstart), 0+zz+zstart, xwidth, ywidth, 0.2, color[offset], 1)
                 ind += 1
         if (inverted):
             layer_num = zdim-zz-1
         else:
             layer_num = zz
         annotate_text = layer_type + " L"+ str(layer_num)
-        if (zdim > 1 or zstart > 0):
+        if (layer_type and (zdim > 1 or zstart > 0)):
             ax.text(xx+3,-1.2+adjust,zz+zstart+1.0,annotate_text,(0,1,0), verticalalignment='center', fontsize=17)
 #        ax.annotate("Time step = "+str(count) +" ms", xy=(xx+1, 0), xycoords='axes points', fontsize=21)
 
@@ -338,6 +362,8 @@ if __name__ == "__main__":
             print("\n")
             print("DEBUG::Core temperatures:", temperatures_core)
             print("DEBUG::Bank temperatures:", temperatures_bank)
+            if cache_l3:
+                print("DEBUG::L3 temperatures:", temperature_l3)
         print("Processing line %d" %count)
 
         count+=1
@@ -371,16 +397,18 @@ if __name__ == "__main__":
         #beginning of 3D plotting
         else:
             ax = fig.add_subplot(gs[0], projection='3d')
+            cache_in_z = 1 if cache_l3 and cache_l3_stacked else 0
                         #ind = yy + cores_in_y*xx + cores_in_x*cores_in_y*zz
 
             #core
             if (arch_type=="3D"):
-                xwidth=(float)(banks_in_x)/cores_in_x
+                cores_and_l3_in_x = cores_in_x + cache_l3_width
+                xwidth=(float)(banks_in_x)/cores_and_l3_in_x
                 ywidth=(float)(banks_in_y)/cores_in_y
                 if (inverted_view):
                     zstart = 0
                 else:
-                    zstart = banks_in_z
+                    zstart = banks_in_z + cache_in_z
                 postprocess=False
                 title_message = None
                 adj=0.0   #adjust annotation
@@ -403,12 +431,36 @@ if __name__ == "__main__":
 #            art3d.pathpatch_2d_to_3d(p, z=0, zdir = "x")
             #plot_opaque_cube(ax, 0, 0, 0, cores_in_x, cores_in_y, cores_in_z, color='none', alpha=0.05)##
 
+            # cache
+            if (cache_l3 and cache_l3_stacked):
+                if (inverted_view):
+                    zstart = cores_in_z
+                else:
+                    zstart = banks_in_z
+                xwidth=banks_in_x
+                ywidth=banks_in_y
+                postprocess=False
+                adj=-0.7
+                plot_3D_structure(ax, tmin, tmax, 1, 1, 1, zstart, xwidth, ywidth, temperature_l3, None, postprocess, inverted_view, "L3", adj)
+
+            if (cache_l3 and not cache_l3_stacked):
+                if (inverted_view):
+                    zstart = 0
+                else:
+                    zstart = banks_in_z
+                xwidth=(float)(banks_in_x)/cores_and_l3_in_x
+                ywidth=banks_in_y                
+                xstart = cores_in_x * xwidth           
+                plot_3D_structure(ax, tmin, tmax, 1, 1, 1, zstart, xwidth, ywidth, temperature_l3, None, postprocess, inverted_view, "", adj, xstart=xstart)
+
+                # plot_opaque_cube(ax, xwidth*3, ywidth*3, zstart, xwidth, ywidth, 0.2, color[temperature_l3], 1)
+
             #memory
             if (arch_type=="3D"):
                 postprocess=True
                 title_message = "3D architecture temperature map"
                 if (inverted_view):
-                    zstart = cores_in_z
+                    zstart = cores_in_z + cache_in_z
                 else:
                     zstart = 0
                 adj=0.7   #adjust annotation
