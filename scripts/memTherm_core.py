@@ -50,7 +50,11 @@ NUM_BANKS=int(sim.config.get('memory/num_banks'))
 #banks_in_z = number_of_banks/banks_in_x/banks_in_y  
 #banks_in_z = 2
 #bank_printing_pattern = [6,3,5,1,4,0,7,2]
-#bank_printing_pattern = [] 
+#bank_printing_pattern = []
+
+# Cache power info
+power_l2 = bool(sim.config.get('core_power/l2'))
+power_l3 = bool(sim.config.get('core_power/l3'))
 
 # Logic Floorplan info (only for 3Dmem)
 logic_cores_in_x = banks_in_x
@@ -218,6 +222,8 @@ def gen_ptrace_header():
                 ptrace_header=ptrace_header + "X" + str(x) + "\t" 
     
     if type_of_stack=="3D":
+        if power_l3:
+            ptrace_header = ptrace_header + "L3" + "\t" 
         for z in range(0,cores_in_z):
             for x in range(0,cores_in_x):
                 for y in range(0,cores_in_y):
@@ -419,6 +425,8 @@ class memTherm:
 
   def gen_combined_trace_header(self):
     trace_header = ""
+    if power_l3:
+        trace_header = "L3\t"
     for x in range(NUM_CORES):
         trace_header = trace_header + "C_" + str(x) + "\t"
     for x in range(NUM_BANKS):
