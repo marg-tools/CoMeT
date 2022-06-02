@@ -96,10 +96,13 @@ Core::Core(SInt32 id)
 
    m_shmem_perf_model = new ShmemPerfModel();
 
-   LOG_PRINT("instantiated memory manager model");
+   LOG_PRINT("instantiated memory manager model"); //LEO
+   //std::cout << "MEMORY MANAGER BASE GEMAAKT VOOR " << id << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"; //Leo
    m_memory_manager = MemoryManagerBase::createMMU(
          Sim()->getCfg()->getString("caching_protocol/type"),
          this, m_network, m_shmem_perf_model);
+
+   //m_memory_manager. //TOD LEO
 
    m_performance_model = PerformanceModel::create(this);
 }

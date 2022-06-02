@@ -63,6 +63,8 @@
 /*  efficiency.															                              */
 /**************************************************************************/
 
+
+
 void usage(int argc, char **argv)
 {
   fprintf(stdout, "Usage: %s -f <file> -p <file> [-o <file>] [-c <file>] [-d <file>] [-l <leakage_vector>] [-v <volt_vector>] [options]\n", argv[0]);
@@ -72,6 +74,8 @@ void usage(int argc, char **argv)
   fprintf(stdout, "            \tlayer configuration file (e.g. layer.lcf) when the\n");
   fprintf(stdout, "            \tlatter is specified\n");
   fprintf(stdout, "   -p <file>\tpower trace input file (e.g. gcc.ptrace)\n");
+  // fprintf(stdout, "  [-lpl <float>]\tlow power mode leakage fraction. Shape should be 0.xx. Necessary for dram low power mode.\n");
+  fprintf(stdout, "  [-bm <file>]\tmemory bank mode trace file. Necessary for dram low power mode.\n");
   fprintf(stdout, "  [-o <file>]\ttransient temperature trace output file - if not provided, only\n");
   fprintf(stdout, "            \tsteady state temperatures are output to stdout\n");
   fprintf(stdout, "  [-c <file>]\tinput configuration parameters from file (e.g. hotspot.config)\n");
@@ -154,6 +158,12 @@ void global_config_from_strs(global_config_t *config, str_pair *table, int size)
        strcpy(volt_vector, "");
    }
 
+  if ((idx = get_str_index(table, size, "bm")) >= 0) {
+      if(sscanf(table[idx].value, "%s", config->bm_infile) != 1)
+        fatal("invalid format for configuration  parameter bm_infile\n");
+  } else {
+      strcpy(config->bm_infile, NULLFILE);
+  }
 
 }
 
@@ -173,6 +183,7 @@ int global_config_to_strs(global_config_t *config, str_pair *table, int max_entr
   sprintf(table[4].name, "d");
   sprintf(table[5].name, "detailed_3D");
   sprintf(table[6].name, "l");
+  sprintf(table[8].name, "bm");
   sprintf(table[0].value, "%s", config->flp_file);
   sprintf(table[1].value, "%s", config->p_infile);
   sprintf(table[2].value, "%s", config->t_outfile);
@@ -181,6 +192,7 @@ int global_config_to_strs(global_config_t *config, str_pair *table, int max_entr
   sprintf(table[5].value, "%s", config->detailed_3D);
   sprintf(table[6].value, "%s", leakage_vector);
   sprintf(table[7].value, "%s", volt_vector);
+  sprintf(table[8].value, "%s", config->bm_infile);
 
   return 6;
 }
@@ -213,6 +225,7 @@ int read_names(FILE *fp, char **names)
       if(!sscanf(src, "%s", names[i]))
         fatal("invalid format of names\n");
       src += strlen(names[i]);
+
       while (isspace((int)*src))
         src++;
   }
@@ -254,6 +267,65 @@ int read_vals(FILE *fp, double *vals)
     fatal("no. of entries exceeded limit\n");
 
   return i;
+}
+
+
+/* read a single line of bank mode floats, neede for the low power mode.	*/
+int read_bank_modes(FILE *fp, float bank_modes[])
+{
+  /*
+  The headers of the bank modes will not be read. It is assumed that 
+  bank mode information is provided in sorted columns, starting with
+  bank 0 and incrementing 1 each column.  
+  */
+
+  char line[LINE_SIZE], temp[LINE_SIZE], *src;
+  float i;
+  char temp_status[10];
+  
+
+  /* skip empty lines	*/
+  do {
+      /* read the entire line	*/
+      fgets(line, LINE_SIZE, fp);
+      if (feof(fp))
+        return 0;
+      strcpy(temp, line);
+      src = strtok(temp, " \r\t\n");
+  } while (!src);
+  
+  fgets(line, LINE_SIZE, fp);
+  printf(line);
+
+  /* new line not read yet	*/	
+  if(line[strlen(line)-1] != '\n')
+  {
+    fatal("line too long\n");
+  }
+
+  /* chop the bank power mode values from the line read	*/
+  printf("starting important loop\n");
+  //printf(line);
+  int banks_counted = 0;
+
+
+  int j = 0;
+  src = line;
+  while (*src && sscanf(src, "%f", &i))
+  {
+    bank_modes[j] = i;
+    banks_counted++;
+    // src += strlen(temp);
+    src += 4; // 4 places because the numbers are formatted as 1.xx
+    j++;
+    // printf("%s", src);
+    while (isspace((int)*src))
+    {
+      src++;
+    }
+  }
+
+  return banks_counted;
 }
 
 /* write a single line of functional unit names	*/
@@ -310,12 +382,18 @@ void free_names(char **m)
  */
 int main(int argc, char **argv)
 {
+
   int i, j, idx, base = 0, count = 0, n = 0;
   int num, size, lines = 0, do_transient = TRUE;
   char **names;
   double *vals;
+
+  float bank_modes[MAX_UNITS]; // Keep track of the bank modes for use in low power mode.
+  int banks_nr = 0;
+
+
   /* trace file pointers	*/
-  FILE *pin, *tout = NULL;
+  FILE *pin, *tout, *bmin = NULL; // bmin points to the bank mode input file.
   /* floorplan	*/
   flp_t *flp;
   /* hotspot temperature model	*/
@@ -332,6 +410,7 @@ int main(int argc, char **argv)
   global_config_t global_config;
   /* table to hold options and configuration */
   str_pair table[MAX_ENTRIES];
+
 
   /* variables for natural convection iterations */
   int natural = 0; 
@@ -409,6 +488,7 @@ for (i = 0; i < length_v; ++i)
   if (strcmp(global_config.config, NULLFILE))
     size += read_str_pairs(&table[size], MAX_ENTRIES, global_config.config);
 
+
   /* earlier entries override later ones. so, command line options 
    * have priority over config file 
    */
@@ -469,9 +549,12 @@ for (i = 0; i < length_v; ++i)
   if (do_transient)
     populate_C_model(model, flp);
 
+
+
 #if VERBOSE > 2
   debug_print_model(model);
 #endif
+  
 
   /* allocate the temp and power arrays	*/
   /* using hotspot_vector to internally allocate any extra nodes needed	*/
@@ -514,9 +597,60 @@ for (i = 0; i < length_v; ++i)
   if(read_names(pin, names) != n)
     fatal("no. of units in floorplan and trace file differ\n");
 
+  // Count the number of banks. Necessary for low power mode.
+  for (int i = 0; i < n; i++)
+  {
+      if (strstr(names[i], "B_") != NULL)
+      {
+        banks_nr ++;
+      }
+
+  }
+
+
+
+
   /* header line of temperature trace	*/
   if (do_transient)
     write_names(tout, names, n);
+
+
+  // If the memory bank power mode file is provided, we will use it.
+  if (strcmp(global_config.bm_infile, NULLFILE) != 0)
+  {
+
+
+    printf("[HOTSPOT] bank mode input file was defined.\n");
+
+    if(!(bmin = fopen(global_config.bm_infile, "r")))
+      fatal("unable to open bank mode input file\n");
+
+
+    printf("going to read the bank modes\n");
+    
+    // Read the bank modes into the bank_modes array.
+    read_bank_modes(bmin, bank_modes);
+    printf("%i banks counted\n", model->banks_nr);
+
+
+    printf("end of statuses\n");
+  }
+  else
+  {
+    // Bank mode file was not provided. We will assume they are all in normal power mode.
+    for (int i; i < banks_nr; i++)
+    {
+      bank_modes[i] = 1.0;
+    }
+  }
+
+  model->banks_nr = banks_nr;
+  // Copy bank modes to the model.
+  for (int i = 0; i < banks_nr; i++)
+  {
+    model->bank_modes[i] = bank_modes[i];
+  }
+  
 
   /* read the instantaneous power trace	*/
   vals = dvector(MAX_UNITS);

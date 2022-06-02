@@ -15,9 +15,11 @@ MemoryManagerBase::createMMU(String protocol_type,
    switch (caching_protocol)
    {
       case PARAMETRIC_DRAM_DIRECTORY_MSI:
+         cout << "switch: dramdirectorymsi\n"; //LEO
          return new ParametricDramDirectoryMSI::MemoryManager(core, network, shmem_perf_model);
 
       case FAST_NEHALEM:
+         cout << "switch fast_nehalem\n"; //LEO
          return new FastNehalem::MemoryManager(core, network, shmem_perf_model);
 
       default:

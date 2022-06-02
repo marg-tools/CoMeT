@@ -37,6 +37,7 @@ void print_dram_trace()
             rdt[i].read_access_count_per_epoch = 0;
             for(UInt64 j=0; j<NUM_OF_BANKS; j++){
                 rdt[i].bank_read_access_count[j] = 0;
+                rdt[i].bank_read_access_count_lowpower[j] = 0; // Added to keep track of low power read accesses.
             }
         }
 
@@ -51,6 +52,7 @@ void print_dram_trace()
                 wrt[i].write_access_count_per_epoch = 0;
                 for(UInt64 j=0; j<NUM_OF_BANKS; j++){
                     wrt[i].bank_write_access_count[j] = 0;
+                    wrt[i].bank_write_access_count_lowpower[j] = 0; // Added to keep track of low power write accesses.
                 }
             }
 
@@ -66,7 +68,7 @@ void print_dram_trace()
         wrt[i].write_access_count_per_epoch, rdt[i].read_access_count_per_epoch+
         wrt[i].write_access_count_per_epoch);
         for(UInt64 j=0; j<NUM_OF_BANKS; j++){
-            printf("%u, ", rdt[i].bank_read_access_count[j]+wrt[i].bank_write_access_count[j]);
+            printf("%u, ", rdt[i].bank_read_access_count[j] + rdt[i].bank_read_access_count_lowpower[j] + wrt[i].bank_write_access_count[j] + wrt[i].bank_write_access_count_lowpower[j]);
         }
     }
 

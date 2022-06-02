@@ -20,18 +20,13 @@ DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
    m_total_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   // TODO added by Leo to keep track of memory banks
-   read_memory_config(core_id); // also added by leo
-
-   // for (int i = 0; i < aNUM_OF_BANKS; i++)
-   // {
-   //    m_bank_status_map[i] = 1; // all banks are on
-   // }
+   // Memory config is needed to know the amount of memory banks.
+   read_memory_config(core_id);
 
 
-   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
-   // added by leo
+   // Read the low power access cost.
    m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
@@ -66,8 +61,6 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    }
 
 
-
-
    SubsecondTime processing_time = m_dram_bandwidth.getRoundedLatency(8 * pkt_size); // bytes to bits
 
    // Compute Queue Delay
@@ -81,62 +74,33 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
       queue_delay = SubsecondTime::Zero();
    }
 
-
-
-   //get the memory bank corresponding to the address
+   // Get the memory bank corresponding to the address.
    UInt32 bank_nr = get_address_bank(address, requester);
-   // cout << "getting the access latency for bank " << bank << "\n";
 
-   // LEO get the status for this bank
-   int bank_status = Sim()->m_bank_status_map[bank_nr];
+
+   int bank_mode = Sim()->m_bank_mode_map[bank_nr];
 
    SubsecondTime access_latency;
 
-   if (bank_status == 0) // LEO if the bank is in low_power mode
+   // Distinguish between dram power modes.
+   if (bank_mode == 0) // Low power mode
    {
       access_latency = queue_delay + processing_time + m_dram_access_cost_lowpower;
    }
    else
    {
       access_latency = queue_delay + processing_time + m_dram_access_cost;
-      
    }
-   //cout << "bank " << bank_nr << " status is " << bank_status << ".\t Access latency is " << access_latency << "\n"; //LEO
-
-
-
-   // Leo: want to make a distinction here between high and low power mode
-   // SubsecondTime access_latency = queue_delay + processing_time + m_dram_access_cost; //
-
 
    perf->updateTime(pkt_time);
    perf->updateTime(pkt_time + queue_delay, ShmemPerf::DRAM_QUEUE);
    perf->updateTime(pkt_time + queue_delay + processing_time, ShmemPerf::DRAM_BUS);
    perf->updateTime(pkt_time + access_latency, ShmemPerf::DRAM_DEVICE);
 
-   // Update Memory Counters
    m_num_accesses ++;
    m_total_access_latency += access_latency;
    m_total_queueing_delay += queue_delay;
-   // cout << "from the cfg           " << Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal") << "\n";
-   // cout << "from the cfg converted " << TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_normal")) << "\n";
-   // cout << "lowpower from the cfg           " << Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower") << "\n";
-   // cout << "lowpower from the cfg converted " << TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower")) << "\n";
 
-   // cout << "using variable dram perf model\n";
-   // cout << "dram access cost is " << m_dram_access_cost << "\n";
-   // cout << "access latency is " << access_latency << "\n-----\n";
-   // cout << "BANKS STATUS for " << aNUM_OF_BANKS << "banks\n";
-
-   // // for (UInt8 i = 0; i < aNUM_OF_BANKS; i++){
-   // //    UInt8 status = m_bank_status_map[i];
-   // //    cout << m_bank_status_map[i] << ", ";
-   // // }
-   // // cout << "\n";
-
-   // for (auto& x: m_bank_status_map) {
-   //    std::cout << x.first << ": " << x.second << std::endl;
-   // }
    return access_latency;
 }
 
@@ -161,13 +125,6 @@ DramPerfModelVariable::read_memory_config(core_id_t requester)
    BANKS_PER_CHANNEL = (aNUM_OF_BANKS/NUM_OF_CHANNELS) - 1;
    BANK_MASK = (((1<<(BANK_ADDRESS_BITS))-1) << BANK_OFFSET_IN_PA);
 
-   cout << "num of channels " << NUM_OF_CHANNELS << "\n";
-   cout << "num of banks " << aNUM_OF_BANKS << "\n";
-   cout << "bank access bits" << BANK_ADDRESS_BITS << "\n";
-   cout << "bank offset in PA" << BANK_OFFSET_IN_PA << "\n";
-   cout << "banks per layer" << BANKS_PER_LAYER << "\n";
-   cout << "banks per channel" << BANKS_PER_CHANNEL << "\n";
-   cout << "bank mask" << BANK_MASK << "\n";
 }
 
 

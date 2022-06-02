@@ -74,19 +74,19 @@ DramLowpower::DramLowpower(
 
 std::map<int,int> DramLowpower::getMemStatus() {
     cout << "in DramLowpower::getMemStatus\n";
-    std::map<int,int> new_bank_status_map;
+    std::map<int,int> new_bank_mode_map;
     for (int i = 0; i < numberOfBanks; i++)
     {
-        if (Sim()->m_bank_status_map[i] == 0) // if the memory was already in low power mode
+        if (Sim()->m_bank_mode_map[i] == 0) // if the memory was already in low power mode
         {
             if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
             {
                 cout << "[Scheduler][dram-DTM]: thermal violation ended for bank " << i << endl;
-                new_bank_status_map[i] = 1;
+                new_bank_mode_map[i] = 1;
             }
             else
             {
-                new_bank_status_map[i] = 0;
+                new_bank_mode_map[i] = 0;
             }
         }
         else // if the memory was not in low power mode
@@ -94,35 +94,15 @@ std::map<int,int> DramLowpower::getMemStatus() {
             if (performanceCounters->getTemperatureOfBank(i) > dtmCriticalTemperature) // temp is above critical temperature
             {
                 cout << "[Scheduler][dram-DTM]: thermal violation detected for bank " << i << endl;
-                new_bank_status_map[i] = 0;
+                new_bank_mode_map[i] = 0;
             }
             else
             {
-                new_bank_status_map[i] = 1;
+                new_bank_mode_map[i] = 1;
             }
 
         }
         
     }
-    return new_bank_status_map;
+    return new_bank_mode_map;
 }
-
-
-
-//     if (performanceCounters->getPeakTemperature() > dtmCriticalTemperature) {
-//         if (!in_throttle_mode) {
-//             cout << "[Scheduler][ondemand-DTM]: detected thermal violation" << endl;
-//         }
-//         cout << "current temp" << performanceCounters->getPeakTemperature() << " > " << dtmCriticalTemperature << "\n";
-//         cout << "throttling...\n";
-//         in_throttle_mode = true;
-//     } else if (performanceCounters->getPeakTemperature() < dtmRecoveredTemperature) {
-//         if (in_throttle_mode) {
-//             cout << "[Scheduler][ondemand-DTM]: thermal violation ended" << endl;
-//         }
-//         cout << "current temp" << performanceCounters->getPeakTemperature() << " <" << dtmRecoveredTemperature << "\n";
-//         cout << "UNthrottling...\n";
-//         in_throttle_mode = false;
-//     }
-//     return in_throttle_mode;
-// }

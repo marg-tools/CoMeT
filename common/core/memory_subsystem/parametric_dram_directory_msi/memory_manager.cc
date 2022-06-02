@@ -47,7 +47,7 @@ MemoryManager::MemoryManager(Core* core,
    // Read Parameters from the Config file
    std::map<MemComponent::component_t, CacheParameters> cache_parameters;
    std::map<MemComponent::component_t, String> cache_names;
-
+   // cout << "CREATING A MEMORY MANAGER THING" << core->getId() << "!!!!!!!!!!!!\n"; // LEO
    bool nuca_enable = false;
    CacheParameters nuca_parameters;
 
@@ -227,7 +227,9 @@ MemoryManager::MemoryManager(Core* core,
 
    if (find(core_list_with_dram_controllers.begin(), core_list_with_dram_controllers.end(), getCore()->getId()) != core_list_with_dram_controllers.end())
    {
+      
       m_dram_cntlr_present = true;
+
 
       m_dram_cntlr = new PrL1PrL2DramDirectoryMSI::DramCntlr(this,
             getShmemPerfModel(),

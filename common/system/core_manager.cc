@@ -25,7 +25,7 @@ CoreManager::CoreManager()
 
    for (UInt32 i = 0; i < Config::getSingleton()->getTotalCores(); i++)
    {
-      m_cores.push_back(new Core(i));
+      m_cores.push_back(new Core(i)); //LEO TODO HIERZO??
    }
 
    LOG_PRINT("Finished CoreManager Constructor.");

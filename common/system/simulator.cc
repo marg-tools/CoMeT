@@ -149,7 +149,7 @@ void Simulator::start()
    std::cout << "Initializing global dram status map\n";
    for (int i = 0; i < Sim()->getCfg()->getInt("memory/num_banks"); i++)
    {
-      m_bank_status_map[i] = 1; // all banks are on
+      m_bank_mode_map[i] = 1; // all banks are on
    }
 
    m_sim_thread_manager = new SimThreadManager();

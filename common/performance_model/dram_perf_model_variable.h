@@ -22,14 +22,7 @@ class DramPerfModelVariable : public DramPerfModel
       SubsecondTime m_total_queueing_delay;
       SubsecondTime m_total_access_latency;
 
-      //std::map<int, int> m_bank_status_map; // TODO to keep track of memory bank status
-
-
-
-
       // TODO added by Leo to keep track of memory banks
-
-
       UInt64 aNUM_OF_BANKS;
       UInt64 BANK_ADDRESS_BITS;
       UInt64 BANK_OFFSET_IN_PA;
@@ -38,7 +31,7 @@ class DramPerfModelVariable : public DramPerfModel
       UInt64 BANK_MASK;
       UInt64 NUM_OF_CHANNELS;
       String TYPE_OF_STACK;
-      UInt32 MCP_FLAG; // no idea what this is for
+      UInt32 MCP_FLAG;
 
    public:
       DramPerfModelVariable(core_id_t core_id,

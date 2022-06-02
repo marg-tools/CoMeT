@@ -18,7 +18,10 @@
 #endif
 
 extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 read_access_count_export_lowpower[MAX_NUM_OF_BANKS];
 extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+extern UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // Keep track of memory bank power status.
 extern UInt64 NUM_OF_BANKS;
 
 UInt32 stats_initialized=0;
@@ -34,11 +37,12 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    : DramCntlrInterface(memory_manager, shmem_perf_model, cache_block_size)
    , m_reads(0)
    , m_writes(0)
-{
+   {
+
    m_dram_perf_model = DramPerfModel::createDramPerfModel(
          memory_manager->getCore()->getId(),
          cache_block_size);
-
+   
    m_fault_injector = Sim()->getFaultinjectionManager()
       ? Sim()->getFaultinjectionManager()->getFaultInjector(memory_manager->getCore()->getId(), MemComponent::DRAM)
       : NULL;
@@ -50,12 +54,19 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    read_memory_config(memory_manager->getCore()->getId());
 
    if (stats_initialized == 0) {
-     for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
-       registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
-       registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
-     }
-     stats_initialized = 1;
-  }
+      for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
+         registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
+         registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
+
+         registerStatsMetric("dram", i, "bank_read_access_counter_lowpower", &read_access_count_export_lowpower[i]);
+         registerStatsMetric("dram", i, "bank_write_access_counter_lowpower", &write_access_count_export_lowpower[i]);
+
+         bank_mode_export[i] = 1;
+         registerStatsMetric("dram", i, "bank_mode", &bank_mode_export[i]);
+      }
+      stats_initialized = 1;
+   }
+
 }
 
 DramCntlr::~DramCntlr()
@@ -91,9 +102,7 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
    addToDramAccessCount(address, READ);
    #endif
    MYLOG("R @ %08lx latency %s", address, itostr(dram_access_latency).c_str());
-
    dram_read_trace(address, requester, now, m_reads);
-
    return boost::tuple<SubsecondTime, HitWhere::where_t>(dram_access_latency, HitWhere::DRAM);
 }
 
@@ -130,7 +139,9 @@ SubsecondTime
 DramCntlr::runDramPerfModel(core_id_t requester, SubsecondTime time, IntPtr address, DramCntlrInterface::access_t access_type, ShmemPerf *perf)
 {
    UInt64 pkt_size = getCacheBlockSize();
+   
    SubsecondTime dram_access_latency = m_dram_perf_model->getAccessLatency(time, pkt_size, requester, address, access_type, perf);
+
    return dram_access_latency;
 }
 

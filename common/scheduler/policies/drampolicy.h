@@ -8,7 +8,7 @@
 #ifndef __DRAMPOLICY_H
 #define __DRAMPOLICY_H
 
-#include "simulator.h" // to get access to the m_bank_status_map
+#include "simulator.h" // to get access to the m_bank_mode_map
 #include <map>
 
 class DramPolicy {
