@@ -606,7 +606,7 @@ for (i = 0; i < length_v; ++i)
       }
 
   }
-
+  model->banks_nr = banks_nr;
 
 
 
@@ -644,7 +644,7 @@ for (i = 0; i < length_v; ++i)
     }
   }
 
-  model->banks_nr = banks_nr;
+  
   // Copy bank modes to the model.
   for (int i = 0; i < banks_nr; i++)
   {
