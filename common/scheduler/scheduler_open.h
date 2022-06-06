@@ -105,7 +105,7 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		long dramEpoch;
 		void initDramPolicy(String policyName);
 		void executeDramPolicy();
-		void setMemBankStatus(int bankNr, int status);
+		void setMemBankMode(int bankNr, int mode);
 
 		// migration
 		MigrationPolicy *migrationPolicy = NULL;

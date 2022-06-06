@@ -927,20 +927,20 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 void SchedulerOpen::executeDramPolicy()
 {
 
-	std::map<int,int> new_bank_mode_map = dramPolicy->getMemStatus();
+	std::map<int,int> new_bank_mode_map = dramPolicy->getNewBankModes();
 
     for (int i = 0; i < numberOfBanks; i++)
 	{
-		setMemBankStatus(i, new_bank_mode_map[i]);
+		setMemBankMode(i, new_bank_mode_map[i]);
 	}
 	
 
 }
 
 
-void SchedulerOpen::setMemBankStatus(int bankNr, int status)
+void SchedulerOpen::setMemBankMode(int bankNr, int mode)
 {
-	Sim()->m_bank_mode_map[bankNr] = status;
+	Sim()->m_bank_mode_map[bankNr] = mode;
 }
 
 
@@ -1044,7 +1044,7 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		executeDVFSPolicy();
 	}
 
-	// TODO or maybe I should addd a function for dram dtm policy here
+	// TODO LEO or maybe I should addd a function for dram dtm policy here
 		if ((dramPolicy != NULL) && (time.getNS() % dramEpoch == 0)) {
 		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
 

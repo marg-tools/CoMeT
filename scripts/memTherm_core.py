@@ -119,6 +119,7 @@ hotspot_grid_steady_file = sim.config.get('hotspot/log_files_mem/grid_steady_fil
 hotspot_all_transient_file = sim.config.get('hotspot/log_files_mem/all_transient_file')
 power_trace_file = sim.config.get('hotspot/log_files_mem/power_trace_file')
 bank_mode_trace_file = sim.config.get('scheduler/open/dram/lowpower/bank_mode_trace_file') # For low power mode.
+full_bank_mode_trace_file = sim.config.get('scheduler/open/dram/lowpower/full_bank_mode_trace_file') # For low power mode.
 full_power_trace_file = sim.config.get('hotspot/log_files_mem/full_power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/log_files_mem/temperature_trace_file')
 full_temperature_trace_file = sim.config.get('hotspot/log_files_mem/full_temperature_trace_file')
@@ -158,7 +159,7 @@ hotspot_command = executable  \
 #                  + ' -f ' + hotspot_floorplan_file \
 
 if dram_logic == "lowPower":
-  hotspot_command += ' -bs '+ bank_mode_trace_file
+  hotspot_command += ' -bm '+ bank_mode_trace_file
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
@@ -183,6 +184,7 @@ os.system("rm -f " + full_temperature_trace_file)
 os.system("rm -f " + full_power_trace_file)
 os.system("rm -f " + c_full_power_trace_file)
 os.system("rm -f " + c_full_temperature_trace_file)
+os.system("rm -f " + full_bank_mode_trace_file) # TODO LEO
 for filename in ('PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.log',):
   open(filename, 'w') # empties the file
 
@@ -341,6 +343,11 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
+    if dram_logic == 'lowPower': #  todo leo
+      mem_header = gen_mem_header()
+      with open(full_bank_mode_trace_file, "w") as f:
+          f.write("%s\n" %(mem_header))
+      f.close()
     #setup to invoke the hotspot tool every interval_ns time and invoke calc_temperature_trace function
     sim.util.Every(interval_ns * sim.util.Time.NS, self.calc_temperature_trace, statsdelta = self.sd, roi_only = True)
 
@@ -689,6 +696,8 @@ class memTherm:
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
+    if dram_logic == "lowPower":
+      os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file) # todo leo
 
   def getStatsGetter(self, component, core, metric):
     # Some components don't exist (i.e. DRAM reads on cores that don't have a DRAM controller),
