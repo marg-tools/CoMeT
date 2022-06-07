@@ -60,6 +60,9 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int coresInY;
 		int coresInZ;
 		int numberOfBanks;
+		int banksInX;
+		int banksInY;
+		int banksInZ;
 
 		PerformanceCounters *performanceCounters;
 

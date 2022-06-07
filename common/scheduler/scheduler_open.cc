@@ -18,6 +18,7 @@
 #include "policies/mapFirstUnused.h"
 
 #include "policies/dramLowpower.h"
+#include "policies/dramNeighbours.h"
 
 #include <iomanip>
 #include <random>
@@ -59,6 +60,10 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");
 	coresInY = Sim()->getCfg()->getInt("memory/cores_in_y");
 	coresInZ = Sim()->getCfg()->getInt("memory/cores_in_z");
+
+	banksInX = Sim()->getCfg()->getInt("memory/banks_in_x");
+	banksInY = Sim()->getCfg()->getInt("memory/banks_in_y");
+	banksInZ = Sim()->getCfg()->getInt("memory/banks_in_z");
 
 	performanceCounters = new PerformanceCounters(
 		Sim()->getCfg()->getString("hotspot/log_files/combined_instpower_trace_file").c_str(),
@@ -913,6 +918,20 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 		dramPolicy = new DramLowpower(
 			performanceCounters,
 			numberOfBanks,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
+	} else if (policyName == "neighbours") {
+		// float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
+		// float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/neighbours/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/neighbours/dtm_recovered_temperature");
+		dramPolicy = new DramNeighbours(
+			performanceCounters,
+			numberOfBanks,
+			banksInX,
+			banksInY,
+			banksInZ,
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
