@@ -910,7 +910,7 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 	cout << "[Scheduler] [Info]: Initializing Dram policy" << endl;
 	if (policyName == "off") {
 		dramPolicy = NULL;
-	} else if (policyName == "lowPower") {
+	} else if (policyName == "lowpower") {
 		// float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
 		// float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
 		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_cricital_temperature");

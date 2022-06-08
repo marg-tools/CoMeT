@@ -627,7 +627,7 @@ void populate_C_model(RC_model_t *model, flp_t *flp)
 /* will support HotLeakage in future releases */
 double calc_lc_leakage(int mode, double h, double w, double temp)
 {	
-	printf("[CALC_LC_LEAKAGE]\n");
+	// printf("[CALC_LC_LEAKAGE]\n");
 	/* a simple leakage model.
 	 * Be aware -- this model may not be accurate in some cases.
 	 * You may want to use your own temperature-dependent leakage model here.
@@ -659,6 +659,7 @@ double calc_lc_leakage(int mode, double h, double w, double temp)
 /* will support HotLeakage in future releases */
 double calc_core_leakage(int mode, double h, double w, double temp)
 {
+	// printf("[CALC_CORE_LEAKAGE]\n");
 	/* a simple leakage model.
 	 * Be aware -- this model may not be accurate in some cases.
 	 * You may want to use your own temperature-dependent leakage model here.
@@ -694,7 +695,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 //		steady_state_temp_grid(model->grid, power, temp);
 //	else fatal("unknown model type\n");	
 
-	printf("[STEADY STATE TEMP]\n");
+	// printf("[STEADY STATE TEMP]\n");
 	//debug_print_model(model);
 	int leak_convg_true = 0;
 	int leak_iter = 0;
@@ -1009,6 +1010,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 				 			//printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
+							// printf("calculating temp for unit %s \n", model->grid->layers[k].flp->units[j].name); // Debug for low power mode.
 							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
@@ -1070,6 +1072,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
+							// printf("calculating temp for unit %s \n", model->grid->layers[k].flp->units[j].name); // Debug for low power mode.
 							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
 									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);										//printf("%f ", power[base+j]);
 							}
@@ -1098,6 +1101,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
+							// printf("calculating temp for unit %s \n", model->grid->layers[k].flp->units[j].name); // Debug for low power mode.
 							if (k==5){ // Layer0 : Interposer, Layer 1: TIM, layer 2 in 3Dmem is an SRAM layer its leakage model is different.
 								if ( (j==22) || (j==21) || (j==20) )	// No leakeage in air. Assuming 4 cores + 16 LC
 									power_new[base+j] = power[base+j];
@@ -1298,7 +1302,7 @@ void debug_print_model(RC_model_t *model)
 /* will support HotLeakage in future releases */
 double calc_leakage(int mode, double h, double w, double temp, unit_t* unit, float bank_modes[])
 {
-	printf("[CALC_LEAKAGE]\n");
+	// printf("[CALC_LEAKAGE]\n");
 	/* a simple leakage model.
 	 * Be aware -- this model may not be accurate in some cases.
 	 * You may want to use your own temperature-dependent leakage model here.
@@ -1330,7 +1334,7 @@ double calc_leakage(int mode, double h, double w, double temp, unit_t* unit, flo
 		float mode = bank_modes[bank_id];
 		// if ( (int) mode != 1)
 		
-		printf("multiplying leakage by %f\n", mode);
+		// printf("multiplying leakage by %f\n", mode); // Debug low power mode
 		
 		return leakage_power * mode;
 	}

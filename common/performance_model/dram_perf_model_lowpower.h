@@ -1,5 +1,5 @@
-#ifndef __DRAM_PERF_MODEL_VARIABLE_H__
-#define __DRAM_PERF_MODEL_VARIABLE_H__
+#ifndef __DRAM_PERF_MODEL_LOWPOWER_H__
+#define __DRAM_PERF_MODEL_LOWPOWER_H__
 
 #include "dram_perf_model.h"
 #include "queue_model.h"
@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <map>
 
-class DramPerfModelVariable : public DramPerfModel
+class DramPerfModelLowpower : public DramPerfModel
 {
    private:
       QueueModel* m_queue_model;
@@ -22,7 +22,7 @@ class DramPerfModelVariable : public DramPerfModel
       SubsecondTime m_total_queueing_delay;
       SubsecondTime m_total_access_latency;
 
-      // TODO added by Leo to keep track of memory banks
+      // TODO leo These are necessary to calculate the bank from the memory address.
       UInt64 aNUM_OF_BANKS;
       UInt64 BANK_ADDRESS_BITS;
       UInt64 BANK_OFFSET_IN_PA;
@@ -34,10 +34,10 @@ class DramPerfModelVariable : public DramPerfModel
       UInt32 MCP_FLAG;
 
    public:
-      DramPerfModelVariable(core_id_t core_id,
+      DramPerfModelLowpower(core_id_t core_id,
             UInt32 cache_block_size);
 
-      ~DramPerfModelVariable();
+      ~DramPerfModelLowpower();
 
       SubsecondTime getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size, core_id_t requester, IntPtr address, DramCntlrInterface::access_t access_type, ShmemPerf *perf);
 
@@ -45,4 +45,4 @@ class DramPerfModelVariable : public DramPerfModel
       UInt32 get_address_bank(IntPtr address, core_id_t requester);
 };
 
-#endif /* __DRAM_PERF_MODEL_VARIABLE_H__ */
+#endif /* __DRAM_PERF_MODEL_LOWPOWER_H__ */

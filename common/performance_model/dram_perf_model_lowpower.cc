@@ -1,6 +1,6 @@
 #include <iostream>
 using namespace std;
-#include "dram_perf_model_variable.h"
+#include "dram_perf_model_lowpower.h"
 #include "simulator.h"
 #include "config.h"
 #include "config.hpp"
@@ -12,7 +12,7 @@ using namespace std;
 #define ENABLE_CHANNEL_PARTITIONING 0   // why is this here if it is always zero?
 
 
-DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
+DramPerfModelLowpower::DramPerfModelLowpower(core_id_t core_id,
       UInt32 cache_block_size):
    DramPerfModel(core_id, cache_block_size),
    m_queue_model(NULL),
@@ -20,14 +20,14 @@ DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
    m_total_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   // Memory config is needed to know the amount of memory banks.
+   // Memory config is needed for memory address to bank nr conversion.
    read_memory_config(core_id);
 
 
    m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
    // Read the low power access cost.
-   m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/variable/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/lowpower/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
    {
@@ -39,7 +39,7 @@ DramPerfModelVariable::DramPerfModelVariable(core_id_t core_id,
    registerStatsMetric("dram", core_id, "total-queueing-delay", &m_total_queueing_delay);
 }
 
-DramPerfModelVariable::~DramPerfModelVariable()
+DramPerfModelLowpower::~DramPerfModelLowpower()
 {
    if (m_queue_model)
    {
@@ -49,7 +49,7 @@ DramPerfModelVariable::~DramPerfModelVariable()
 }
 
 SubsecondTime
-DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size, core_id_t requester, IntPtr address, DramCntlrInterface::access_t access_type, ShmemPerf *perf)
+DramPerfModelLowpower::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size, core_id_t requester, IntPtr address, DramCntlrInterface::access_t access_type, ShmemPerf *perf)
 {
 
    // pkt_size is in 'Bytes'
@@ -106,9 +106,9 @@ DramPerfModelVariable::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
 
 
 void 
-DramPerfModelVariable::read_memory_config(core_id_t requester)
+DramPerfModelLowpower::read_memory_config(core_id_t requester)
 {
-   cout << "[dram-perfmodel_variable] reading memory config\n";
+   cout << "[dram-perfmodel_lowpower] reading memory config\n";
    TYPE_OF_STACK = Sim()->getCfg()->getStringArray("memory/type_of_stack", requester);
    NUM_OF_CHANNELS = Sim()->getCfg()->getInt("memory/num_channels");
    aNUM_OF_BANKS = Sim()->getCfg()->getInt("memory/num_banks");
@@ -129,7 +129,7 @@ DramPerfModelVariable::read_memory_config(core_id_t requester)
 
 
 UInt32
-DramPerfModelVariable::get_address_bank(IntPtr address, core_id_t requester)
+DramPerfModelLowpower::get_address_bank(IntPtr address, core_id_t requester)
 {
     SInt32 memory_controllers_interleaving = 0;
     memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");

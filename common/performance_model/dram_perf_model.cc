@@ -4,7 +4,7 @@
 #include "dram_perf_model_readwrite.h"
 #include "dram_perf_model_normal.h"
 #include "dram_perf_model_nvm.h"
-#include "dram_perf_model_variable.h"
+#include "dram_perf_model_lowpower.h"
 #include "config.hpp"
 
 DramPerfModel* DramPerfModel::createDramPerfModel(core_id_t core_id, UInt32 cache_block_size)
@@ -28,9 +28,9 @@ DramPerfModel* DramPerfModel::createDramPerfModel(core_id_t core_id, UInt32 cach
    {
       return new DramPerfModelNVM(core_id, cache_block_size);
    }
-   else if (type == "variable")
+   else if (type == "lowpower")
    {
-      return new DramPerfModelVariable(core_id, cache_block_size);
+      return new DramPerfModelLowpower(core_id, cache_block_size);
    }
    else
    {
