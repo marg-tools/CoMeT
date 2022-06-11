@@ -363,9 +363,7 @@ class memTherm:
       bank_mode[bank] = int(self.stats['stat_bank_mode'][bank].last)
       self.fd.write(' %u' % bank_mode[bank])
     self.fd.write('\n')
-    print(bank_mode)
     return bank_mode
-#    print access_rates
 
    #return access rates of various memory banks
   def get_access_rates(self, time, time_delta):
@@ -378,7 +376,6 @@ class memTherm:
       access_rates_read[bank] = statdiff_rd
       self.fd.write(' %u' % statdiff_rd)
     self.fd.write('\n')
-#    print access_rates
     
     
     if self.isTerminal:

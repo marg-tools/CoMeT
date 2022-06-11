@@ -270,7 +270,7 @@ int read_vals(FILE *fp, double *vals)
 }
 
 
-/* read a single line of bank mode floats, neede for the low power mode.	*/
+/* read a single line of bank mode floats, needed for the low power mode.	*/
 int read_bank_modes(FILE *fp, float bank_modes[])
 {
   /*
@@ -295,7 +295,6 @@ int read_bank_modes(FILE *fp, float bank_modes[])
   } while (!src);
   
   fgets(line, LINE_SIZE, fp);
-  printf(line);
 
   /* new line not read yet	*/	
   if(line[strlen(line)-1] != '\n')
@@ -304,8 +303,7 @@ int read_bank_modes(FILE *fp, float bank_modes[])
   }
 
   /* chop the bank power mode values from the line read	*/
-  printf("starting important loop\n");
-  //printf(line);
+
   int banks_counted = 0;
 
 
@@ -619,21 +617,15 @@ for (i = 0; i < length_v; ++i)
   if (strcmp(global_config.bm_infile, NULLFILE) != 0)
   {
 
-
     printf("[HOTSPOT] bank mode input file was defined.\n");
 
     if(!(bmin = fopen(global_config.bm_infile, "r")))
       fatal("unable to open bank mode input file\n");
 
 
-    printf("going to read the bank modes\n");
-    
     // Read the bank modes into the bank_modes array.
     read_bank_modes(bmin, bank_modes);
-    printf("%i banks counted\n", model->banks_nr);
 
-
-    printf("end of statuses\n");
   }
   else
   {
@@ -644,7 +636,6 @@ for (i = 0; i < length_v; ++i)
     }
   }
 
-  
   // Copy bank modes to the model.
   for (int i = 0; i < banks_nr; i++)
   {

@@ -2,7 +2,6 @@
 #define __HOTSPOT_H_
 
 #include "util.h"
-int bank_modes[]; // Bank power modes. Require for dram DTM.
 int banks_nr;
 
 
