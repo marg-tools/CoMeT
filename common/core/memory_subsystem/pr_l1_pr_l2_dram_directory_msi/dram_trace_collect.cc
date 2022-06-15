@@ -345,7 +345,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
     }
 }
 
-//  TODO this code was just copied from the functions above because I want to use it more often
+//  Moved this to a separate function to be used by other files.
 UInt32
 get_address_bank(IntPtr address, core_id_t requester)
 {
