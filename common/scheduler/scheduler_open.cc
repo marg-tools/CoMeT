@@ -911,8 +911,7 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 	if (policyName == "off") {
 		dramPolicy = NULL;
 	} else if (policyName == "lowpower") {
-		// float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
-		// float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
+
 		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_cricital_temperature");
 		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_recovered_temperature");
 		dramPolicy = new DramLowpower(
@@ -922,10 +921,8 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmRecoveredTemperature
 		);
 	} else if (policyName == "neighbours") {
-		// float upThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/up_threshold");
-		// float downThreshold = Sim()->getCfg()->getFloat("scheduler/open/dvfs/ondemand/down_threshold");
-		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/neighbours/dtm_cricital_temperature");
-		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/neighbours/dtm_recovered_temperature");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_recovered_temperature");
 		dramPolicy = new DramNeighbours(
 			performanceCounters,
 			numberOfBanks,
@@ -935,7 +932,7 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
-	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
+	} //else if (policyName ="XYZ") {... } //Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
  		exit (1);
