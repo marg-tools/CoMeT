@@ -155,11 +155,12 @@ hotspot_command = executable  \
                   + ' -type ' + type_of_stack \
                   + ' -sampling_intvl ' + str(interval_sec) \
                   + ' -grid_layer_file ' + hotspot_layer_file \
-                  + ' -detailed_3D on'
+                  + ' -detailed_3D on' \
+                  + ' -bm '+ bank_mode_trace_file
 #                  + ' -f ' + hotspot_floorplan_file \
 
-if dram_logic == "lowpower":
-  hotspot_command += ' -bm '+ bank_mode_trace_file
+# if dram_logic == "lowpower": #todo leo
+#   hotspot_command += ' -bm '+ bank_mode_trace_file
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
