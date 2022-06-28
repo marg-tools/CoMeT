@@ -376,6 +376,8 @@ To do your own (automated) evaluations, see the `simulationcontrol.resultlib` pa
   
   McPat: https://www.hpl.hp.com/research/mcpat/
   
+  CACTI: https://hpl.hp.com/research/cacti/
+  
   HotSpot: http://lava.cs.virginia.edu/HotSpot/
     
   HotSniper: https://github.com/anujpathania/HotSniper
