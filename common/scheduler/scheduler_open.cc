@@ -129,7 +129,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
 	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
 	initMigrationPolicy(Sim()->getCfg()->getString("scheduler/open/migration/logic").c_str());
-	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/logic").c_str()); // LEO
+	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/dtm").c_str()); // LEO
 }
 
 /** initMappingPolicy
@@ -912,8 +912,8 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 		dramPolicy = NULL;
 	} else if (policyName == "lowpower") {
 
-		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_cricital_temperature");
-		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_recovered_temperature");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
 		dramPolicy = new DramLowpower(
 			performanceCounters,
 			numberOfBanks,
@@ -921,8 +921,8 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmRecoveredTemperature
 		);
 	} else if (policyName == "neighbours") {
-		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_cricital_temperature");
-		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/lowpower/dtm_recovered_temperature");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_cricital_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
 		dramPolicy = new DramNeighbours(
 			performanceCounters,
 			numberOfBanks,
@@ -1065,7 +1065,7 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDramPolicy();
-		cout << "[Scheduler]: current bank mode\n";
+		cout << "[Scheduler]: bank mode after policy:\n";
 		for (int i = 0; i < numberOfBanks; i++)
 		{
 			cout  << Sim()->m_bank_mode_map[i] << " ";

@@ -1347,7 +1347,7 @@ double calc_leakage(int mode, double h, double w, double temp, unit_t* unit, flo
 		float mode = bank_modes[bank_id];
 		// if ( (int) mode != 1)
 		
-		// printf("multiplying leakage by %f\n", mode); // Debug for low power mode
+		// printf("%s multiplying leakage by %f\n", unit->name, mode); // Debug for low power mode
 		
 		return leakage_power * mode;
 	}

@@ -25,15 +25,20 @@ DramNeighbours::DramNeighbours(
 
 /*
 Return the new memory modes, based on current temperatures.
+Hot banks will be turned to low power mode, as well as their neighbours. Banks will recover when their temp
+falls below the threshold, unless their neighbour is still hot. 
 */
 std::map<int,int> DramNeighbours::getNewBankModes() {
 
     cout << "in DramNeighbours::getNewBankModes\n";
 
     std::map<int,int> new_bank_mode_map;
-    for (int i = 0; i < numberOfBanks; i++) // first loop: turn all banks in low power mode that are cooled down on
+
+    // First loop: low power mode banks that cooled enough are turned back on.
+    // This means that cool banks with hot neighbours will be turned on, but this will be corrected in the next loop.
+    for (int i = 0; i < numberOfBanks; i++)
     {
-        if (Sim()->m_bank_mode_map[i] == 0) // if the memory was already in low power mode
+        if (Sim()->m_bank_mode_map[i] == 0) // if the memory is in low power mode
         {
             if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
             {
@@ -44,13 +49,17 @@ std::map<int,int> DramNeighbours::getNewBankModes() {
             {
                 new_bank_mode_map[i] = 0;
             }
+
         }
-        // all other banks are on
-        new_bank_mode_map[i] = 1;
+        else
+        {
+            new_bank_mode_map[i] = Sim()->m_bank_mode_map[i];
+        }
     }
+    // Second loop: Hot banks from normal power to low power mode, as well as their neighbours.
+    // and banks that are between the critical and recovery temperature, while also in low power mode, will turn their neighbours off again.
     for (int i = 0; i < numberOfBanks; i++)
     {
-        // second loop: turn all banks in normal power mode that are too hot to low power mode, as well ast heir neighbours
         if (Sim()->m_bank_mode_map[i] == 1) 
         {
             if (performanceCounters->getTemperatureOfBank(i) > dtmCriticalTemperature) // temp is above critical temperature
@@ -85,6 +94,7 @@ std::map<int,int> DramNeighbours::getNewBankModes() {
                 }
 
             }
+
         }
     }
 

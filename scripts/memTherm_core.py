@@ -23,7 +23,7 @@ rows_refreshed_in_refresh_interval = no_rows/no_refesh_commands_in_t_refw  # for
 bank_static_power = 0
 core_thermal_enabled = sim.config.get("core_thermal/enabled")
 
-dram_logic = sim.config.get('scheduler/open/dram/logic')
+mem_dtm = sim.config.get('scheduler/open/dram/dtm')
 lpm_dynamic_power = float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power'))
 lpm_leakage_power = float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power'))
 
@@ -118,8 +118,8 @@ hotspot_steady_temp_file = sim.config.get('hotspot/log_files_mem/steady_temp_fil
 hotspot_grid_steady_file = sim.config.get('hotspot/log_files_mem/grid_steady_file')
 hotspot_all_transient_file = sim.config.get('hotspot/log_files_mem/all_transient_file')
 power_trace_file = sim.config.get('hotspot/log_files_mem/power_trace_file')
-bank_mode_trace_file = sim.config.get('scheduler/open/dram/lowpower/bank_mode_trace_file') # For low power mode.
-full_bank_mode_trace_file = sim.config.get('scheduler/open/dram/lowpower/full_bank_mode_trace_file') # For low power mode.
+bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/bank_mode_trace_file') # For low power mode.
+full_bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/full_bank_mode_trace_file') # For low power mode.
 full_power_trace_file = sim.config.get('hotspot/log_files_mem/full_power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/log_files_mem/temperature_trace_file')
 full_temperature_trace_file = sim.config.get('hotspot/log_files_mem/full_temperature_trace_file')
@@ -159,8 +159,8 @@ hotspot_command = executable  \
                   + ' -bm '+ bank_mode_trace_file
 #                  + ' -f ' + hotspot_floorplan_file \
 
-# if dram_logic == "lowpower": #todo leo
-#   hotspot_command += ' -bm '+ bank_mode_trace_file
+if mem_dtm != "off": #todo leo
+  hotspot_command += ' -bm '+ bank_mode_trace_file
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
@@ -287,7 +287,7 @@ class memTherm:
     stat_component_rd, stat_name_read = stat_read.rsplit('.', 1)
     stat_component_wr, stat_name_write = stat_write.rsplit('.', 1)
     
-    if dram_logic == 'lowpower': 
+    if mem_dtm != 'off': 
       stat_write_lowpower = 'dram.bank_write_access_counter_lowpower'       #from sniper C-code
       stat_read_lowpower = 'dram.bank_read_access_counter_lowpower'       #from sniper C-code
 
@@ -297,6 +297,9 @@ class memTherm:
 
       stat_component_rd_lowpower, stat_name_read_lowpower = stat_read_lowpower.rsplit('.', 1)
       stat_component_wr_lowpower, stat_name_write_lowpower = stat_write_lowpower.rsplit('.', 1)
+
+
+
 
     stat_bank_mode = 'dram.bank_mode'
     self.stat_name_bank_mode = stat_bank_mode
@@ -314,7 +317,7 @@ class memTherm:
 
     self.sd = sim.util.StatsDelta()
 
-    if dram_logic == 'lowpower':
+    if mem_dtm != 'off':
       self.stats = {
         'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
         'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
@@ -349,7 +352,7 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
-    # if dram_logic == 'lowpower': #  todo leo
+    # if mem_dtm != 'off': #  todo leo
     mem_header = gen_mem_header()
     with open(full_bank_mode_trace_file, "w") as f:
         f.write("%s\n" %(mem_header))
@@ -396,7 +399,7 @@ class memTherm:
 
     
 
-    if dram_logic == 'lowpower':
+    if mem_dtm != 'off':
       if self.isTerminal:
         self.fd.write('[STAT:%s] ' % self.stat_name_read_lowpower)
   #    self.fd.write('%u' % (time / 1e6)) # Time in ns
@@ -478,7 +481,7 @@ class memTherm:
     #calculate bank power for each bank using access traces
 
     for bank in range(NUM_BANKS):
-      if dram_logic == 'lowpower':
+      if mem_dtm != 'off':
         # In case of low power mode, multiply the read and write accesses with the given scale factor.
         bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access + accesses_read_lowpower[bank] * energy_per_read_access * lpm_dynamic_power + accesses_write_lowpower[bank] * energy_per_write_access * lpm_dynamic_power)/(timestep*1000) \
                               + bank_static_power + avg_refresh_power
@@ -680,7 +683,7 @@ class memTherm:
     vdd_string = self.get_core_vdd_for_hotspot()     #used to scale core leakage power in hotspot
 
 
-    # if dram_logic == "lowpower": # todo leo
+    # if mem_dtm == "lowpower": # todo leo
     self.write_bank_leakage_trace(time, time_delta)
 
     #execute hotspot separately for core in case of 3Dmem and 2D memories
@@ -703,7 +706,7 @@ class memTherm:
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
-    # if dram_logic == "lowpower": # todo leo
+    # if mem_dtm == "lowpower": # todo leo
     os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file) # todo leo
 
   def getStatsGetter(self, component, core, metric):
