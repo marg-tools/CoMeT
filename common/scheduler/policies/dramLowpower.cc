@@ -20,13 +20,13 @@ DramLowpower::DramLowpower(
 /*
 Return the new memory modes, based on current temperatures.
 */
-std::map<int,int> DramLowpower::getNewBankModes() {
+std::map<int,int> DramLowpower::getNewBankModes(std::map<int, int> old_bank_modes) {
 
     cout << "in DramLowpower::getNewBankModes\n";
     std::map<int,int> new_bank_mode_map;
     for (int i = 0; i < numberOfBanks; i++)
     {
-        if (Sim()->m_bank_mode_map[i] == 0) // if the memory was already in low power mode
+        if (old_bank_modes[i] == 0) // if the memory was already in low power mode
         {
             if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
             {

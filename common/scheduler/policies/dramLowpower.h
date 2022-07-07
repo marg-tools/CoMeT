@@ -21,7 +21,7 @@ public:
         int numberOfBanks,
         float dtmCriticalTemperature,
         float dtmRecoveredTemperature);
-    virtual std::map<int,int> getNewBankModes();
+    virtual std::map<int,int> getNewBankModes(std::map<int,int> old_bank_modes);
 
 private:
     const PerformanceCounters *performanceCounters;

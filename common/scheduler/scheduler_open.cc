@@ -942,12 +942,18 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 
 void SchedulerOpen::executeDramPolicy()
 {
+	std::map<int,int> old_bank_modes;
+    for (int i = 0; i < numberOfBanks; i++)
+	{
+		old_bank_modes[i] = Sim()->m_bank_modes[i];
+	}
 
-	std::map<int,int> new_bank_mode_map = dramPolicy->getNewBankModes();
+	std::map<int,int> new_bank_modes = dramPolicy->getNewBankModes(old_bank_modes);
+
 
     for (int i = 0; i < numberOfBanks; i++)
 	{
-		setMemBankMode(i, new_bank_mode_map[i]);
+		setMemBankMode(i, new_bank_modes[i]);
 	}
 	
 
@@ -956,7 +962,8 @@ void SchedulerOpen::executeDramPolicy()
 
 void SchedulerOpen::setMemBankMode(int bankNr, int mode)
 {
-	Sim()->m_bank_mode_map[bankNr] = mode;
+	// Sim()->m_bank_mode_map[bankNr] = mode;
+	Sim()->m_bank_modes[bankNr] = mode;
 }
 
 
@@ -1068,7 +1075,8 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "[Scheduler]: bank mode after policy:\n";
 		for (int i = 0; i < numberOfBanks; i++)
 		{
-			cout  << Sim()->m_bank_mode_map[i] << " ";
+			// cout  << Sim()->m_bank_mode_map[i] << " ";
+			cout  << Sim()->m_bank_modes[i] << " ";
 		}
 		cout << "\n";
 

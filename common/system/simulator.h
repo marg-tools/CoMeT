@@ -7,6 +7,8 @@
 
 #include <decoder.h>
 
+#define MAX_NUM_OF_BANKS (128)
+
 class _Thread;
 class SyscallServer;
 class SyncServer;
@@ -45,6 +47,7 @@ public:
    static void release();
 
    std::map<int, int> m_bank_mode_map; // Keeps track of dram power mode per bank.
+   UInt64 m_bank_modes[MAX_NUM_OF_BANKS];
 
    SyscallServer* getSyscallServer() { return m_syscall_server; }
    SyncServer* getSyncServer() { return m_sync_server; }

@@ -156,7 +156,7 @@ hotspot_command = executable  \
                   + ' -sampling_intvl ' + str(interval_sec) \
                   + ' -grid_layer_file ' + hotspot_layer_file \
                   + ' -detailed_3D on' \
-                  + ' -bm '+ bank_mode_trace_file
+                  # + ' -bm '+ bank_mode_trace_file
 #                  + ' -f ' + hotspot_floorplan_file \
 
 if mem_dtm != "off": #todo leo
@@ -361,7 +361,7 @@ class memTherm:
     sim.util.Every(interval_ns * sim.util.Time.NS, self.calc_temperature_trace, statsdelta = self.sd, roi_only = True)
 
 
-  def get_bank_mode(self, time, time_delta):
+  def get_bank_modes(self, time, time_delta):
     """
     Return status of memory banks and prints to output.
     """
@@ -428,7 +428,7 @@ class memTherm:
 
   def write_bank_mode_trace(self, time, time_delta):
     print("[WRITE BANK MODE TRACE]")
-    bank_mode_trace = self.get_bank_mode(time, time_delta)
+    bank_mode_trace = self.get_bank_modes(time, time_delta)
     bank_mode_trace_string = ""
 
     for bank in range(NUM_BANKS):
@@ -449,7 +449,7 @@ class memTherm:
     and a row of scalars to multiply the memory bank leakage power with.
     """
     print("[WRITE BANK LEAKAGE TRACE]")
-    bank_mode_trace = self.get_bank_mode(time, time_delta)
+    bank_mode_trace = self.get_bank_modes(time, time_delta)
     bank_mode_trace_string = ""
 
     for bank in range(NUM_BANKS):
@@ -460,7 +460,7 @@ class memTherm:
       bank_mode_trace_string = bank_mode_trace_string + "{:.2f}".format(leakage) + '\t'
     bank_mode_trace_string += "\r\n"
     bank_mode_header = gen_mem_header()
-    # Write bank mode information into the trace file for use by hotspot.
+    # Write bank mode information to the trace file for use by hotspot.
     with open("%s" %(bank_mode_trace_file), "w") as f:
         f.write("%s\n" %(bank_mode_header))
         f.write("%s" %(bank_mode_trace_string))

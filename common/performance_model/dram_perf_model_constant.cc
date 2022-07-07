@@ -69,7 +69,8 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    }
 
    UInt32 bank_nr = get_address_bank(address, requester);
-   int bank_mode = Sim()->m_bank_mode_map[bank_nr];
+   // int bank_mode = Sim()->m_bank_mode_map[bank_nr];
+   int bank_mode = Sim()->m_bank_modes[bank_nr];
 
    // cout << "bank " << bank_nr << " in power mode " << bank_mode << "\n"; // Debug low power mode.
 

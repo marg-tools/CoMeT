@@ -6,13 +6,12 @@
 #ifndef __DRAMPOLICY_H
 #define __DRAMPOLICY_H
 
-#include "simulator.h" // to get access to the m_bank_mode_map
 #include <map>
 
 class DramPolicy {
 public:
     virtual ~DramPolicy() {}
-    virtual std::map<int, int> getNewBankModes() = 0;
+    virtual std::map<int, int> getNewBankModes(std::map<int, int> old_bank_modes) = 0;
 };
 
 #endif

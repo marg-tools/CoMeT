@@ -28,7 +28,7 @@ Return the new memory modes, based on current temperatures.
 Hot banks will be turned to low power mode, as well as their neighbours. Banks will recover when their temp
 falls below the threshold, unless their neighbour is still hot. 
 */
-std::map<int,int> DramNeighbours::getNewBankModes() {
+std::map<int,int> DramNeighbours::getNewBankModes(std::map<int,int> old_bank_modes) {
 
     cout << "in DramNeighbours::getNewBankModes\n";
 
@@ -38,7 +38,7 @@ std::map<int,int> DramNeighbours::getNewBankModes() {
     // This means that cool banks with hot neighbours will be turned on, but this will be corrected in the next loop.
     for (int i = 0; i < numberOfBanks; i++)
     {
-        if (Sim()->m_bank_mode_map[i] == 0) // if the memory is in low power mode
+        if (old_bank_modes[i] == 0) // if the memory is in low power mode
         {
             if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
             {
@@ -53,14 +53,14 @@ std::map<int,int> DramNeighbours::getNewBankModes() {
         }
         else
         {
-            new_bank_mode_map[i] = Sim()->m_bank_mode_map[i];
+            new_bank_mode_map[i] = old_bank_modes[i];
         }
     }
     // Second loop: Hot banks from normal power to low power mode, as well as their neighbours.
     // and banks that are between the critical and recovery temperature, while also in low power mode, will turn their neighbours off again.
     for (int i = 0; i < numberOfBanks; i++)
     {
-        if (Sim()->m_bank_mode_map[i] == 1) 
+        if (old_bank_modes[i] == 1) 
         {
             if (performanceCounters->getTemperatureOfBank(i) > dtmCriticalTemperature) // temp is above critical temperature
             {

@@ -203,15 +203,27 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
                 read_access_count_export_lowpower[i] = read_access_count_per_bank_lowpower[i];//LEO
                 read_access_count_per_bank[i]=0;
                 read_access_count_per_bank_lowpower[i]=0;
-                bank_mode_export[i] =  Sim()->m_bank_mode_map[i]; // LEO
+                // bank_mode_export[i] =  Sim()->m_bank_modes[i]; // LEO
 
               }
             ++read_adv_count;
             read_access_count=0;
             read_last_printed_timestamp = read_interval_start_time;
         }
+        // TODO LEO let's try something else
+        // else {
+        //     if (Sim()->m_bank_mode_map[read_bank_accessed] == 1)
+        //     {
+        //         ++read_access_count_per_bank[read_bank_accessed];
+        //     }
+        //     else
+        //     {
+        //         ++read_access_count_per_bank_lowpower[read_bank_accessed];
+        //     }
+        //     ++read_access_count;
+        // }
         else {
-            if (Sim()->m_bank_mode_map[read_bank_accessed] == 1)
+            if (Sim()->m_bank_modes[read_bank_accessed] == 1)
             {
                 ++read_access_count_per_bank[read_bank_accessed];
             }
@@ -331,8 +343,20 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             write_access_count=0;
             write_last_printed_timestamp = write_interval_start_time;
         }
+        // TODO LEO LET'S TRY SOMETHING ELSE
+        // else { 
+        //     if (Sim()->m_bank_mode_map[read_bank_accessed] == 1)
+        //     {
+        //         ++write_access_count_per_bank[write_bank_accessed];
+        //     }
+        //     else
+        //     {
+        //         ++write_access_count_per_bank_lowpower[write_bank_accessed];
+        //     }
+        //     ++write_access_count;
+        // }
         else {
-            if (Sim()->m_bank_mode_map[read_bank_accessed] == 1)
+            if (Sim()->m_bank_modes[read_bank_accessed] == 1)
             {
                 ++write_access_count_per_bank[write_bank_accessed];
             }
@@ -343,6 +367,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             ++write_access_count;
         }
     }
+
 }
 
 //  Moved this to a separate function to be used by other files.
