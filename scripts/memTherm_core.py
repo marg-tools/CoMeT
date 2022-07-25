@@ -483,8 +483,12 @@ class memTherm:
     for bank in range(NUM_BANKS):
       if mem_dtm != 'off':
         # In case of low power mode, multiply the read and write accesses with the given scale factor.
-        bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access + accesses_read_lowpower[bank] * energy_per_read_access * lpm_dynamic_power + accesses_write_lowpower[bank] * energy_per_write_access * lpm_dynamic_power)/(timestep*1000) \
-                              + bank_static_power + avg_refresh_power
+
+        normal_power_access = accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access
+        low_power_access    = (accesses_read_lowpower[bank] * energy_per_read_access + accesses_write_lowpower[bank] * energy_per_write_access) * lpm_dynamic_power
+        bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
+
+
       else:
         bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
                       + bank_static_power + avg_refresh_power

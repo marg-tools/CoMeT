@@ -265,6 +265,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             registerStatsMetric("dram", 0 , "mywrites", &m_writes);
             for(i = 0; i < NUM_OF_BANKS; i = i + 1){
                 write_access_count_per_bank[i]=0;
+                write_access_count_per_bank_lowpower[i]=0; // Leo
             }
         }
 

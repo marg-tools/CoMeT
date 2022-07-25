@@ -1072,13 +1072,13 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDramPolicy();
-		cout << "[Scheduler]: bank mode after policy:\n";
-		for (int i = 0; i < numberOfBanks; i++)
-		{
-			// cout  << Sim()->m_bank_mode_map[i] << " ";
-			cout  << Sim()->m_bank_modes[i] << " ";
-		}
-		cout << "\n";
+		// cout << "[Scheduler]: bank mode after policy:\n"; TODO LEO
+		// for (int i = 0; i < numberOfBanks; i++)
+		// {
+		// 	// cout  << Sim()->m_bank_mode_map[i] << " ";
+		// 	cout  << Sim()->m_bank_modes[i] << " ";
+		// }
+		// cout << "\n";
 
 	}
 
