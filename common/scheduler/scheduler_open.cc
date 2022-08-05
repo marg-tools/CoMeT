@@ -18,7 +18,6 @@
 #include "policies/mapFirstUnused.h"
 
 #include "policies/dramLowpower.h"
-#include "policies/dramNeighbours.h"
 
 #include <iomanip>
 #include <random>
@@ -129,7 +128,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
 	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
 	initMigrationPolicy(Sim()->getCfg()->getString("scheduler/open/migration/logic").c_str());
-	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/dtm").c_str()); // LEO
+	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/dtm").c_str());
 }
 
 /** initMappingPolicy
@@ -889,7 +888,6 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
  * Set DVFS levels according to the used policy.
  */
 void SchedulerOpen::executeDVFSPolicy() {
-	
 	std::vector<int> oldFrequencies;
 	std::vector<bool> activeCores;
 	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
@@ -907,12 +905,11 @@ void SchedulerOpen::executeDVFSPolicy() {
  * Initialize the Dram policy to the policy with the given name
  */
 void SchedulerOpen::initDramPolicy(String policyName) {
-	cout << "[Scheduler] [Info]: Initializing Dram policy" << endl;
 	if (policyName == "off") {
 		dramPolicy = NULL;
 	} else if (policyName == "lowpower") {
 
-		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_cricital_temperature");
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_critical_temperature");
 		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
 		dramPolicy = new DramLowpower(
 			performanceCounters,
@@ -920,25 +917,12 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
-	} else if (policyName == "neighbours") {
-		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_cricital_temperature");
-		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
-		dramPolicy = new DramNeighbours(
-			performanceCounters,
-			numberOfBanks,
-			banksInX,
-			banksInY,
-			banksInZ,
-			dtmCriticalTemperature,
-			dtmRecoveredTemperature
-		);
-	} //else if (policyName ="XYZ") {... } //Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
+	} //else if (policyName ="XYZ") {... } // Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
  		exit (1);
 	}
 }
-
 
 void SchedulerOpen::executeDramPolicy()
 {
@@ -950,24 +934,16 @@ void SchedulerOpen::executeDramPolicy()
 
 	std::map<int,int> new_bank_modes = dramPolicy->getNewBankModes(old_bank_modes);
 
-
     for (int i = 0; i < numberOfBanks; i++)
 	{
 		setMemBankMode(i, new_bank_modes[i]);
 	}
-	
-
 }
-
 
 void SchedulerOpen::setMemBankMode(int bankNr, int mode)
 {
-	// Sim()->m_bank_mode_map[bankNr] = mode;
 	Sim()->m_bank_modes[bankNr] = mode;
 }
-
-
-
 
 /** executeMigrationPolicy
  * Perform migration according to the used policy.
@@ -1067,19 +1043,10 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		executeDVFSPolicy();
 	}
 
-	// TODO LEO or maybe I should addd a function for dram dtm policy here
-		if ((dramPolicy != NULL) && (time.getNS() % dramEpoch == 0)) {
+	if ((dramPolicy != NULL) && (time.getNS() % dramEpoch == 0)) {
 		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDramPolicy();
-		// cout << "[Scheduler]: bank mode after policy:\n"; TODO LEO
-		// for (int i = 0; i < numberOfBanks; i++)
-		// {
-		// 	// cout  << Sim()->m_bank_mode_map[i] << " ";
-		// 	cout  << Sim()->m_bank_modes[i] << " ";
-		// }
-		// cout << "\n";
-
 	}
 
 	if (time.getNS () % mappingEpoch == 0) {

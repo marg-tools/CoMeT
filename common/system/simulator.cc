@@ -146,10 +146,9 @@ void Simulator::start()
    m_clock_skew_minimization_server = ClockSkewMinimizationServer::create();
    m_core_manager = new CoreManager(); // This is the call
 
-   std::cout << "Initializing global dram status map\n";
+   // std::cout << "Initializing global dram status map\n";
    for (int i = 0; i < Sim()->getCfg()->getInt("memory/num_banks"); i++)
    {
-      // m_bank_mode_map[i] = 1; // all banks are on
       m_bank_modes[i] = 1;
    }
 

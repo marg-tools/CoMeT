@@ -27,7 +27,6 @@ DVFSOndemand::DVFSOndemand(
 }
 
 std::vector<int> DVFSOndemand::getFrequencies(const std::vector<int> &oldFrequencies, const std::vector<bool> &activeCores) {
-    cout << "in DVFSOndemand::GetFrequences\n";
     if (throttle()) {
         std::vector<int> minFrequencies(numberOfCores, minFrequency);
         cout << "[Scheduler][ondemand-DTM]: in throttle mode -> return min. frequencies" << endl;
@@ -82,8 +81,6 @@ std::vector<int> DVFSOndemand::getFrequencies(const std::vector<int> &oldFrequen
 }
 
 bool DVFSOndemand::throttle() {
-    cout << "in DVFSOndemand::throttle\n";
-
     if (performanceCounters->getPeakTemperature() > dtmCriticalTemperature) {
         if (!in_throttle_mode) {
             cout << "[Scheduler][ondemand-DTM]: detected thermal violation" << endl;

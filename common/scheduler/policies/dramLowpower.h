@@ -1,9 +1,5 @@
 /**
- * This header implements the ondemand governor with DTM.
- * The ondemand governor implementation is based on
- *     Pallipadi, Venkatesh, and Alexey Starikovskiy.
- *     "The ondemand governor."
- *     Proceedings of the Linux Symposium. Vol. 2. No. 00216. 2006.
+ * This header implements memory DTM using a low power mode.
  */
 
 #ifndef __DRAM_LOWPOWER_H
@@ -14,7 +10,7 @@
 #include "drampolicy.h"
 #include "performance_counters.h"
 
-class DramLowpower : public DramPolicy { // i should change this to a NEW type of dram dtm
+class DramLowpower : public DramPolicy {
 public:
     DramLowpower(
         const PerformanceCounters *performanceCounters,

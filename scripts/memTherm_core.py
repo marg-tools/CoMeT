@@ -156,16 +156,13 @@ hotspot_command = executable  \
                   + ' -sampling_intvl ' + str(interval_sec) \
                   + ' -grid_layer_file ' + hotspot_layer_file \
                   + ' -detailed_3D on' \
-                  # + ' -bm '+ bank_mode_trace_file
 #                  + ' -f ' + hotspot_floorplan_file \
 
-if mem_dtm != "off": #todo leo
+if mem_dtm != "off":
   hotspot_command += ' -bm '+ bank_mode_trace_file
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
-print(hotspot_command)
-
 
 c_hotspot_config_path = hotspot_config_path
 #c_init_file_external = c_hotspot_config_path + sim.config.get('hotspot/init_file_external_core')
@@ -185,16 +182,10 @@ os.system("rm -f " + full_temperature_trace_file)
 os.system("rm -f " + full_power_trace_file)
 os.system("rm -f " + c_full_power_trace_file)
 os.system("rm -f " + c_full_temperature_trace_file)
-os.system("rm -f " + full_bank_mode_trace_file) # TODO LEO
+os.system("rm -f " + full_bank_mode_trace_file)
 for filename in ('PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.log',):
   open(filename, 'w') # empties the file
 
-
-#generates ptrace header as per the memory floorplan and architecture
-#DDR:    B0_0 B0_1 ... B3_3
-#3Dmem:   LC0_0 LC0_1 ... LC3_3 (logic core), B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ...
-#3D:   B0_0 B0_1 ... B3_3 (layer0),  B0_0 B0_1 ... B3_3 (layer1), ..., C0_0 C0_1 ... C3_3 (top layer core)
-#2.5D   C0_0 C0_1 ... C3_3 (core part), LC0_0 LC0_1 ... LC3_3 (logic core base), X1, X2, X3, B0_0 B0_1 ... B3_3, X1, X2, X3 (layer0),  B0_0 B0_1 ... B3_3, X1, X2, X3 (layer1), ...
 def gen_mem_header():
     """
     Return header for memory banks.
@@ -218,7 +209,6 @@ def gen_mem_header():
     #             #ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
    
     return mem_header
-
 
 #generates ptrace header as per the memory floorplan and architecture
 #DDR:    B0_0 B0_1 ... B3_3
@@ -290,21 +280,14 @@ class memTherm:
     if mem_dtm != 'off': 
       stat_write_lowpower = 'dram.bank_write_access_counter_lowpower'       #from sniper C-code
       stat_read_lowpower = 'dram.bank_read_access_counter_lowpower'       #from sniper C-code
-
       self.stat_name_read_lowpower = stat_read_lowpower
       self.stat_name_write_lowpower= stat_write_lowpower
-
-
       stat_component_rd_lowpower, stat_name_read_lowpower = stat_read_lowpower.rsplit('.', 1)
       stat_component_wr_lowpower, stat_name_write_lowpower = stat_write_lowpower.rsplit('.', 1)
-
-
-
 
     stat_bank_mode = 'dram.bank_mode'
     self.stat_name_bank_mode = stat_bank_mode
     stat_component_bank_mode, stat_name_bank_mode = stat_bank_mode.rsplit('.', 1)
-
 
     if filename:
       self.fd = file(os.path.join(sim.config.output_dir, filename), 'w')
@@ -327,7 +310,6 @@ class memTherm:
         'stat_wr_lowpower': [ self.getStatsGetter(stat_component_wr_lowpower, bank, stat_name_write_lowpower) for bank in range(NUM_BANKS) ],
         'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
       }
-
     else:
       self.stats = {
       'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
@@ -352,7 +334,6 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
-    # if mem_dtm != 'off': #  todo leo
     mem_header = gen_mem_header()
     with open(full_bank_mode_trace_file, "w") as f:
         f.write("%s\n" %(mem_header))
@@ -386,7 +367,6 @@ class memTherm:
       self.fd.write(' %u' % statdiff_rd)
     self.fd.write('\n')
     
-    
     if self.isTerminal:
       self.fd.write('[STAT:%s] ' % self.stat_name_write)
     access_rates_write = [0 for number in xrange(NUM_BANKS)]
@@ -396,8 +376,6 @@ class memTherm:
       access_rates_write[bank] = statdiff_wr
       self.fd.write(' %u' % statdiff_wr)
     self.fd.write('\n')
-
-    
 
     if mem_dtm != 'off':
       if self.isTerminal:
@@ -423,8 +401,8 @@ class memTherm:
 
       return access_rates_read, access_rates_write, access_rates_read_lowpower, access_rates_write_lowpower
 
-
     return access_rates_read, access_rates_write, [], []
+
 
   def write_bank_mode_trace(self, time, time_delta):
     print("[WRITE BANK MODE TRACE]")
@@ -448,7 +426,6 @@ class memTherm:
     Write a tab separated text file with a row of memory unit headers, 
     and a row of scalars to multiply the memory bank leakage power with.
     """
-    print("[WRITE BANK LEAKAGE TRACE]")
     bank_mode_trace = self.get_bank_modes(time, time_delta)
     bank_mode_trace_string = ""
 
@@ -469,9 +446,8 @@ class memTherm:
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
-    print("[CALC POWER TRACE]")
     accesses_read, accesses_write, accesses_read_lowpower, accesses_write_lowpower = self.get_access_rates(time, time_delta)
-    #    print accesses
+
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
     avg_no_refresh_rows_in_timestep = avg_no_refresh_intervals_in_timestep * rows_refreshed_in_refresh_interval # 2.56*8 rows refreshed = 20.48 refreshes 
     refresh_energy_in_timestep =  avg_no_refresh_rows_in_timestep * energy_per_refresh_access                   # 20.48 * 100 nJ = 2048 nJ, 100 nJ (say) is the energy per refresh access
@@ -483,11 +459,9 @@ class memTherm:
     for bank in range(NUM_BANKS):
       if mem_dtm != 'off':
         # In case of low power mode, multiply the read and write accesses with the given scale factor.
-
         normal_power_access = accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access
         low_power_access    = (accesses_read_lowpower[bank] * energy_per_read_access + accesses_write_lowpower[bank] * energy_per_write_access) * lpm_dynamic_power
         bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
-
 
       else:
         bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
@@ -546,7 +520,6 @@ class memTherm:
     return power_trace
 
   def execute_core_hotspot(self, vdd_str):
-    print("[EXECUTE CORE HOTSPOT]")
      #the function to execute core hotspot separately. It is called only for 3Dmem and 2D arch.
     c_executable = hotspot_path + 'hotspot'
  #  hotspot_steady_temp_file = config.get('hotspot_c/hotspot_steady_temp_file')
@@ -680,14 +653,11 @@ class memTherm:
 
   # invokes hotspot to generate the temperature trace
   def calc_temperature_trace(self, time, time_delta):
-    print("[CALC TEMPERATURE TRACE]")
 #   print power_trace
     #invoke energystats function to compute core power trace
     self.ES.periodic(time, time_delta)
     vdd_string = self.get_core_vdd_for_hotspot()     #used to scale core leakage power in hotspot
 
-
-    # if mem_dtm == "lowpower": # todo leo
     self.write_bank_leakage_trace(time, time_delta)
 
     #execute hotspot separately for core in case of 3Dmem and 2D memories
@@ -698,8 +668,7 @@ class memTherm:
      #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
     hcmd = hotspot_command
     hcmd += ' -v ' + vdd_string
-    print("[HOTSPOT COMMAND] " + hcmd)
-    # print("[VDD STRING]" + vdd_string)
+
     first_run = (sum(1 for linee in open(combined_temperature_trace_file, 'r')) == 1) 
     if (init_file_external!= "None") or (not first_run):
         hcmd += ' -init_file ' + init_file
@@ -710,8 +679,8 @@ class memTherm:
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
-    # if mem_dtm == "lowpower": # todo leo
-    os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file) # todo leo
+
+    os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file)
 
   def getStatsGetter(self, component, core, metric):
     # Some components don't exist (i.e. DRAM reads on cores that don't have a DRAM controller),

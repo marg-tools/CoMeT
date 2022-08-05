@@ -113,7 +113,6 @@ double PerformanceCounters::getTemperatureOfCore(int coreId) const {
 }
 
 /** getTemperatureOfBank
- * Leo: Not sure about the second part of the following line.
  * Return the latest temperature of the given memory bank. Requires "tp" (total power) to be tracked in base.cfg. Return -1 if power is not tracked.
  */
 double PerformanceCounters::getTemperatureOfBank(int bankId) const {

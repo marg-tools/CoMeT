@@ -56,7 +56,6 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
 
    SubsecondTime processing_time = m_dram_bandwidth.getRoundedLatency(8 * pkt_size); // bytes to bits
 
-
    // Compute Queue Delay
    SubsecondTime queue_delay;
    if (m_queue_model)
@@ -69,10 +68,7 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    }
 
    UInt32 bank_nr = get_address_bank(address, requester);
-   // int bank_mode = Sim()->m_bank_mode_map[bank_nr];
    int bank_mode = Sim()->m_bank_modes[bank_nr];
-
-   // cout << "bank " << bank_nr << " in power mode " << bank_mode << "\n"; // Debug low power mode.
 
    SubsecondTime access_latency;
 

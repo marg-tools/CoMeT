@@ -4,7 +4,6 @@
 #include "util.h"
 int banks_nr;
 
-
 /* global configuration parameters for HotSpot	*/
 typedef struct global_config_t_st
 {

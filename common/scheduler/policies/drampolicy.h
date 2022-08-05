@@ -1,6 +1,5 @@
 /**
  * This header implements the DRAM policy interface.
- * TODO LEO
  */
 
 #ifndef __DRAMPOLICY_H

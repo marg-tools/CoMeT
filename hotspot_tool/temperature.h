@@ -135,9 +135,6 @@
 	#include <sunperf.h>
 #endif
 
-
-
-
 /* thermal model configuration	*/
 typedef struct thermal_config_t_st
 {

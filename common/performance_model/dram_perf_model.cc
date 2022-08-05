@@ -8,7 +8,6 @@
 
 DramPerfModel* DramPerfModel::createDramPerfModel(core_id_t core_id, UInt32 cache_block_size)
 {
-   std::cout << "making a dram perf model\n";
    String type = Sim()->getCfg()->getString("perf_model/dram/type");
 
    if (type == "constant")

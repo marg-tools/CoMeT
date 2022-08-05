@@ -46,7 +46,6 @@ public:
    static void allocate();
    static void release();
 
-   std::map<int, int> m_bank_mode_map; // Keeps track of dram power mode per bank.
    UInt64 m_bank_modes[MAX_NUM_OF_BANKS];
 
    SyscallServer* getSyscallServer() { return m_syscall_server; }
@@ -111,7 +110,6 @@ private:
    FaultinjectionManager *m_faultinjection_manager;
    RoutineTracer *m_rtn_tracer;
    MemoryTracker *m_memory_tracker;
-   
 
    bool m_running;
    bool m_inst_mode_output;
