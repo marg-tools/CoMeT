@@ -7,6 +7,9 @@
 
 #include <map>
 
+#define LOW_POWER 0
+#define NORMAL_POWER 1
+
 class DramPolicy {
 public:
     virtual ~DramPolicy() {}

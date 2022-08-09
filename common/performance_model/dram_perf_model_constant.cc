@@ -6,6 +6,9 @@
 #include "shmem_perf.h"
 #include "dram_trace_collect.h" // Used to calculate the bank number from an address.
 
+#define LOW_POWER 0
+#define NORMAL_POWER 1
+
 /*
    This file has been extended to support a low power access latency,
    which will be used when memory DTM is used.
@@ -73,7 +76,7 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
    SubsecondTime access_latency;
 
    // Distinguish between dram power modes.
-   if (bank_mode == 0) // Low power mode
+   if (bank_mode == LOW_POWER) // Low power mode
    {
       access_latency = queue_delay + processing_time + m_dram_access_cost_lowpower;
    }

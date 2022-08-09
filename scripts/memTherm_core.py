@@ -5,6 +5,8 @@ memTherm_core.py
 
 import sys, os, sim
 
+LOW_POWER = 0
+NORMAL_POWER = 1
 
 bank_size=int(sim.config.get('memory/bank_size'))
 no_columns = 1                                      # in Kilo
@@ -435,7 +437,7 @@ class memTherm:
 
     for bank in range(NUM_BANKS):
       leakage = 1.0
-      if bank_mode_trace[bank] == 0:
+      if bank_mode_trace[bank] == LOW_POWER:
         leakage = lpm_leakage_power
       # print(bank_mode_trace[bank])
       bank_mode_trace_string = bank_mode_trace_string + "{:.2f}".format(leakage) + '\t'

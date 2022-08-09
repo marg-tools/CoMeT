@@ -30,6 +30,9 @@
 
 #include <sstream>
 
+#define LOW_POWER 0 // Used for memory power mode.
+#define NORMAL_POWER 1
+
 Simulator *Simulator::m_singleton;
 config::Config *Simulator::m_config_file;
 bool Simulator::m_config_file_allowed = true;
@@ -149,7 +152,7 @@ void Simulator::start()
    // std::cout << "Initializing global dram status map\n";
    for (int i = 0; i < Sim()->getCfg()->getInt("memory/num_banks"); i++)
    {
-      m_bank_modes[i] = 1;
+      m_bank_modes[i] = NORMAL_POWER;
    }
 
    m_sim_thread_manager = new SimThreadManager();

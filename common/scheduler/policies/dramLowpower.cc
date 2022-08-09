@@ -26,16 +26,16 @@ std::map<int,int> DramLowpower::getNewBankModes(std::map<int, int> old_bank_mode
     std::map<int,int> new_bank_mode_map;
     for (int i = 0; i < numberOfBanks; i++)
     {
-        if (old_bank_modes[i] == 0) // if the memory was already in low power mode
+        if (old_bank_modes[i] == LOW_POWER) // if the memory was already in low power mode
         {
             if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
             {
                 cout << "[Scheduler][dram-DTM]: thermal violation ended for bank " << i << endl;
-                new_bank_mode_map[i] = 1;
+                new_bank_mode_map[i] = NORMAL_POWER;
             }
             else
             {
-                new_bank_mode_map[i] = 0;
+                new_bank_mode_map[i] = LOW_POWER;
             }
         }
         else // if the memory was not in low power mode
@@ -43,11 +43,11 @@ std::map<int,int> DramLowpower::getNewBankModes(std::map<int, int> old_bank_mode
             if (performanceCounters->getTemperatureOfBank(i) > dtmCriticalTemperature) // temp is above critical temperature
             {
                 cout << "[Scheduler][dram-DTM]: thermal violation detected for bank " << i << endl;
-                new_bank_mode_map[i] = 0;
+                new_bank_mode_map[i] = LOW_POWER;
             }
             else
             {
-                new_bank_mode_map[i] = 1;
+                new_bank_mode_map[i] = NORMAL_POWER;
             }
 
         }
