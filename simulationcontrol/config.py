@@ -20,7 +20,7 @@ NUMBER_CORES = NUMBER_CORES_X * NUMBER_CORES_Y * NUMBER_CORES_Z
 ARCH_TYPE = '3D'  # 3D, 3Dmem, 2.5D, or DDR
 VIDEO_PLOT_3D = True
 VIDEO_BREAKOUT_LAYER = 0
-VIDEO_BREAKOUT_TYPE = 'MEMORY'  # CORE or MEMORY
+VIDEO_BREAKOUT_TYPE = 'CORE'  # CORE or MEMORY
 VIDEO_INVERTED_VIEW = False  # inverted = heatsink on bottom
 VIDEO_EXPLICIT_TMIN = None  # if None use default min and max values
 VIDEO_EXPLICIT_TMAX = None  # if None use default min and max values

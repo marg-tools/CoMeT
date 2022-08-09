@@ -155,11 +155,13 @@ hotspot_command = executable  \
                   + ' -type ' + type_of_stack \
                   + ' -sampling_intvl ' + str(interval_sec) \
                   + ' -grid_layer_file ' + hotspot_layer_file \
-                  + ' -detailed_3D on' \
+                  + ' -detailed_3D on'
 #                  + ' -f ' + hotspot_floorplan_file \
 
 if mem_dtm != "off":
   hotspot_command += ' -bm '+ bank_mode_trace_file
+
+print hotspot_command                  
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
@@ -334,6 +336,7 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
+    
     mem_header = gen_mem_header()
     with open(full_bank_mode_trace_file, "w") as f:
         f.write("%s\n" %(mem_header))
@@ -366,6 +369,7 @@ class memTherm:
       access_rates_read[bank] = statdiff_rd
       self.fd.write(' %u' % statdiff_rd)
     self.fd.write('\n')
+#    print access_rates 
     
     if self.isTerminal:
       self.fd.write('[STAT:%s] ' % self.stat_name_write)
@@ -447,12 +451,13 @@ class memTherm:
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
     accesses_read, accesses_write, accesses_read_lowpower, accesses_write_lowpower = self.get_access_rates(time, time_delta)
+ #    print accesses 
 
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
     avg_no_refresh_rows_in_timestep = avg_no_refresh_intervals_in_timestep * rows_refreshed_in_refresh_interval # 2.56*8 rows refreshed = 20.48 refreshes 
     refresh_energy_in_timestep =  avg_no_refresh_rows_in_timestep * energy_per_refresh_access                   # 20.48 * 100 nJ = 2048 nJ, 100 nJ (say) is the energy per refresh access
     avg_refresh_power = refresh_energy_in_timestep/(timestep*1000)
-    bank_power_trace = [0 for _ in range(NUM_BANKS)]
+    bank_power_trace = [0 for number in xrange(NUM_BANKS)]
      #total power = access_count*energy per access + leakage power + refresh power
     #calculate bank power for each bank using access traces
 
@@ -668,7 +673,6 @@ class memTherm:
      #invoke the memory hotspot. It will include core parts automatically for 3D and 2.5D
     hcmd = hotspot_command
     hcmd += ' -v ' + vdd_string
-
     first_run = (sum(1 for linee in open(combined_temperature_trace_file, 'r')) == 1) 
     if (init_file_external!= "None") or (not first_run):
         hcmd += ' -init_file ' + init_file

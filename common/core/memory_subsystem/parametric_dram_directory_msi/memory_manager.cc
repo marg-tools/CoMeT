@@ -47,6 +47,7 @@ MemoryManager::MemoryManager(Core* core,
    // Read Parameters from the Config file
    std::map<MemComponent::component_t, CacheParameters> cache_parameters;
    std::map<MemComponent::component_t, String> cache_names;
+   
    bool nuca_enable = false;
    CacheParameters nuca_parameters;
 

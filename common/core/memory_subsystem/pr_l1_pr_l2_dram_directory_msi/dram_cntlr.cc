@@ -38,11 +38,10 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    , m_reads(0)
    , m_writes(0)
    {
-
    m_dram_perf_model = DramPerfModel::createDramPerfModel(
          memory_manager->getCore()->getId(),
          cache_block_size);
-   
+
    m_fault_injector = Sim()->getFaultinjectionManager()
       ? Sim()->getFaultinjectionManager()->getFaultInjector(memory_manager->getCore()->getId(), MemComponent::DRAM)
       : NULL;
@@ -100,7 +99,9 @@ DramCntlr::getDataFromDram(IntPtr address, core_id_t requester, Byte* data_buf, 
    addToDramAccessCount(address, READ);
    #endif
    MYLOG("R @ %08lx latency %s", address, itostr(dram_access_latency).c_str());
+
    dram_read_trace(address, requester, now, m_reads);
+
    return boost::tuple<SubsecondTime, HitWhere::where_t>(dram_access_latency, HitWhere::DRAM);
 }
 
@@ -137,9 +138,7 @@ SubsecondTime
 DramCntlr::runDramPerfModel(core_id_t requester, SubsecondTime time, IntPtr address, DramCntlrInterface::access_t access_type, ShmemPerf *perf)
 {
    UInt64 pkt_size = getCacheBlockSize();
-   
    SubsecondTime dram_access_latency = m_dram_perf_model->getAccessLatency(time, pkt_size, requester, address, access_type, perf);
-
    return dram_access_latency;
 }
 

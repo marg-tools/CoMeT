@@ -70,7 +70,7 @@ vector<write_trace_data> wrt;
 UInt64 read_adv_count;
 UInt64 write_adv_count;
 
-#define ENABLE_CHANNEL_PARTITIONING 0   // why is this here if it is always zero?
+#define ENABLE_CHANNEL_PARTITIONING 0
 #define ACCUMULATION_TIME     (1000)    // Till 200 us bank counts will be accumalated
 
 UInt32 MCP_FLAG;
@@ -161,6 +161,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             }
             
         }
+        
         
         //printf("\nRead banked accessed %d\n", read_bank_accessed) ;
 

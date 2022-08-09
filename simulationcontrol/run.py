@@ -4,14 +4,14 @@ import runlib
 def example2():
     for benchmark in (
                       'parsec-blackscholes',
-                      'parsec-bodytrack',
+                      #'parsec-bodytrack',
                       #'parsec-canneal',
                       #'parsec-dedup',
                       #'parsec-fluidanimate',
                       #'parsec-streamcluster',
                       #'parsec-swaptions',
                       #'parsec-x264',
-                      'splash2-barnes',
+                      #'splash2-barnes',
                       #'splash2-fmm',
                       #'splash2-ocean.cont',
                       #'splash2-ocean.ncont',
@@ -20,7 +20,7 @@ def example2():
                       #'splash2-water.nsq',
                       #'splash2-water.sp',
                       #'splash2-cholesky',
-                      #'splash2-fft',
+                      'splash2-fft',
                       #'splash2-lu.cont',
                       #'splash2-lu.ncont',
                       #'splash2-radix'
@@ -42,11 +42,12 @@ def case_study():
     runlib.run(['open', 'ondemand'], runlib.get_instance('parsec-swaptions', parallelism=4, input_set='medium'))
 
 def small_benchmark():
-    runlib.run([], runlib.get_instance('splash2-barnes', parallelism=4, input_set='small'))
+    runlib.run([], runlib.get_instance('parsec-blackscholes', parallelism=4, input_set='small'))
 
 
 def main():
-    small_benchmark()
+    example()
+    case_study()
 
 
 if __name__ == '__main__':

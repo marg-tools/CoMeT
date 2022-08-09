@@ -85,13 +85,11 @@ bool DVFSOndemand::throttle() {
         if (!in_throttle_mode) {
             cout << "[Scheduler][ondemand-DTM]: detected thermal violation" << endl;
         }
-
         in_throttle_mode = true;
     } else if (performanceCounters->getPeakTemperature() < dtmRecoveredTemperature) {
         if (in_throttle_mode) {
             cout << "[Scheduler][ondemand-DTM]: thermal violation ended" << endl;
         }
-
         in_throttle_mode = false;
     }
     return in_throttle_mode;
