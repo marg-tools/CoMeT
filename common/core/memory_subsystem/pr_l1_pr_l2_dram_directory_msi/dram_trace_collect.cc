@@ -50,7 +50,6 @@ UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
 UInt64 write_access_count_per_bank_lowpower[MAX_NUM_OF_BANKS];
 UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
 
-
 UInt32 write_access_count;
 UInt64 write_interval_start_time;
 UInt32 write_bank_accessed;
@@ -162,7 +161,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             
         }
         
-        
+
         //printf("\nRead banked accessed %d\n", read_bank_accessed) ;
 
         UInt64 current_time = now.getUS();

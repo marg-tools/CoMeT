@@ -222,7 +222,6 @@ int read_names(FILE *fp, char **names)
       if(!sscanf(src, "%s", names[i]))
         fatal("invalid format of names\n");
       src += strlen(names[i]);
-
       while (isspace((int)*src))
         src++;
   }
@@ -538,7 +537,7 @@ for (i = 0; i < length_v; ++i)
 #if VERBOSE > 2
   debug_print_model(model);
 #endif
-  
+
   /* allocate the temp and power arrays	*/
   /* using hotspot_vector to internally allocate any extra nodes needed	*/
   if (do_transient)

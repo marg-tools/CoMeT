@@ -37,7 +37,7 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    : DramCntlrInterface(memory_manager, shmem_perf_model, cache_block_size)
    , m_reads(0)
    , m_writes(0)
-   {
+{
    m_dram_perf_model = DramPerfModel::createDramPerfModel(
          memory_manager->getCore()->getId(),
          cache_block_size);

@@ -20,7 +20,7 @@ def example2():
                       #'splash2-water.nsq',
                       #'splash2-water.sp',
                       #'splash2-cholesky',
-                      'splash2-fft',
+                      #'splash2-fft',
                       #'splash2-lu.cont',
                       #'splash2-lu.ncont',
                       #'splash2-radix'
@@ -40,9 +40,6 @@ def example():
 
 def case_study():
     runlib.run(['open', 'ondemand'], runlib.get_instance('parsec-swaptions', parallelism=4, input_set='medium'))
-
-def small_benchmark():
-    runlib.run([], runlib.get_instance('parsec-blackscholes', parallelism=4, input_set='small'))
 
 
 def main():

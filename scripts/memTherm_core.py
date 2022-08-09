@@ -160,11 +160,11 @@ hotspot_command = executable  \
 
 if mem_dtm != "off":
   hotspot_command += ' -bm '+ bank_mode_trace_file
-
-print hotspot_command                  
+               
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
+print hotspot_command                  
 
 c_hotspot_config_path = hotspot_config_path
 #c_init_file_external = c_hotspot_config_path + sim.config.get('hotspot/init_file_external_core')
@@ -364,13 +364,13 @@ class memTherm:
       self.fd.write('[STAT:%s] ' % self.stat_name_read)
 #    self.fd.write('%u' % (time / 1e6)) # Time in ns
     access_rates_read = [0 for number in xrange(NUM_BANKS)]
+    #print self.stats['stat'][0].__dict__	#prints the fields of the object
     for bank in range(NUM_BANKS):
       statdiff_rd = self.stats['stat_rd'][bank].last
       access_rates_read[bank] = statdiff_rd
       self.fd.write(' %u' % statdiff_rd)
     self.fd.write('\n')
-#    print access_rates 
-    
+#    print access_rates
     if self.isTerminal:
       self.fd.write('[STAT:%s] ' % self.stat_name_write)
     access_rates_write = [0 for number in xrange(NUM_BANKS)]
