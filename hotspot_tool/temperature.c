@@ -761,7 +761,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
                 	printf("Memory type 3Dmem/DDR: %s\n", model->config->type);
 					for(k=0, base=0; k < model->grid->n_layers; k++) {
 				 // printf("k=%d\n",k);					
-					if(model->grid->layers[k].has_power) 
+					if(model->grid->layers[k].has_power)
 						for(j=0; j < model->grid->layers[k].flp->n_units; j++) {
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
@@ -788,6 +788,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 			}
 					}
 
+
 //for Core
             else if(strcmp(model->config->type,"Core")==0){
             	printf("Arch type: %s\n", model->config->type);
@@ -804,7 +805,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							else	
 								power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 		 					// printf("YES");
-
+							
 							temp_old[base+j] = temp[base+j]; //copy temp before update
 						}
 					base += model->grid->layers[k].flp->n_units;	
@@ -812,6 +813,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				// printf("k=%d",k);					
 				}
 			}
+
 
 //for 3D (WIO)
                     else if(strcmp(model->config->type,"3D")==0){
@@ -829,7 +831,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
-									else
+									else 
 										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
@@ -841,7 +843,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				}
                         }
 //For 2.5D
-						
+                        
                     else if(strcmp(model->config->type,"2.5D")==0){
                                 printf("Arch type 2.5D: %s\n", model->config->type);
 				for(k=0, base=0; k < model->grid->n_layers; k++) {
