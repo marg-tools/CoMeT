@@ -1,0 +1,2 @@
+# command used to create these files:
+../../floorplanlib/create.py --mode 2.5D --cores 2x2 --corex 3.415mm --corey 3.415mm --banks 4x4x8 --bankx 1.707mm --banky 1.707mm --core_mem_distance 1.3mm --cache_L3 non-stacked --cachex 6.83mm --cachey 6.83mm --out ../../config/hotspot/2_5D_l3_non-stacked
