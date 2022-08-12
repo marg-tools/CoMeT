@@ -80,14 +80,14 @@ N
 2e-05
 /home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/3d_non-stacked_cache/tim.flp
 
-# Layer "cores_L3_1"
+# Layer "cores_1"
 8
 Y
 Y
 1750000.0
 0.01
 5e-05
-/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/3d_non-stacked_cache/cores_L3_1.flp
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/3d_non-stacked_cache/cores_1.flp
 
 # Layer "tim"
 9

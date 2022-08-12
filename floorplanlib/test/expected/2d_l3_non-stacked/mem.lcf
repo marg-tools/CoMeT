@@ -1,0 +1,28 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+# Layer "mem"
+0
+Y
+Y
+1750000.0
+0.01
+5e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2d_l3_non-stacked/mem.flp
+
+# Layer "mem_tim"
+1
+Y
+N
+4000000.0
+0.25
+2e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2d_l3_non-stacked/mem_tim.flp
+

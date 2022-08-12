@@ -1,0 +1,82 @@
+#File Format:
+
+#<Layer Number>
+#<Lateral heat flow Y/N?>
+#<Power Dissipation Y/N?>
+#<Specific heat capacity in J/(m^3K)>
+#<Resistivity in (m-K)/W>
+#<Thickness in m>
+#<floorplan file>
+
+# Layer "interposer"
+0
+Y
+N
+1750000.0
+0.01
+5e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/interposer.flp
+
+# Layer "tim"
+1
+Y
+N
+4000000.0
+0.25
+2e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/tim.flp
+
+# Layer "core_and_mem_ctrl"
+2
+Y
+Y
+1750000.0
+0.01
+5e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/core_and_mem_ctrl.flp
+
+# Layer "tim"
+3
+Y
+N
+4000000.0
+0.25
+2e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/tim.flp
+
+# Layer "mem_bank_1"
+4
+Y
+Y
+1750000.0
+0.01
+5e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/mem_bank_1.flp
+
+# Layer "tim"
+5
+Y
+N
+4000000.0
+0.25
+2e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/tim.flp
+
+# Layer "mem_bank_2"
+6
+Y
+Y
+1750000.0
+0.01
+5e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/mem_bank_2.flp
+
+# Layer "tim"
+7
+Y
+N
+4000000.0
+0.25
+2e-05
+/home/martijn/Documents/uva/thesis/CoMeT/floorplanlib/test/actual/2.5d_core_l3_non-stacked/tim.flp
+

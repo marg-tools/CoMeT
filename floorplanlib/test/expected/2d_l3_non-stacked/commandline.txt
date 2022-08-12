@@ -1,0 +1,2 @@
+# command used to create these files:
+create.py --mode DDR --cores 4x4 --corex 1mm --corey 1mm --banks 8x8 --bankx 0.9mm --banky 0.9mm --cache_L3 non-stacked --cachex 1mm --cachey 4mm --out test/actual/2d_l3_non-stacked

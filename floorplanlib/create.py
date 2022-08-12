@@ -334,6 +334,25 @@ class MemoryControllerLayer(SimpleLayer):
 
 class TIMLayer(SimpleLayer):
     """ a rectangular layer of TIM """
+    def add_cache_tim_block(self, width, height):
+        """ add an extra tim block on top of the cache """
+        self.cache = (width, height)
+
+    def create_floorplan_elements(self):
+        """ creates the default TIM block and if defined a TIM block on the cache """
+        result = super().create_floorplan_elements()
+        if hasattr(self, 'cache'):
+            element_id = f'{self._get_element_identifier()}_{self.nb_offset}_L3'
+            cache_tim = FloorplanComponent(element_id, self.cache[0], self.cache[1], super().total_width, Length(0))
+            result += cache_tim.format(endline=True)
+        return result
+
+    @property
+    def total_width(self):
+        """ the size of the TIM block and the TIM block on the cache if defined """
+        cache_width = self.cache[0] if hasattr(self, 'cache') else Length(0)
+        return super().total_width + cache_width
+
     def _get_element_identifier(self):
         return 'TB'
 
@@ -383,33 +402,38 @@ class L3CacheLayer(SimpleLayer):
         component = FloorplanComponent(self._get_element_identifier(), self.element_width, self.element_height, self.pos_offset[0], self.pos_offset[1])
         return component.format(endline=True)
         
-        
 class CoreAndL3CacheLayer(CoreLayer):
     """ a layer with cores on the left and a single L3 cache on the right """
-    def __init__(self, cores, core_width, core_height, cache_width, cache_height, thickness, name, subcomponent_template=None, nb_offset=0):
-        super().__init__(cores, core_width, core_height, thickness, name=name, nb_offset=nb_offset, subcomponent_template=subcomponent_template)
-        # offset cache to the right
-        cache_offset = (cores[0] * core_width, Length(0))
-        self.cache = L3CacheLayer(cache_width, cache_height, thickness, name=None, pos_offset=cache_offset)
-        self.thickness = thickness
+    def __init__(self, cores, core_width, core_height, cache_width, cache_height, thickness, name, subcomponent_template=None, nb_offset=0, pos_offset=None):
+        super().__init__(cores, core_width, core_height, thickness, name=name, nb_offset=nb_offset, subcomponent_template=subcomponent_template, pos_offset=pos_offset)
+        if cache_width == Length(0) or cache_height == Length(0):
+            self.cache = None
+        else:
+            # offset cache to the right
+            cache_offset = (cores[0] * core_width + self.pos_offset[0], self.pos_offset[1])
+            self.cache = L3CacheLayer(cache_width, cache_height, thickness, name=None, pos_offset=cache_offset)
 
     @property
     def total_width(self):
+        if self.cache is None:
+            return super().total_width
         return super().total_width + self.cache.total_width
 
-    def write_floorplan(self, directory):
-        with open(self._get_floorplan_filename(directory), 'w') as f:
-            f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
-            f.write(super().create_floorplan_elements())
-            f.write(self.cache.create_floorplan_elements())
+    def create_floorplan_elements(self):
+        floorplan = super().create_floorplan_elements()
+        if self.cache:
+            floorplan += self.cache.create_floorplan_elements()
+        return floorplan
     
 
 class CoreAndMemoryControllerLayer(ThermalLayer):
     """ first layer in 2.5D containing cores and memory controllers """
-    def __init__(self, cores, core_width, core_height, banks, bank_width, bank_height, thickness, core_mem_distance, name, subcore_template):
+    def __init__(self, cores, core_width, core_height, cache_type, cache_width, cache_height, banks, bank_width, bank_height, thickness, core_mem_distance, name, subcore_template):
         super().__init__(name=name)
         cores_width = cores[0] * core_width
         cores_height = cores[1] * core_width
+        if cache_type == 'non-stacked':
+            cores_width += cache_width
         mem_width = banks[0] * bank_width
         mem_height = banks[1] * bank_height
         cores_offset = (
@@ -420,7 +444,7 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
             cores_width + core_mem_distance,  # x
             Length(0) if mem_height > cores_height else 0.5 * (cores_height - mem_height)  # y
         )
-        self.cores = CoreLayer(cores, core_width, core_height, thickness, name=None, pos_offset=cores_offset, subcomponent_template=subcore_template)
+        self.cores = CoreAndL3CacheLayer(cores, core_width, core_height, cache_width, cache_height, thickness, name=None, pos_offset=cores_offset, subcomponent_template=subcore_template)
         self.memory_controllers = MemoryControllerLayer(banks, bank_width, bank_height, thickness, name=None, pos_offset=mem_offset)
         self.core_mem_distance = core_mem_distance
         self.thickness = thickness
@@ -488,6 +512,72 @@ class CoreAndMemoryControllerLayer(ThermalLayer):
 
     def _thickness(self):
         return self.thickness
+
+class CombinedLayer(ThermalLayer):
+    """ Combines two layers in one layer next to eachother """
+    def __init__(self, layer_a, layer_b, distance=Length(0), direction=None):
+        super().__init__(name=f'{layer_a.name}+{layer_b.name}')
+        self.distance = distance
+        # Set direction to which layer b is placed
+        self.direction = (1, 0) if direction is None else direction
+        self.layer_a = layer_a
+        self.layer_b = layer_b
+        self.layer_b.pos_offset  = (
+            self.layer_b.pos_offset[0] + layer_a.total_width * self.direction[0] + distance * self.direction[0], 
+            self.layer_b.pos_offset[1] + layer_a.total_height * self.direction[1] + distance * self.direction[1])
+
+    @property
+    def total_width(self):
+        if self.direction[0]:
+            return self.layer_a.total_width + self.layer_b.total_width + self.distance
+        else:
+            return self.layer_a.total_width
+
+    @property
+    def total_height(self):
+        if self.direction[1]:
+            return self.layer_a.total_height + self.layer_b.total_height + self.distance
+        else:
+            return self.layer_a.total_height
+    
+    def write_floorplan(self, directory):
+        with open(self._get_floorplan_filename(directory), 'w') as f:
+            f.write('# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\\t[<specific-heat-capacity>\\t<thermal-resistivity>]\n')
+            f.write(self.layer_a.create_floorplan_elements())
+            f.write(self.layer_b.create_floorplan_elements())
+            # Air between the two components
+            width = self.distance if self.direction[0] else self.layer_a.total_width
+            height = self.distance if self.direction[1] else self.layer_a.total_height
+            left = self.layer_a.total_width * self.direction[0]
+            bottom = self.layer_a.total_height * self.direction[1]
+            f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                'X1',
+                width.meters, height.meters,
+                left.meters, bottom.meters,
+                AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+            # 2 Unused air blocks
+            f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                'X2',
+                width.meters, 0.000001,
+                0, 0,
+                AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+            f.write('{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{}\t{}\n'.format(
+                'X3',
+                width.meters, 0.000001,
+                0, 0,
+                AIR_SPECIFIC_HEAT_CAPACITY, AIR_THERMAL_RESISTIVITY))
+
+    def _has_power_consumption(self):
+        return self.layer_a._has_power_consumption() or self.layer_b._has_power_consumption()
+
+    def _specific_heat_capacity(self):
+        return self.layer_a._specific_heat_capacity()
+
+    def _thermal_resistivity(self):
+        return self.layer_a._thermal_resistivity()
+
+    def _thickness(self):
+        return max(self.layer_a._thickness(), self.layer_b._thickness())
 
 
 class PadWithAirLayer(ThermalLayer):
@@ -605,7 +695,6 @@ class ThermalStack(object):
 
     def write_files(self, directory):
         for l in self.layers[1:]:
-            print(l.total_width, self.layers[0].total_width)
             assert l.total_width == self.layers[0].total_width
             assert l.total_height == self.layers[1].total_height
 
@@ -649,10 +738,10 @@ def main():
     banks.add_argument("--banky", help="size of each memory bank (in dimension y)", type=length, required=True)
     banks.add_argument("--bank_thickness", help="thickness of the bank silicon layer", type=length, required=False, default='50um')
     cache = parser.add_argument_group('cache')
-    cache.add_argument("--cache_L3", help="only 3D: add L3 cache on a seperate layer", choices=('stacked', 'non-stacked', 'none'), required=False, default='none')
+    cache.add_argument("--cache_L3", help="add L3 cache on a seperate layer", choices=('stacked', 'non-stacked', 'none'), required=False, default='none')
     cache.add_argument("--cachex", help="size of the L3 cache (in dimension x), only used with non-stacked L3", type=length, required=False, default='0mm')
     cache.add_argument("--cachey", help="size of the L3 cache (in dimension y), only used with non-stacked L3", type=length, required=False, default='0mm')
-    cache.add_argument("--cache_thickness", help="only 3D: thickness of the cache silicon layer", type=length, required=False, default='50um')
+    cache.add_argument("--cache_thickness", help="thickness of the cache silicon layer", type=length, required=False, default='50um')
     parser.add_argument("--core_mem_distance", help="only 2.5D: distance between cores and memory on interposer (default: 7mm)", type=length, required=False, default='7mm')
     parser.add_argument("--tim_thickness", help="thickness of the TIM", type=length, required=False, default='20um')
     parser.add_argument("--interposer_thickness", help="only 2.5D: thickness of the interposer", type=length, required=False, default='50um')
@@ -661,6 +750,7 @@ def main():
 
     cores_per_layer = args.cores[0] * args.cores[1]
     cores_2d = (args.cores[0], args.cores[1])
+    cache_core_layer = (args.cachex, args.cachey) if args.cache_L3 == 'non-stacked' else (Length(0), Length(0))
 
     if args.subcore_template is not None:
         if args.subcore_template.left != Length(0) or args.subcore_template.bottom != Length(0):
@@ -672,10 +762,21 @@ def main():
         if len(args.banks) != 2:
             parser.error('banks must be 2D in DDR mode. Example: --banks 4x4')
 
+        tim = TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim')
+        if args.cache_L3 == 'non-stacked':
+            tim.add_cache_tim_block(args.cachex, args.cachey)
+
         core = ThermalStack('cores')
         for i in range(args.cores[2]):
-            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
-            core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim'))
+            core.add_layer(CoreAndL3CacheLayer(cores_2d, args.corex, args.corey, cache_core_layer[0], cache_core_layer[1], args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
+            core.add_layer(tim)
+
+        if args.cache_L3 == 'stacked':
+            cores_width = cores_2d[0] * args.corex
+            cores_height = cores_2d[1] * args.corey
+            core.add_layer(L3CacheLayer(cores_width, cores_height, args.cache_thickness, name='l3_cache'))
+            core.add_layer(tim)
+
         core.write_files(args.out)
 
         banks_2d = (args.banks[0], args.banks[1])
@@ -691,10 +792,21 @@ def main():
         banks_per_layer = args.banks[0] * args.banks[1]
         banks_2d = (args.banks[0], args.banks[1])
 
+        tim = TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim')
+        if args.cache_L3 == 'non-stacked':
+            tim.add_cache_tim_block(args.cachex, args.cachey)
+
         core = ThermalStack('cores')
         for i in range(args.cores[2]):
-            core.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
-            core.add_layer(TIMLayer(cores_2d, args.corex, args.corey, args.tim_thickness, name='core_tim'))
+            core.add_layer(CoreAndL3CacheLayer(cores_2d, args.corex, args.corey, cache_core_layer[0], cache_core_layer[1], args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
+            core.add_layer(tim)
+
+        if args.cache_L3 == 'stacked':
+            cores_width = cores_2d[0] * args.corex
+            cores_height = cores_2d[1] * args.corey
+            core.add_layer(L3CacheLayer(cores_width, cores_height, args.cache_thickness, name='l3_cache'))
+            core.add_layer(tim)
+            
         core.write_files(args.out)
 
         mem = ThermalStack('mem')
@@ -723,6 +835,9 @@ def main():
         banks_per_layer = args.banks[0] * args.banks[1]
         banks_2d = (args.banks[0], args.banks[1])
 
+        if args.cache_L3 == 'non-stacked':
+            cores_width += args.cachex
+
         total_width = cores_width + args.core_mem_distance + mem_width
         total_height = max(cores_height, mem_height)
 
@@ -732,6 +847,7 @@ def main():
         stack.add_layer(tim)
         stack.add_layer(CoreAndMemoryControllerLayer(
             cores_2d, args.corex, args.corey,
+            args.cache_L3, cache_core_layer[0], cache_core_layer[1],
             banks_2d, args.bankx, args.banky, args.core_thickness,
             args.core_mem_distance,
             name='core_and_mem_ctrl',
@@ -743,7 +859,13 @@ def main():
         for i in range(args.banks[2]):
             stack.add_layer(tim)
             mem_banks = MemoryLayer(banks_2d, args.bankx, args.banky, args.bank_thickness, name=f'mem_bank_{i+1}', pos_offset=mem_offset, nb_offset=i*banks_per_layer)
-            stack.add_layer(PadWithAirLayer(total_width, total_height, mem_banks, force={'left': True, 'top': True, 'bottom': True}))
+            # add memory with cache on the layer above the cores
+            if args.cache_L3 == 'stacked' and i == 0:
+                l3_cache = L3CacheLayer(cores_width, cores_height, args.cache_thickness, name='l3_cache')
+                mem_banks.pos_offset = (Length(0), mem_offset[1])
+                stack.add_layer(CombinedLayer(l3_cache, mem_banks, args.core_mem_distance))
+            else:
+                stack.add_layer(PadWithAirLayer(total_width, total_height, mem_banks, force={'left': True, 'top': True, 'bottom': True}))
         stack.add_layer(tim)
         stack.write_files(args.out)
 
@@ -772,10 +894,7 @@ def main():
             stack.add_layer(tim)
 
         for i in range(args.cores[2]):
-            if args.cache_L3 == 'non-stacked':
-                stack.add_layer(CoreAndL3CacheLayer(cores_2d, args.corex, args.corey, args.cachex, args.cachey, args.core_thickness, name=f'cores_L3_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
-            else:
-                stack.add_layer(CoreLayer(cores_2d, args.corex, args.corey, args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
+            stack.add_layer(CoreAndL3CacheLayer(cores_2d, args.corex, args.corey, cache_core_layer[0], cache_core_layer[1], args.core_thickness, name=f'cores_{i+1}', nb_offset=i*cores_per_layer, subcomponent_template=args.subcore_template))
             stack.add_layer(tim)
 
         stack.write_files(args.out)

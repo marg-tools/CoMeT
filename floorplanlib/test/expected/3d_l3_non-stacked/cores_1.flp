@@ -1,4 +1,4 @@
-# Line Format: <unit-name>\t<width>\t<height>\t<left-x>\t<bottom-y>\t[<specific-heat-capacity>\t<thermal-resistivity>]
+# Line Format: <unit-name>\t<width>\t<height>\t<left-x>\t<bottom-y>
 C_0	0.000450	0.000900	0.000000	0.000000
 C_1	0.000450	0.000900	0.000450	0.000000
 C_2	0.000450	0.000900	0.000900	0.000000
