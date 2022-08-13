@@ -1,3 +1,4 @@
+from ast import arg
 import datetime
 import difflib
 import math
@@ -69,17 +70,27 @@ def create_video(run):
         '--layer_to_view', str(config.VIDEO_BREAKOUT_LAYER),
         '--type_to_view', config.VIDEO_BREAKOUT_TYPE,
         '--samplingRate', '1',
-        '--traceFile', os.path.join(BENCHMARKS, 'combined_temperature.trace'),
+        '--traceFile', os.path.join(config.RESULTS_FOLDER, 'combined_temperature.trace'),
         '--output', os.path.join(config.RESULTS_FOLDER, run, 'video'),
         '--clean',
     ]
+    
+    # unpack gz
+    with open(os.path.join(config.RESULTS_FOLDER, 'combined_temperature.trace'), 'wb') as f_out:
+        with gzip.open(os.path.join(config.RESULTS_FOLDER, run, 'combined_temperature.trace.gz'), 'rb') as f_in:
+            shutil.copyfileobj(f_in, f_out)
+
     if config.VIDEO_INVERTED_VIEW:
         args.append('--inverted_view')
     if config.VIDEO_EXPLICIT_TMIN is not None:
         args.extend(['--tmin', str(config.VIDEO_EXPLICIT_TMIN)])
     if config.VIDEO_EXPLICIT_TMAX is not None:
         args.extend(['--tmax', str(config.VIDEO_EXPLICIT_TMAX)])
-
+    if config.VIDEO_L3:
+        args.append('--cache_l3')
+        args.extend(['--cache_l3_width', str(config.VIDEO_L3_WIDTH)])
+    if config.VIDEO_L3_STACKED:
+        args.append('--cache_l3_stacked')
     subprocess.check_call(args)
 
 
@@ -115,6 +126,7 @@ def save_output(configuration_tags, benchmark, console_output, started, ended):
             shutil.copyfileobj(f_in, f_out)
     create_plots(run)
     create_video(run)
+    return run
 
 
 def run(configuration_tags, benchmark):
@@ -142,18 +154,17 @@ def run(configuration_tags, benchmark):
     if p.returncode != 0:
         raise Exception('return code != 0')
 
-    save_output(configuration_tags, benchmark, console_output, started, ended)
+    return save_output(configuration_tags, benchmark, console_output, started, ended)
 
 
 def try_run(configuration_tags, benchmark):
     try:
-        run(configuration_tags, benchmark)
+        return run(configuration_tags, benchmark)
     except KeyboardInterrupt:
         raise
     except Exception as e:
         for i in range(4):
             print('#' * 80)
-        #print(e)
         print(traceback.format_exc())
         for i in range(4):
             print('#' * 80)
