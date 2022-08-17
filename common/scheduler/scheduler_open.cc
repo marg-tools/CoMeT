@@ -17,6 +17,8 @@
 #include "policies/dvfsOndemand.h"
 #include "policies/mapFirstUnused.h"
 
+#include "policies/dramLowpower.h"
+
 #include <iomanip>
 #include <random>
 
@@ -36,6 +38,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/max_frequency") + 0.5);
 	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/frequency_step_size") + 0.5);
 	dvfsEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dvfs/dvfs_epoch").c_str());
+	dramEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dram/dram_epoch").c_str()); // Required for Dram policy.
 
 	migrationEpoch = atol(Sim()->getCfg()->getString("scheduler/open/migration/epoch").c_str());
 
@@ -51,10 +54,15 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	arrivalInterval = atoi (Sim()->getCfg()->getString("scheduler/open/arrivalInterval").c_str());
 	numberOfTasks = Sim()->getCfg()->getInt("traceinput/num_apps");
 	numberOfCores = Sim()->getConfig()->getApplicationCores();
+	numberOfBanks = Sim()->getCfg()->getInt("memory/num_banks"); // Required for Dram policy.
 
 	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");
 	coresInY = Sim()->getCfg()->getInt("memory/cores_in_y");
 	coresInZ = Sim()->getCfg()->getInt("memory/cores_in_z");
+
+	banksInX = Sim()->getCfg()->getInt("memory/banks_in_x");
+	banksInY = Sim()->getCfg()->getInt("memory/banks_in_y");
+	banksInZ = Sim()->getCfg()->getInt("memory/banks_in_z");
 
 	performanceCounters = new PerformanceCounters(
 		Sim()->getCfg()->getString("hotspot/log_files/combined_instpower_trace_file").c_str(),
@@ -120,6 +128,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	initMappingPolicy(Sim()->getCfg()->getString("scheduler/open/logic").c_str());
 	initDVFSPolicy(Sim()->getCfg()->getString("scheduler/open/dvfs/logic").c_str());
 	initMigrationPolicy(Sim()->getCfg()->getString("scheduler/open/migration/logic").c_str());
+	initDramPolicy(Sim()->getCfg()->getString("scheduler/open/dram/dtm").c_str());
 }
 
 /** initMappingPolicy
@@ -892,6 +901,50 @@ void SchedulerOpen::executeDVFSPolicy() {
 	performanceCounters->notifyFreqsOfCores(frequencies);
 }
 
+/** initDramPolicy
+ * Initialize the Dram policy to the policy with the given name
+ */
+void SchedulerOpen::initDramPolicy(String policyName) {
+	if (policyName == "off") {
+		dramPolicy = NULL;
+	} else if (policyName == "lowpower") {
+
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_critical_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
+		dramPolicy = new DramLowpower(
+			performanceCounters,
+			numberOfBanks,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
+	} //else if (policyName ="XYZ") {... } // Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
+	else {
+		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
+ 		exit (1);
+	}
+}
+
+void SchedulerOpen::executeDramPolicy()
+{
+	std::map<int,int> old_bank_modes;
+    for (int i = 0; i < numberOfBanks; i++)
+	{
+		old_bank_modes[i] = Sim()->m_bank_modes[i];
+	}
+
+	std::map<int,int> new_bank_modes = dramPolicy->getNewBankModes(old_bank_modes);
+
+    for (int i = 0; i < numberOfBanks; i++)
+	{
+		setMemBankMode(i, new_bank_modes[i]);
+	}
+}
+
+void SchedulerOpen::setMemBankMode(int bankNr, int mode)
+{
+	Sim()->m_bank_modes[bankNr] = mode;
+}
+
 /** executeMigrationPolicy
  * Perform migration according to the used policy.
  */
@@ -988,6 +1041,12 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		cout << "\n[Scheduler]: DVFS Control Loop invoked at " << formatTime(time) << endl;
 
 		executeDVFSPolicy();
+	}
+
+	if ((dramPolicy != NULL) && (time.getNS() % dramEpoch == 0)) {
+		cout << "\n[Scheduler]: Dram Control Loop invoked at " << formatTime(time) << endl;
+
+		executeDramPolicy();
 	}
 
 	if (time.getNS () % mappingEpoch == 0) {

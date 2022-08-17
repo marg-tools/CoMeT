@@ -5,6 +5,8 @@ memTherm_core.py
 
 import sys, os, sim
 
+LOW_POWER = 0
+NORMAL_POWER = 1
 
 bank_size=int(sim.config.get('memory/bank_size'))
 no_columns = 1                                      # in Kilo
@@ -22,6 +24,10 @@ no_refesh_commands_in_t_refw = int(sim.config.get('memory/no_refesh_commands_in_
 rows_refreshed_in_refresh_interval = no_rows/no_refesh_commands_in_t_refw  # for 512Mb bank, 8 rows per refresh => for 64Mb bank, 1 rows per refresh
 bank_static_power = 0
 core_thermal_enabled = sim.config.get("core_thermal/enabled")
+
+mem_dtm = sim.config.get('scheduler/open/dram/dtm')
+lpm_dynamic_power = float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power'))
+lpm_leakage_power = float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power'))
 
 #define constants
 #_enable = 1
@@ -114,6 +120,8 @@ hotspot_steady_temp_file = sim.config.get('hotspot/log_files_mem/steady_temp_fil
 hotspot_grid_steady_file = sim.config.get('hotspot/log_files_mem/grid_steady_file')
 hotspot_all_transient_file = sim.config.get('hotspot/log_files_mem/all_transient_file')
 power_trace_file = sim.config.get('hotspot/log_files_mem/power_trace_file')
+bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/bank_mode_trace_file') # For low power mode.
+full_bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/full_bank_mode_trace_file') # For low power mode.
 full_power_trace_file = sim.config.get('hotspot/log_files_mem/full_power_trace_file')
 temperature_trace_file = sim.config.get('hotspot/log_files_mem/temperature_trace_file')
 full_temperature_trace_file = sim.config.get('hotspot/log_files_mem/full_temperature_trace_file')
@@ -152,6 +160,9 @@ hotspot_command = executable  \
                   + ' -detailed_3D on'
 #                  + ' -f ' + hotspot_floorplan_file \
 
+if mem_dtm != "off":
+  hotspot_command += ' -bm '+ bank_mode_trace_file
+               
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
@@ -175,8 +186,33 @@ os.system("rm -f " + full_temperature_trace_file)
 os.system("rm -f " + full_power_trace_file)
 os.system("rm -f " + c_full_power_trace_file)
 os.system("rm -f " + c_full_temperature_trace_file)
+os.system("rm -f " + full_bank_mode_trace_file)
 for filename in ('PeriodicCPIStack.log', 'PeriodicFrequency.log', 'PeriodicVdd.log',):
   open(filename, 'w') # empties the file
+
+def gen_mem_header():
+    """
+    Return header for memory banks.
+    Similar to gen_ptrace_header, but will not write to file and will not include other components than memory.
+    """
+    # For a 2by1 ptrace with four layers header should be B0_0    B0_1    B0_0    B0_1    B0_0    B0_1    B0_0    B0_1
+    # For 3D: core is at the top, whereas for 3Dmem, 2.5D config. the 3Dmem is at the bottom.
+    # Creating Header
+    mem_header = ''
+
+    for b in range(NUM_BANKS):
+      mem_header = mem_header + "B_" + str(b) + "\t"
+
+    # for z in range(0,banks_in_z):
+    #     for x in range(0,banks_in_x):
+    #         for y in range(0,banks_in_y):
+    #                 #                atrace_header=atrace_header + "B" + str(x) + "_" + str(y) + "\t" 
+    #             #if type_of_stack== "3D" or type_of_stack== "3Dmem" or type_of_stack=="DDR":
+    #             bank_number = z*banks_in_x*banks_in_y + x*banks_in_y + y
+    #             mem_header = mem_header + "B_" + str(bank_number) + "\t" 
+    #             #ptrace_header=ptrace_header + "B" + str(x) + "_" + str(y) + "\t" 
+   
+    return mem_header
 
 #generates ptrace header as per the memory floorplan and architecture
 #DDR:    B0_0 B0_1 ... B3_3
@@ -244,6 +280,18 @@ class memTherm:
     self.stat_name_write = stat_write
     stat_component_rd, stat_name_read = stat_read.rsplit('.', 1)
     stat_component_wr, stat_name_write = stat_write.rsplit('.', 1)
+    
+    if mem_dtm != 'off': 
+      stat_write_lowpower = 'dram.bank_write_access_counter_lowpower'       #from sniper C-code
+      stat_read_lowpower = 'dram.bank_read_access_counter_lowpower'       #from sniper C-code
+      self.stat_name_read_lowpower = stat_read_lowpower
+      self.stat_name_write_lowpower= stat_write_lowpower
+      stat_component_rd_lowpower, stat_name_read_lowpower = stat_read_lowpower.rsplit('.', 1)
+      stat_component_wr_lowpower, stat_name_write_lowpower = stat_write_lowpower.rsplit('.', 1)
+
+    stat_bank_mode = 'dram.bank_mode'
+    self.stat_name_bank_mode = stat_bank_mode
+    stat_component_bank_mode, stat_name_bank_mode = stat_bank_mode.rsplit('.', 1)
 
     if filename:
       self.fd = file(os.path.join(sim.config.output_dir, filename), 'w')
@@ -255,12 +303,25 @@ class memTherm:
     self.ES = EnergyStats()
 
     self.sd = sim.util.StatsDelta()
-    self.stats = {
+
+    if mem_dtm != 'off':
+      self.stats = {
+        'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
+        'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
+        'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
+        'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
+        'stat_rd_lowpower': [ self.getStatsGetter(stat_component_rd_lowpower, bank, stat_name_read_lowpower) for bank in range(NUM_BANKS) ],
+        'stat_wr_lowpower': [ self.getStatsGetter(stat_component_wr_lowpower, bank, stat_name_write_lowpower) for bank in range(NUM_BANKS) ],
+        'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
+      }
+    else:
+      self.stats = {
       'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
       'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
-      'stat_rd': [ self.getStatsGetter(stat_component_rd, core, stat_name_read) for core in range(NUM_BANKS) ],
-      'stat_wr': [ self.getStatsGetter(stat_component_wr, core, stat_name_write) for core in range(NUM_BANKS) ],
-    }
+      'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
+      'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
+      'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
+      }
     #print the initial header into different log/trace files
     gen_ptrace_header()
     ptrace_header = gen_ptrace_header()
@@ -277,8 +338,27 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
+    
+    mem_header = gen_mem_header()
+    with open(full_bank_mode_trace_file, "w") as f:
+        f.write("%s\n" %(mem_header))
+    f.close()
     #setup to invoke the hotspot tool every interval_ns time and invoke calc_temperature_trace function
     sim.util.Every(interval_ns * sim.util.Time.NS, self.calc_temperature_trace, statsdelta = self.sd, roi_only = True)
+
+
+  def get_bank_modes(self, time, time_delta):
+    """
+    Return status of memory banks and prints to output.
+    """
+    if self.isTerminal:
+      self.fd.write('[STAT:%s] ' % self.stat_name_bank_mode)
+    bank_mode = [1 for _ in range(NUM_BANKS)]
+    for bank in range(NUM_BANKS):
+      bank_mode[bank] = int(self.stats['stat_bank_mode'][bank].last)
+      self.fd.write(' %u' % bank_mode[bank])
+    self.fd.write('\n')
+    return bank_mode
 
    #return access rates of various memory banks
   def get_access_rates(self, time, time_delta):
@@ -302,12 +382,79 @@ class memTherm:
       access_rates_write[bank] = statdiff_wr
       self.fd.write(' %u' % statdiff_wr)
     self.fd.write('\n')
-    return access_rates_read, access_rates_write
+
+    if mem_dtm != 'off':
+      if self.isTerminal:
+        self.fd.write('[STAT:%s] ' % self.stat_name_read_lowpower)
+  #    self.fd.write('%u' % (time / 1e6)) # Time in ns
+      access_rates_read_lowpower = [0 for number in xrange(NUM_BANKS)]
+      #print self.stats['stat'][0].__dict__	#prints the fields of the object
+      for bank in range(NUM_BANKS):
+        statdiff_rd_lowpower = self.stats['stat_rd_lowpower'][bank].last
+        access_rates_read_lowpower[bank] = statdiff_rd_lowpower
+        self.fd.write(' %u' % statdiff_rd_lowpower)
+      self.fd.write('\n')
+
+      if self.isTerminal:
+        self.fd.write('[STAT:%s] ' % self.stat_name_write_lowpower)
+      access_rates_write_lowpower = [0 for number in xrange(NUM_BANKS)]
+      #print self.stats['stat'][0].__dict__	#prints the fields of the object
+      for bank in range(NUM_BANKS):
+        statdiff_wr_lowpower = self.stats['stat_wr_lowpower'][bank].last
+        access_rates_write_lowpower[bank] = statdiff_wr_lowpower
+        self.fd.write(' %u' % statdiff_wr_lowpower)
+      self.fd.write('\n')
+
+      return access_rates_read, access_rates_write, access_rates_read_lowpower, access_rates_write_lowpower
+
+    return access_rates_read, access_rates_write, [], []
+
+
+  def write_bank_mode_trace(self, time, time_delta):
+    print("[WRITE BANK MODE TRACE]")
+    bank_mode_trace = self.get_bank_modes(time, time_delta)
+    bank_mode_trace_string = ""
+
+    for bank in range(NUM_BANKS):
+      # print(bank_mode_trace[bank])
+      bank_mode_trace_string = bank_mode_trace_string + str(bank_mode_trace[bank]) + '\t'
+    bank_mode_trace_string += "\r\n"
+    bank_mode_header = gen_mem_header()
+    # Write bank mode information into the trace file for use by hotspot.
+    with open("%s" %(bank_mode_trace_file), "w") as f:
+        f.write("%s\n" %(bank_mode_header))
+        f.write("%s" %(bank_mode_trace_string))
+    f.close()
+
+
+  def write_bank_leakage_trace(self, time, time_delta):
+    """
+    Write a tab separated text file with a row of memory unit headers, 
+    and a row of scalars to multiply the memory bank leakage power with.
+    """
+    bank_mode_trace = self.get_bank_modes(time, time_delta)
+    bank_mode_trace_string = ""
+
+    for bank in range(NUM_BANKS):
+      leakage = 1.0
+      if bank_mode_trace[bank] == LOW_POWER:
+        leakage = lpm_leakage_power
+      # print(bank_mode_trace[bank])
+      bank_mode_trace_string = bank_mode_trace_string + "{:.2f}".format(leakage) + '\t'
+    bank_mode_trace_string += "\r\n"
+    bank_mode_header = gen_mem_header()
+    # Write bank mode information to the trace file for use by hotspot.
+    with open("%s" %(bank_mode_trace_file), "w") as f:
+        f.write("%s\n" %(bank_mode_header))
+        f.write("%s" %(bank_mode_trace_string))
+    f.close()
+
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
-    accesses_read, accesses_write = self.get_access_rates(time, time_delta)
-#    print accesses
+    accesses_read, accesses_write, accesses_read_lowpower, accesses_write_lowpower = self.get_access_rates(time, time_delta)
+ #    print accesses 
+
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
     avg_no_refresh_rows_in_timestep = avg_no_refresh_intervals_in_timestep * rows_refreshed_in_refresh_interval # 2.56*8 rows refreshed = 20.48 refreshes 
     refresh_energy_in_timestep =  avg_no_refresh_rows_in_timestep * energy_per_refresh_access                   # 20.48 * 100 nJ = 2048 nJ, 100 nJ (say) is the energy per refresh access
@@ -315,9 +462,17 @@ class memTherm:
     bank_power_trace = [0 for number in xrange(NUM_BANKS)]
      #total power = access_count*energy per access + leakage power + refresh power
     #calculate bank power for each bank using access traces
+
     for bank in range(NUM_BANKS):
-      bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
-                             + bank_static_power + avg_refresh_power
+      if mem_dtm != 'off':
+        # In case of low power mode, multiply the read and write accesses with the given scale factor.
+        normal_power_access = accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access
+        low_power_access    = (accesses_read_lowpower[bank] * energy_per_read_access + accesses_write_lowpower[bank] * energy_per_write_access) * lpm_dynamic_power
+        bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
+
+      else:
+        bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
+                      + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = ''
     #create logic_core power array. applicable only for 3Dmem and 2.5D memory
@@ -510,6 +665,8 @@ class memTherm:
     self.ES.periodic(time, time_delta)
     vdd_string = self.get_core_vdd_for_hotspot()     #used to scale core leakage power in hotspot
 
+    self.write_bank_leakage_trace(time, time_delta)
+
     #execute hotspot separately for core in case of 3Dmem and 2D memories
     if (core_thermal_enabled == 'true' and (type_of_stack=="3Dmem" or type_of_stack=="DDR")):
         self.execute_core_hotspot(vdd_string)
@@ -528,6 +685,8 @@ class memTherm:
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
+
+    os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file)
 
   def getStatsGetter(self, component, core, metric):
     # Some components don't exist (i.e. DRAM reads on cores that don't have a DRAM controller),

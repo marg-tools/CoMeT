@@ -7,6 +7,8 @@
 
 #include <decoder.h>
 
+#define MAX_NUM_OF_BANKS (128)
+
 class _Thread;
 class SyscallServer;
 class SyncServer;
@@ -43,6 +45,8 @@ public:
    static void setConfig(config::Config * cfg, Config::SimulationMode mode);
    static void allocate();
    static void release();
+
+   UInt64 m_bank_modes[MAX_NUM_OF_BANKS];
 
    SyscallServer* getSyscallServer() { return m_syscall_server; }
    SyncServer* getSyncServer() { return m_sync_server; }

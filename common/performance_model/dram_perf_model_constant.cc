@@ -4,6 +4,15 @@
 #include "config.hpp"
 #include "stats.h"
 #include "shmem_perf.h"
+#include "dram_trace_collect.h" // Used to calculate the bank number from an address.
+
+#define LOW_POWER 0
+#define NORMAL_POWER 1
+
+/*
+   This file has been extended to support a low power access latency,
+   which will be used when memory DTM is used.
+*/
 
 DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
       UInt32 cache_block_size):
@@ -14,6 +23,9 @@ DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
    m_total_access_latency(SubsecondTime::Zero())
 {
    m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+
+   // Read the low power access cost.
+   m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
    {
@@ -58,8 +70,20 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
       queue_delay = SubsecondTime::Zero();
    }
 
-   SubsecondTime access_latency = queue_delay + processing_time + m_dram_access_cost;
+   UInt32 bank_nr = get_address_bank(address, requester);
+   int bank_mode = Sim()->m_bank_modes[bank_nr];
 
+   SubsecondTime access_latency;
+
+   // Distinguish between dram power modes.
+   if (bank_mode == LOW_POWER) // Low power mode
+   {
+      access_latency = queue_delay + processing_time + m_dram_access_cost_lowpower;
+   }
+   else // Normal power mode.
+   {
+      access_latency = queue_delay + processing_time + m_dram_access_cost;
+   }
 
    perf->updateTime(pkt_time);
    perf->updateTime(pkt_time + queue_delay, ShmemPerf::DRAM_QUEUE);

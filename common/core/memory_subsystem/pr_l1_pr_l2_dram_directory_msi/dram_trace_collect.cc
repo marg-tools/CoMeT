@@ -18,6 +18,9 @@
 
 using namespace std;
 
+#define LOW_POWER 0     // Memory power mode.
+#define NORMAL_POWER 1
+
 // Global variables are initialized to 0 by default
 
 UInt64 NUM_OF_BANKS;
@@ -34,6 +37,11 @@ unsigned long num_of_dram_writes;
 
 UInt64 read_access_count_per_bank[MAX_NUM_OF_BANKS];
 UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
+
+UInt64 read_access_count_per_bank_lowpower[MAX_NUM_OF_BANKS];
+UInt64 read_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // For tracking memory bank power modes.
+
 UInt32 read_access_count;
 UInt64 read_interval_start_time;
 UInt32 read_bank_accessed;
@@ -41,6 +49,10 @@ UInt32 read_last_printed_timestamp;
 
 UInt64 write_access_count_per_bank[MAX_NUM_OF_BANKS];
 UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
+
+UInt64 write_access_count_per_bank_lowpower[MAX_NUM_OF_BANKS];
+UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+
 UInt32 write_access_count;
 UInt64 write_interval_start_time;
 UInt32 write_bank_accessed;
@@ -111,6 +123,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             registerStatsMetric("dram", 0 , "myreads", &m_reads);
             for(i = 0; i < NUM_OF_BANKS; i = i + 1){
                 read_access_count_per_bank[i]=0;
+                read_access_count_per_bank_lowpower[i]=0;
             }
         }
 
@@ -166,6 +179,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
                 rdt[read_adv_count].read_access_count_per_epoch = 0;
                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                     rdt[read_adv_count].bank_read_access_count[i] = 0;
+                    rdt[read_adv_count].bank_read_access_count_lowpower[i] = 0;
                 }
                 ++read_adv_count;
                 read_last_printed_timestamp =  read_last_printed_timestamp + ACCUMULATION_TIME;
@@ -178,15 +192,25 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                 //printf("%d,", read_access_count_per_bank[i]);
                 rdt[read_adv_count].bank_read_access_count[i] = read_access_count_per_bank[i];
+                rdt[read_adv_count].bank_read_access_count_lowpower[i] = read_access_count_per_bank_lowpower[i];
                 read_access_count_export[i] = read_access_count_per_bank[i];
+                read_access_count_export_lowpower[i] = read_access_count_per_bank_lowpower[i];
                 read_access_count_per_bank[i]=0;
+                read_access_count_per_bank_lowpower[i]=0;
               }
             ++read_adv_count;
             read_access_count=0;
             read_last_printed_timestamp = read_interval_start_time;
         }
         else {
-            ++read_access_count_per_bank[read_bank_accessed];
+            if (Sim()->m_bank_modes[read_bank_accessed] == NORMAL_POWER)
+            {
+                ++read_access_count_per_bank[read_bank_accessed];
+            }
+            else
+            {
+                ++read_access_count_per_bank_lowpower[read_bank_accessed];
+            }
             ++read_access_count;
         }
     }
@@ -221,6 +245,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             registerStatsMetric("dram", 0 , "mywrites", &m_writes);
             for(i = 0; i < NUM_OF_BANKS; i = i + 1){
                 write_access_count_per_bank[i]=0;
+                write_access_count_per_bank_lowpower[i]=0;
             }
         }
 
@@ -274,6 +299,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
                 wrt[write_adv_count].write_access_count_per_epoch = 0;
                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
                     wrt[write_adv_count].bank_write_access_count[i] = 0;
+                    wrt[write_adv_count].bank_write_access_count_lowpower[i] = 0;
                 }
                 ++write_adv_count;
                 write_last_printed_timestamp =  write_last_printed_timestamp + ACCUMULATION_TIME;
@@ -288,15 +314,69 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
                 wrt[write_adv_count].bank_write_access_count[i] = write_access_count_per_bank[i];
                 write_access_count_export[i] = write_access_count_per_bank[i];
                 write_access_count_per_bank[i]=0;
+
+                wrt[write_adv_count].bank_write_access_count_lowpower[i] = write_access_count_per_bank_lowpower[i];
+                write_access_count_export_lowpower[i] = write_access_count_per_bank_lowpower[i];
+                write_access_count_per_bank_lowpower[i]=0;
               }
             ++write_adv_count;
             write_access_count=0;
             write_last_printed_timestamp = write_interval_start_time;
         }
         else {
-            ++write_access_count_per_bank[write_bank_accessed];
+            if (Sim()->m_bank_modes[read_bank_accessed] == NORMAL_POWER)
+            {
+                ++write_access_count_per_bank[write_bank_accessed];
+            }
+            else
+            {
+                ++write_access_count_per_bank_lowpower[write_bank_accessed];
+            }
             ++write_access_count;
         }
     }
 }
 
+//  Moved this to a separate function to be used by other files.
+UInt32
+get_address_bank(IntPtr address, core_id_t requester)
+{
+    SInt32 memory_controllers_interleaving = 0;
+    memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+    UInt32 bank = -1;
+
+    if(TYPE_OF_STACK ==  "3Dmem" || TYPE_OF_STACK == "2.5D") {
+        if(ENABLE_CHANNEL_PARTITIONING) {
+            bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+            return bank;
+        }
+        else {
+            bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
+            return bank;
+        }
+    }
+    else {
+        if(TYPE_OF_STACK == "3D") {
+            if(ENABLE_CHANNEL_PARTITIONING)
+            {
+                bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                return bank;
+            }
+            else {
+                bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*1);
+                return bank;
+            }
+        }
+        else {
+            if(TYPE_OF_STACK ==  "DDR") {
+                bank = ((address & BANK_MASK) >> BANK_OFFSET_IN_PA);
+                return bank;
+            }
+            else {
+                printf("Invalid type of stack\n");
+                return -1;
+            }
+        }
+    }
+}

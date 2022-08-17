@@ -22,6 +22,7 @@ public:
     double getCPIOfCore(int coreId) const;
     int getFreqOfCore(int coreId) const;
     double getIPSOfCore(int coreId) const;
+    double getTemperatureOfBank(int bankId) const;
 
     void notifyFreqsOfCores(std::vector<int> frequencies);
 private:

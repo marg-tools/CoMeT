@@ -355,6 +355,8 @@ typedef struct RC_model_t_st
 	/* block model or grid model	*/
 	int type;
 	thermal_config_t *config;
+	int banks_nr;
+	float bank_modes[MAX_UNITS];
 }RC_model_t;
 
 /* constructor/destructor	*/
@@ -423,7 +425,7 @@ void matinv(double **inv, double **m, int n, int spd);
 void scaleadd_dvector (double *dst, double *src1, double *src2, int n, double scale);
 
 /* temperature-aware leakage calculation */
-double calc_leakage(int mode, double h, double w, double temp);
+double calc_leakage(int mode, double h, double w, double temp, unit_t *unit, float bank_modes[]);
 
 /* calculate average heatsink temperature for natural convection package model */
 double calc_sink_temp(RC_model_t *model, double *temp);

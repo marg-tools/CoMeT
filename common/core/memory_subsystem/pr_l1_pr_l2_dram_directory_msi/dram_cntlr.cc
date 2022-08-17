@@ -7,18 +7,21 @@
 #include "fault_injection.h"
 #include "shmem_perf.h"
 #include "dram_trace_collect.h"
+#include "simulator.h"
 
 #if 0
    extern Lock iolock;
 #  include "core_manager.h"
-#  include "simulator.h"
 #  define MYLOG(...) { ScopedLock l(iolock); fflush(stdout); printf("[%s] %d%cdr %-25s@%3u: ", itostr(getShmemPerfModel()->getElapsedTime()).c_str(), getMemoryManager()->getCore()->getId(), Sim()->getCoreManager()->amiUserThread() ? '^' : '_', __FUNCTION__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #  define MYLOG(...) {}
 #endif
 
 extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 read_access_count_export_lowpower[MAX_NUM_OF_BANKS];
 extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
+extern UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+extern UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // Keep track of memory bank power status.
 extern UInt64 NUM_OF_BANKS;
 
 UInt32 stats_initialized=0;
@@ -50,12 +53,17 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    read_memory_config(memory_manager->getCore()->getId());
 
    if (stats_initialized == 0) {
-     for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
-       registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
-       registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
-     }
-     stats_initialized = 1;
-  }
+      for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
+         registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
+         registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
+
+         registerStatsMetric("dram", i, "bank_read_access_counter_lowpower", &read_access_count_export_lowpower[i]);
+         registerStatsMetric("dram", i, "bank_write_access_counter_lowpower", &write_access_count_export_lowpower[i]);
+
+         registerStatsMetric("dram", i, "bank_mode", &Sim()->m_bank_modes[i]);
+      }
+      stats_initialized = 1;
+   }
 }
 
 DramCntlr::~DramCntlr()

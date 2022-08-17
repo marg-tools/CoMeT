@@ -623,7 +623,7 @@ void populate_C_model(RC_model_t *model, flp_t *flp)
 
 /* calculate temperature-dependent leakage power */
 /* will support HotLeakage in future releases */
-double calc_lc_leakage(int mode, double h, double w, double temp)
+double calc_lc_leakage(int mode, double h, double w, double temp, unit_t* unit, float bank_modes[])
 {
 	/* a simple leakage model.
 	 * Be aware -- this model may not be accurate in some cases.
@@ -647,6 +647,15 @@ double calc_lc_leakage(int mode, double h, double w, double temp)
 //	leakage_power = 0.272;					// At 353 (80)
 
 	leakage_power = 1.0 * leakage_power;
+
+	// Some layers with memory banks end up here.
+	if (unit != NULL && strstr(unit->name, "B_") != NULL)
+	{
+		char * p = unit->name;
+		int bank_id = strtol(unit->name+2, NULL, 10);
+		float mode = bank_modes[bank_id];
+		return leakage_power * mode;
+	}
 	//printf("leak = %f\n",leakage_power);
 	return leakage_power;	
 }
@@ -712,7 +721,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 				for(i=0; i < n; i++) {
 					blk_height = model->block->flp->units[i].height;
 					blk_width = model->block->flp->units[i].width;
-					power_new[i] = power[i] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[i]);
+					power_new[i] = power[i] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[i], &model->block->flp->units[i], model->bank_modes);
 					temp_old[i] = temp[i]; //copy temp before update
 				}
 				steady_state_temp_block(model->block, power_new, temp); // update temperature
@@ -761,14 +770,14 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else
-										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -822,8 +831,8 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
-									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+									else 
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -858,7 +867,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 										 	{ power_new[base+j] = 0; //printf("NO lc_leakage\n");
 											}
 										else
-										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);	
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
 										//printf("YES calc_lc_leakage, power = %f, power_new[%d + %d] = %f\n", power[base+j], base, j, power_new[base+j]);
 									}
 								}						
@@ -871,8 +880,8 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 											{ power_new[base+j] = 0; //printf("NO bank_leakage\n");
 											}
 										else	
-											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
-				 					//printf("YES calc_leakage, power = %f, power_new[%d + %d] = %f\n", power[base+j], base, j, power_new[base+j]);
+											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
+ 				 					//printf("YES calc_leakage, power = %f, power_new[%d + %d] = %f\n", power[base+j], base, j, power_new[base+j]);
 				 					// printf("YES");
 								}						
 							}
@@ -982,14 +991,14 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else
-										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
 										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1046,7 +1055,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1079,7 +1088,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 										if (leakage[j-4] == 0)
 											power_new[base+j] = 0;
 										else
-											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
+											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
 									}
 								}						
 							}
@@ -1090,7 +1099,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 										if (leakage[j] == 0)
 											power_new[base+j] = 0;
 										else	
-											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 								}						
 							}
@@ -1265,7 +1274,7 @@ void debug_print_model(RC_model_t *model)
 
 /* calculate temperature-dependent leakage power */
 /* will support HotLeakage in future releases */
-double calc_leakage(int mode, double h, double w, double temp)
+double calc_leakage(int mode, double h, double w, double temp, unit_t* unit, float bank_modes[])
 {
 	/* a simple leakage model.
 	 * Be aware -- this model may not be accurate in some cases.
@@ -1290,8 +1299,16 @@ double calc_leakage(int mode, double h, double w, double temp)
 //	leakage_power = 0.2156328354;			// At 353 (80)
 	leakage_power = 1.0 * leakage_power;
 
-
-	//printf("leak = %f\n",leakage_power);
+	// Look up memory bank mode and scale the leakage power.
+	if (unit != NULL && strstr(unit->name, "B_") != NULL)
+	{
+		char * p = unit->name;
+		int bank_id = strtol(unit->name+2, NULL, 10);
+		float mode = bank_modes[bank_id];
+		//printf("leak = %f\n",leakage_power * mode); 
+		return leakage_power * mode;
+	}
+	//printf("leak = %f\n",leakage_power); 
 	return leakage_power;	
 }
 
