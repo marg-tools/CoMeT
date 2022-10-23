@@ -306,7 +306,7 @@ python3 floorplanlib/create.py \
 </details>
 
 
-### 3.6 Supports PARSEC, SPLASH-2, SPEC 2017
+### 3.6 Supports PARSEC, SPLASH-2, SPEC 2017, and Deep Neural Networks
 
 <details>
 <summary>Click here to open details</summary>
@@ -337,6 +337,21 @@ make run
     ```
     - $SIM\_PATH represents path of a specific *.address* for the SPEC benchmark 
 
+- Running Deep Neural Networks (Darknet Open Source Neural Networks in C)
+```sh
+cd test/darknet
+# Compiling the darknet source code
+make
+# Running 4 instances of AlexNet on gainestown_3Dmem architecture
+# Download alexnet.weights (pre-trained model for AlexNet) from https://pjreddie.com/darknet/imagenet/
+./run.sh
+```
+    - Note on running darknet framework
+	- Running the entire source code would take days.
+	- Insert appropriate region of interest (ROI) markers in the source code, depending on the phase of DNN you want to simulate.
+	- Files of interest in darknet framework are inside src folder.
+	- Relevant functions -- load_network(), forward_network(), train_classifier(), try_classifier(), predict_classifier()
+	- Use SimRoiStart() and SimRoiEnd() to specify ROI.
 </details>
 
 ### 3.7 Simulation Control
