@@ -386,6 +386,8 @@ To do your own (automated) evaluations, see the `simulationcontrol.resultlib` pa
   
   thermallib: https://github.com/ma-rapp/thermallib
 
+  Darknet Open Source Neural Networks in C: https://pjreddie.com/darknet/
+
 
 
 
