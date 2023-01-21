@@ -115,11 +115,14 @@ combined_temperature_trace_file = sim.config.get('hotspot/log_files/combined_tem
 combined_insttemperature_trace_file = sim.config.get('hotspot/log_files/combined_insttemperature_trace_file')
 combined_power_trace_file = sim.config.get('hotspot/log_files/combined_power_trace_file')
 combined_instpower_trace_file = sim.config.get('hotspot/log_files/combined_instpower_trace_file')
+combined_power_trace_file_total = combined_power_trace_file.replace(".","_total.")       #appending _total to the power trace with leakage power
+combined_instpower_trace_file_total = 'tmmpFile_power1'
 #memory related files
 hotspot_steady_temp_file = sim.config.get('hotspot/log_files_mem/steady_temp_file')
 hotspot_grid_steady_file = sim.config.get('hotspot/log_files_mem/grid_steady_file')
 hotspot_all_transient_file = sim.config.get('hotspot/log_files_mem/all_transient_file')
 power_trace_file = sim.config.get('hotspot/log_files_mem/power_trace_file')
+power_trace_file_total = 'tmmpFile_power2'
 bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/bank_mode_trace_file') # For low power mode.
 full_bank_mode_trace_file = sim.config.get('scheduler/open/dram/dtm/full_bank_mode_trace_file') # For low power mode.
 full_power_trace_file = sim.config.get('hotspot/log_files_mem/full_power_trace_file')
@@ -133,6 +136,7 @@ c_hotspot_grid_steady_file = sim.config.get('hotspot/log_files_core/grid_steady_
 c_hotspot_all_transient_file = sim.config.get('hotspot/log_files_core/all_transient_file')
 c_full_power_trace_file = sim.config.get('hotspot/log_files_core/full_power_trace_file')
 c_power_trace_file = sim.config.get('hotspot/log_files_core/power_trace_file')
+c_power_trace_file_total = 'tmmpFile_power3'
 c_full_temperature_trace_file = sim.config.get('hotspot/log_files_core/full_temperature_trace_file')
 c_temperature_trace_file = sim.config.get('hotspot/log_files_core/temperature_trace_file')
 c_init_file = sim.config.get('hotspot/log_files_core/init_file')
@@ -147,6 +151,7 @@ c_init_file = sim.config.get('hotspot/log_files_core/init_file')
 hotspot_command = executable  \
                   + ' -c ' + hotspot_config_file \
                   + ' -p ' + power_trace_file \
+				  + ' -pTot ' + power_trace_file_total \
                   + ' -o ' + temperature_trace_file \
                   + ' -model_secondary 1 -model_type grid ' \
                   + ' -steady_file ' + hotspot_steady_temp_file \
@@ -333,6 +338,9 @@ class memTherm:
         f.write("%s\n" %(combined_header))
     f.close()
     with open(combined_power_trace_file, "w") as f:
+        f.write("%s\n" %(combined_header))
+    f.close()
+    with open(combined_power_trace_file_total, "w") as f:
         f.write("%s\n" %(combined_header))
     f.close()
     with open(full_power_trace_file, "w") as f:
@@ -544,6 +552,7 @@ class memTherm:
      c_hotspot_args = c_executable  \
                     + ' -c '+ c_hotspot_config_file \
                     + ' -p ' + c_power_trace_file \
+                    + ' -pTot ' + c_power_trace_file_total \
                     + ' -o ' + c_temperature_trace_file \
                     + ' -model_secondary 1 -model_type grid ' \
                     + ' -steady_file ' + c_hotspot_steady_temp_file \
@@ -681,12 +690,14 @@ class memTherm:
     os.system(hcmd)
     self.format_trace_file(True, c_temperature_trace_file, temperature_trace_file, combined_temperature_trace_file, combined_insttemperature_trace_file)
     self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
+    self.format_trace_file(True, c_power_trace_file_total, power_trace_file_total, combined_power_trace_file_total, combined_instpower_trace_file_total)
       #concatenate the per interval temperature trace into a single file
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
 
     os.system("tail -1 " + bank_mode_trace_file + " >>" + full_bank_mode_trace_file)
+    os.system("rm -f tmmpFile_*")
 
   def getStatsGetter(self, component, core, metric):
     # Some components don't exist (i.e. DRAM reads on cores that don't have a DRAM controller),
