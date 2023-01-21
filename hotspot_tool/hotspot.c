@@ -108,6 +108,12 @@ void global_config_from_strs(global_config_t *config, str_pair *table, int size)
   } else {
       fatal("required parameter p_infile missing. check usage\n");
   }
+  if ((idx = get_str_index(table, size, "pTot")) >= 0) {
+      if(sscanf(table[idx].value, "%s", config->pTot_outfile) != 1)
+        fatal("invalid format for configuration  parameter pTot_outfile\n");
+  } else {
+      strcpy(config->pTot_outfile, NULLFILE);
+  }
   if ((idx = get_str_index(table, size, "o")) >= 0) {
       if(sscanf(table[idx].value, "%s", config->t_outfile) != 1)
         fatal("invalid format for configuration  parameter t_outfile\n");
@@ -335,6 +341,15 @@ void write_vals(FILE *fp, double *vals, int size)
   fprintf(fp, "%.2f\n", vals[i]-273.15);
 }
 
+/* write a single line of power trace(in W)	*/
+void write_vals_power(FILE *fp, double *vals, int size)
+{
+  int i;
+  for(i=0; i < size-1; i++)
+    fprintf(fp, "%.2f\t", vals[i]);
+  fprintf(fp, "%.2f\n", vals[i]);
+}
+
 char **alloc_names(int nr, int nc)
 {
   int i;
@@ -375,18 +390,21 @@ int main(int argc, char **argv)
   int num, size, lines = 0, do_transient = TRUE;
   char **names;
   double *vals;
+  double *vals_withLeak;
 
   float bank_modes[MAX_UNITS]; // Keep track of the bank modes for use in low power mode.
   int banks_nr = 0;
 
   /* trace file pointers	*/
   FILE *pin, *tout, *bmin = NULL; // bmin points to the bank mode input file.
+  FILE *pout_withLeak;            //points to the total power output with leakage included
   /* floorplan	*/
   flp_t *flp;
   /* hotspot temperature model	*/
   RC_model_t *model;
   /* instantaneous temperature and power values	*/
   double *temp = NULL, *power;
+  double *power_withLeak;
   double total_power = 0.0;
 
   /* steady state temperature and power values	*/
@@ -543,6 +561,7 @@ for (i = 0; i < length_v; ++i)
   if (do_transient)
     temp = hotspot_vector(model);
   power = hotspot_vector(model);
+  power_withLeak = hotspot_vector(model);
   steady_temp = hotspot_vector(model);
   overall_power = hotspot_vector(model);
 
@@ -573,6 +592,8 @@ for (i = 0; i < length_v; ++i)
     fatal("unable to open power trace input file\n");
   if(do_transient && !(tout = fopen(global_config.t_outfile, "w")))
     fatal("unable to open temperature trace file for output\n");
+  if(do_transient && !(pout_withLeak = fopen(global_config.pTot_outfile, "w")))
+    fatal("unable to open power trace file (total power with leakage) for output\n");
 
   /* names of functional units	*/
   names = alloc_names(MAX_UNITS, STR_SIZE);
@@ -591,8 +612,10 @@ for (i = 0; i < length_v; ++i)
   model->banks_nr = banks_nr;
 
   /* header line of temperature trace	*/
-  if (do_transient)
+  if (do_transient){
     write_names(tout, names, n);
+    write_names(pout_withLeak, names, n);
+  }
 
   // If the memory bank power mode file is provided, we will use it.
   if (strcmp(global_config.bm_infile, NULLFILE) != 0)
@@ -623,6 +646,7 @@ for (i = 0; i < length_v; ++i)
   
   /* read the instantaneous power trace	*/
   vals = dvector(MAX_UNITS);
+  vals_withLeak = dvector(MAX_UNITS);
   while ((num=read_vals(pin, vals)) != 0) {
       if(num != n)
         fatal("invalid trace file format\n");
@@ -658,20 +682,23 @@ for (i = 0; i < length_v; ++i)
            * across multiple calls of compute_temp
            */
           if (model->type == BLOCK_MODEL || lines == 0)
-            compute_temp(model, power, temp, model->config->sampling_intvl);
+            compute_temp(model, power, temp, power_withLeak, model->config->sampling_intvl);
           else
-            compute_temp(model, power, NULL, model->config->sampling_intvl);
+            compute_temp(model, power, NULL, power_withLeak, model->config->sampling_intvl);
 
           /* permute back to the trace file order	*/
           if (model->type == BLOCK_MODEL)
-            for(i=0; i < n; i++)
+            for(i=0; i < n; i++){
               vals[i] = temp[get_blk_index(flp, names[i])];
+              vals_withLeak[i] = power_withLeak[get_blk_index(flp, names[i])];
+			}
           else
             for(i=0, base=0, count=0; i < model->grid->n_layers; i++) {
                 if(model->grid->layers[i].has_power) {
                     for(j=0; j < model->grid->layers[i].flp->n_units; j++) {
                         idx = get_blk_index(model->grid->layers[i].flp, names[count+j]);
                         vals[count+j] = temp[base+idx];
+                        vals_withLeak[count+j] = power_withLeak[base+idx];
                     }
                     count += model->grid->layers[i].flp->n_units;	
                 }	
@@ -680,6 +707,7 @@ for (i = 0; i < length_v; ++i)
 
           /* output instantaneous temperature trace	*/
           write_vals(tout, vals, n);
+          write_vals_power(pout_withLeak, vals_withLeak, n);
       }		
 
       /* for computing average	*/

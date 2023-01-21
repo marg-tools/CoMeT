@@ -13,6 +13,8 @@ typedef struct global_config_t_st
 	char p_infile[STR_SIZE];
 	/* output file for the temperature trace */
 	char t_outfile[STR_SIZE];
+	/* output file for the total power trace with leakage */
+	char pTot_outfile[STR_SIZE];
 	/* input configuration parameters from file	*/
 	char config[STR_SIZE];
 	/* output configuration parameters to file	*/

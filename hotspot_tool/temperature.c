@@ -928,7 +928,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 double *temp_first_time = NULL;
 
 /* transient (instantaneous) temperature	*/
-void compute_temp(RC_model_t *model, double *power, double *temp, double time_elapsed)
+void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_power_dump, double time_elapsed)
 {
 	
 //	double *temp_old = NULL;
@@ -1111,6 +1111,10 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double time_el
 				// printf("k=%d",k);					
 				}
                         }//end of if memory type
+
+			//assigning to the tot_power_dump array for printing to file through the hotspot.c
+			for (k=0; k < base; k++)
+				tot_power_dump[k] = power_new[k];
 
 			// printf("Calling compute_temp_grid\n");					
 			compute_temp_grid(model->grid, power_new, temp_first_time, time_elapsed);

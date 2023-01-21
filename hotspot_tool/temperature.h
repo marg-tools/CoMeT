@@ -370,7 +370,7 @@ void populate_C_model(RC_model_t *model, flp_t *flp);
 
 /* hotspot main interfaces - temperature.c	*/
 void steady_state_temp(RC_model_t *model, double *power, double *temp);
-void compute_temp(RC_model_t *model, double *power, double *temp, double time_elapsed);
+void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_power_dump, double time_elapsed);
 /* differs from 'dvector()' in that memory for internal nodes is also allocated	*/
 double *hotspot_vector(RC_model_t *model);
 /* copy 'src' to 'dst' except for a window of 'size'
