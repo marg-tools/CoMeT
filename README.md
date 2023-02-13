@@ -18,6 +18,15 @@ Following are the salient features:
 7. Using the *SimulationControl* feature, users can run simulations in batch mode, taking the list of workloads (mixes of benchmarks) and configurations as input. Further, to enable detailed output analysis, *SimulationControl* generates additional outputs, such as performance, power, temperature variation (versus time) graphs, and detailed CPI bar charts. 
 
 
+## Publication
+
+### CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5 D, and 3D Processor-Memory Systems
+
+Details of CoMeT can be found in our TACO 2022 paper, and please consider citing this paper in your work if you find this tool useful in your research.
+
+> Lokesh Siddhu, Rajesh Kedia, Shailja Pandey, Martin Rapp, Anuj Pathania, Jörg Henkel, and Preeti Ranjan Panda. **"CoMeT: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5 D, and 3D Processor-Memory Systems"**. *"ACM Transactions on Architecture and Code Optimization"* Volume 19 Issue 3 Article No.: 44 pp 1–25 https://doi.org/10.1145/3532185.
+
+[ACM DL](https://dl.acm.org/doi/full/10.1145/3532185) 
 
 
 ## 1 - Getting Started (Installation)
