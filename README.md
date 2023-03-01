@@ -28,6 +28,10 @@ Details of CoMeT can be found in our TACO 2022 paper, and please consider citing
 
 [ACM DL](https://dl.acm.org/doi/full/10.1145/3532185) 
 
+## The CoMeT User Manual
+
+Please refer to [CoMeT User Manual](https://github.com/marg-tools/CoMeT/blob/main/The%20CoMeT%20User%20Manaual.pdf) to learn how to write custom scheduling policies that perform thermal-aware Dynamic Voltage Frequency Scaling (DVFS), Memory Low-Power Mode, Task Mappings, and Task Migrations.
+
 
 ## 1 - Getting Started (Installation)
 
