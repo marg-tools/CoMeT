@@ -398,6 +398,21 @@ For quick visual check, many plots are automatically generated for you (IPS, pow
 To do your own (automated) evaluations, see the `simulationcontrol.resultlib` package for a set of helper functions to parse the results. See the source code of `parse_results.py` for a few examples.
 </details>
 
+### 3.8 Running subcore (with component details within a core) simulations
+<details>
+<summary>Click here to open details</summary>
+
+CoMeT also allows running subcore level simulations if one is interested to find out the hot regions within a core. To enable subcore simulations in CoMeT, do the following:
+- In `config/base.cfg`, there is a section named `[core_power]`. Make everything as true except for the tp and l3 being false. These reflect various sub components of the core.
+- A single core floorplan template is at ./config/hotspot/3Dmem_subcore/template.flp. We use this template for our simulations. If needed, one can change the dimensions.
+- The `floorplanlib` generates multi-core floorplan by repeating these subcore components. A default created floorplan is available (4-core, 3D-ext configuration) in `./config/hotspot/3Dmem_subcore`
+      - The extra switch to generate such multi-core floorplan is: --subcore-template config/hotspot/3Dmem_subcore/template.flp
+- A default config file is available at `config/gainestown_3Dmem_subcore.cfg`. Use this for the simulation (or create own as per the requirements)
+- PLEASE NOTE THAT heatview DOES NOT SUPPORT subcore video generation.
+
+
+</details>
+
 ## Code Acknowledgements
 
   Sniper: http://snipersim.org
