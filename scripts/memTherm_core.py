@@ -4,6 +4,7 @@ memTherm_core.py
 """
 
 import sys, os, sim
+import reliability as rlb
 
 LOW_POWER = 0
 NORMAL_POWER = 1
@@ -346,7 +347,11 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
-    
+
+    if rlb.enabled:
+        rlb.clean_reliability_files()
+        rlb.init_reliability_files(combined_header, ptrace_header)
+
     mem_header = gen_mem_header()
     with open(full_bank_mode_trace_file, "w") as f:
         f.write("%s\n" %(mem_header))
@@ -692,6 +697,11 @@ class memTherm:
     self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
     self.format_trace_file(True, c_power_trace_file_total, power_trace_file_total, combined_power_trace_file_total, combined_instpower_trace_file_total)
       #concatenate the per interval temperature trace into a single file
+
+    # Update reliability values of all the cores.
+    if rlb.enabled:
+        rlb.update_reliability_values(combined_insttemperature_trace_file, time_delta)
+
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)

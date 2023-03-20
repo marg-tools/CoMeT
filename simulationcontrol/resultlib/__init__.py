@@ -175,6 +175,14 @@ def get_all_temperature_traces(run):
     return traces
 
 
+def get_rvalues_traces(run):
+    return _get_traces(run, 'combined_periodic_rvalue.trace')
+
+
+def get_all_rvalues_traces(run):
+    return _get_named_traces(run, 'combined_periodic_rvalue.trace')
+
+
 @cache.memoize()
 def get_cpi_stack_trace_parts(run):
     parts = []

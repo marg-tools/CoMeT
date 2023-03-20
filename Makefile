@@ -11,13 +11,13 @@ LIB_SIFT=$(SIM_ROOT)/sift/libsift.a
 LIB_DECODER=$(SIM_ROOT)/decoder_lib/libdecoder.a
 SIM_TARGETS=$(LIB_DECODER) $(LIB_CARBON) $(LIB_SIFT) $(LIB_PIN_SIM) $(LIB_FOLLOW) $(STANDALONE) $(PIN_FRONTEND)
 
-.PHONY: all message dependencies compile_simulator configscripts package_deps pin python linux builddir showdebugstatus distclean mbuild xed_install xed
+.PHONY: all message dependencies compile_simulator configscripts package_deps pin python linux builddir showdebugstatus distclean mbuild xed_install xed reliability
 # Remake LIB_CARBON on each make invocation, as only its Makefile knows if it needs to be rebuilt
 .PHONY: $(LIB_CARBON)
 
 all: message dependencies $(SIM_TARGETS) configscripts
 
-dependencies: package_deps xed pin python mcpat linux builddir showdebugstatus
+dependencies: package_deps xed pin python mcpat linux builddir showdebugstatus reliability
 
 $(SIM_TARGETS): dependencies
 
@@ -44,14 +44,14 @@ $(PIN_FRONTEND):
 #$(LIB_FOLLOW):
 #	@$(MAKE) $(MAKE_QUIET) -C $(SIM_ROOT)/pin $@
 
-$(LIB_CARBON): 
+$(LIB_CARBON):
 	@$(MAKE) $(MAKE_QUIET) -C $(SIM_ROOT)/common
 
 $(LIB_SIFT): $(LIB_CARBON)
 	@$(MAKE) $(MAKE_QUIET) -C $(SIM_ROOT)/sift
 
 $(LIB_DECODER): $(LIB_CARBON)
-	@$(MAKE) $(MAKE_QUIET) -C $(SIM_ROOT)/decoder_lib 
+	@$(MAKE) $(MAKE_QUIET) -C $(SIM_ROOT)/decoder_lib
 
 MBUILD_GITID=1651029643b2adf139a8d283db51b42c3c884513
 MBUILD_INSTALL=$(SIM_ROOT)/mbuild
@@ -124,6 +124,11 @@ showdebugstatus:
 ifneq ($(DEBUG),)
 	@echo Using flags: $(OPT_CFLAGS)
 endif
+
+reliability:
+	git submodule init
+	git submodule update
+	make -f Makefile.ubuntu-20.04 -C reliability/
 
 configscripts: dependencies
 	@mkdir -p config
