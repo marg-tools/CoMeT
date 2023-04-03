@@ -108,7 +108,9 @@ def save_output(configuration_tags, benchmark, console_output, started, ended):
               'full_power_mem.trace',  # this contains power of memory banks and logic cores (memory controllers)
               'full_power_core.trace',  # this contains power of cores (included for consistency)
               'combined_temperature.trace',
-              'combined_periodic_rvalue.trace',
+              'combined_rvalue.trace',
+              'full_rvalue_mem.trace',
+              'full_rvalue_core.trace',
               'PeriodicFrequency.log',
               'PeriodicVdd.log',
               'PeriodicCPIStack.log',):
