@@ -156,11 +156,20 @@ def log_vdd(results):
   else:
       raise Exception('do not know how to scale vdd to {} nm'.format(size_nm))
   vdd = [float(results['config']['power/vdd'].get(i))*scale for i in range(ncores)]
+
   filename = 'PeriodicVdd.log'
   os.system("touch "+ filename)
   write_header = os.stat(filename).st_size == 0
   with open(filename, 'a') as f:
     if write_header:
+      f.write('\t'.join('Core{}'.format(i) for i in range(ncores)))
+      f.write('\n')
+    f.write('\t'.join('{:.3f}'.format(f) for f in vdd))
+    f.write('\n')
+
+  filename = 'InstantVdd.log'
+  with open(filename, 'w') as f:
+    if os.stat(filename).st_size == 0:
       f.write('\t'.join('Core{}'.format(i) for i in range(ncores)))
       f.write('\n')
     f.write('\t'.join('{:.3f}'.format(f) for f in vdd))

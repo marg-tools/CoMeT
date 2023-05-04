@@ -700,7 +700,7 @@ class memTherm:
 
     # Update reliability values of all the cores.
     if rlb.enabled:
-        rlb.update_reliability_values(time_delta)
+        rlb.update_reliability_values(time_delta, time)
 
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
