@@ -30,6 +30,10 @@ mem_dtm = sim.config.get('scheduler/open/dram/dtm')
 lpm_dynamic_power = float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power'))
 lpm_leakage_power = float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power'))
 
+core_frequency_min = float(sim.config.get('perf_model/core/min_frequency'))*1000
+core_frequency_max = float(sim.config.get('perf_model/core/max_frequency'))*1000
+core_frequency_step = float(sim.config.get('perf_model/core/frequency_step_size'))*1000
+
 #define constants
 #_enable = 1
 #_disable = 0
@@ -658,7 +662,10 @@ class memTherm:
 
   def get_core_vdd_for_hotspot(self):
     lfreq = [ sim.dvfs.get_frequency(core) for core in range(sim.config.ncores) ]
-    lvdd = [ self.ES.get_vdd_from_freq(f) for f in lfreq ]
+    if rlb.enabled:
+      lvdd = [ self.ES.get_vdd_from_freq(f) for f in rlb.target_freqs(lfreq) ]
+    else:
+      lvdd = [ self.ES.get_vdd_from_freq(f) for f in lfreq ]
     lvdd = [ v/1.2 for v in lvdd ]          #normalize to 1.2 volts
     lvdd = [ round(v, 1) for v in lvdd ]    #round to 1 digit decimal
     vdd_str = ""
@@ -730,8 +737,10 @@ def build_dvfs_table(tech):
     # McPAT does not support technology nodes smaller than 22nm and is operated at 22nm.
     # The scaling is then done in tools/mcpat.py.
     def v(f):
-      return 0.6 + f / 4000.0 * 0.8
-    return [ (f, v(f))  for f in reversed(range(0, 4000+1, 100))]
+      return 0.6 + f / core_frequency_max * 0.8
+    return [ (f, v(f))  for f in reversed(range(int(core_frequency_min), 
+                                                int(core_frequency_max)+1, 
+                                                int(core_frequency_step))) ]
   elif tech == 45:
     return [ (2000, 1.2), (1800, 1.1), (1500, 1.0), (1000, 0.9), (0, 0.8) ]
   else:
@@ -790,14 +799,19 @@ class EnergyStats:
 
   def get_vdd_from_freq(self, f):
     # Assume self.dvfs_table is sorted from highest frequency to lowest
+    if f > core_frequency_max:
+      raise ValueError('Could not find a Vdd for invalid frequency %f exceeding the core\'s maximum frequency' % f)
     for _f, _v in self.dvfs_table:
       if f >= _f:
         return _v
-    assert ValueError('Could not find a Vdd for invalid frequency %f' % f)
+    raise ValueError('Could not find a Vdd for invalid frequency %f' % f)
 
   def gen_config(self, outputbase):
     freq = [ sim.dvfs.get_frequency(core) for core in range(sim.config.ncores) ]
-    vdd = [ self.get_vdd_from_freq(f) for f in freq ]
+    if rlb.enabled:
+      vdd = [ self.get_vdd_from_freq(f) for f in rlb.target_freqs(freq) ]
+    else:
+      vdd = [ self.get_vdd_from_freq(f) for f in freq ]
     configfile = outputbase+'.cfg'
     cfg = open(configfile, 'w')
     cfg.write('''

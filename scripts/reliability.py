@@ -6,6 +6,8 @@ import sys, os, sim
 
 # get general config options
 output_dir = sim.config.get('general/output_dir')
+vth = float(sim.config.get('power/vth'))
+delta_v_scale_factor = float(sim.config.get('reliability/delta_v_scale_factor'))
 vdd_file = 'InstantVdd.log'
 
 # get reliability config options
@@ -73,6 +75,23 @@ def clean_reliability_files():
             if os.path.exists(f):
                 os.remove(f)
 
+def target_freqs(freqs):
+    with open(comb_delta_v_file, 'r') as file:
+        delta_v = map(lambda x: float(x), file.readline().strip().split('\t'))
+    file.close()
+    with open(vdd_file, 'r') as file:
+        file.readline() # ignore header
+        vdd = map(lambda x: float(x), file.readline().strip().split('\t'))
+    file.close()
+
+    # based on equation (1) in Rathore (2019) LifeGuard: A Reinforcement 
+    # Learning-Based Task Mapping Strategy for Performance-Centric Aging 
+    # Management
+    def new_f(f):
+        return f / (1 - (delta_v[i] * delta_v_scale_factor)/(vdd[i] - vth))
+
+    return [new_f(f) for i, f in enumerate(freqs)]
+
 def execute_reliability(delta_t_ms, timestamp_ms, temperature_trace_file, vdd_trace_file, state_file, delta_v_file, instant_trace_file, periodic_trace_file):
     # Setup call to reliability binary `reliability_external`.
     reliability_cmd = "{} {} {} {} {} {} {} {} {}".format(
@@ -88,7 +107,6 @@ def execute_reliability(delta_t_ms, timestamp_ms, temperature_trace_file, vdd_tr
         current_rval.readline()  # Skip header
         with open(periodic_trace_file, 'a') as rvalues:
             rvalues.write(current_rval.readline())
-
 
 def update_reliability_values(delta_t, timestamp):
     # Update the reliability values of the cores.

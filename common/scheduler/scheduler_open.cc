@@ -34,9 +34,9 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
    , m_next_core(0) {
 
 	// Initialize config constants
-	minFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/min_frequency") + 0.5);
-	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/max_frequency") + 0.5);
-	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("scheduler/open/dvfs/frequency_step_size") + 0.5);
+	minFrequency = (int)(1000 * Sim()->getCfg()->getFloat("perf_model/core/min_frequency") + 0.5);
+	maxFrequency = (int)(1000 * Sim()->getCfg()->getFloat("perf_model/core/max_frequency") + 0.5);
+	frequencyStepSize = (int)(1000 * Sim()->getCfg()->getFloat("perf_model/core/frequency_step_size") + 0.5);
 	dvfsEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dvfs/dvfs_epoch").c_str());
 	dramEpoch = atol(Sim()->getCfg()->getString("scheduler/open/dram/dram_epoch").c_str()); // Required for Dram policy.
 
