@@ -117,6 +117,14 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		void executeMigrationPolicy(SubsecondTime time);
 		void migrateThread(thread_id_t thread_id, core_id_t core_id);
 
+		// Reliability
+		bool rlb_enabled;
+		float vdd;
+		float vth;
+		float delta_v_scale_factor;
+		std::vector<int> maxFrequencyDynamic;
+		void checkFrequencies();
+
 		std::string formatTime(SubsecondTime time);
 
 		core_id_t getNextCore(core_id_t core_first);

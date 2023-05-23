@@ -67,7 +67,15 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	performanceCounters = new PerformanceCounters(
 		Sim()->getCfg()->getString("hotspot/log_files/combined_instpower_trace_file").c_str(),
 		Sim()->getCfg()->getString("hotspot/log_files/combined_insttemperature_trace_file").c_str(),
-		"InstantaneousCPIStack.log");
+		"InstantaneousCPIStack.log",
+		Sim()->getCfg()->getString("reliability/log_files/instant_trace_file").c_str(),
+		Sim()->getCfg()->getString("reliability/log_files/delta_v_file").c_str());
+
+	rlb_enabled = (bool) Sim()->getCfg()->getString("reliability/enabled").c_str();
+	vdd = (float) Sim()->getCfg()->getFloat("power/vdd");
+	vth = (float) Sim()->getCfg()->getFloat("power/vth");
+	delta_v_scale_factor = (float) Sim()->getCfg()->getFloat("reliability/delta_v_scale_factor");
+	maxFrequencyDynamic = std::vector<int> (numberOfCores, maxFrequency);
 
 	//Initialize the cores in the system.
 	for (int coreIterator=0; coreIterator < numberOfCores; coreIterator++) {
@@ -872,10 +880,12 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
 	int oldFrequency = Sim()->getMagicServer()->getFrequency(coreCounter);
 
 	if (frequency < minFrequency) {
+		cout << "[Scheduler] [Warning]: requested frequency " << frequency << " increased to minimum frequency " << minFrequency << endl;	
 		frequency = minFrequency;
 	}
-	if (frequency > maxFrequency) {
-		frequency = maxFrequency;
+	if (frequency > maxFrequencyDynamic.at(coreCounter)) {
+		cout << "[Scheduler] [Warning]: requested frequency " << frequency << " lowered to maximum frequency " << maxFrequencyDynamic.at(coreCounter) << endl;	
+		frequency = maxFrequencyDynamic.at(coreCounter);
 	}
 
 	if (frequency != oldFrequency) {
@@ -883,6 +893,25 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
 	}
 }
 
+/** checkFrequencies
+ * Calculate maximum frequency based on change in threshold voltage and adjust core frequencies if needed.
+ */
+void SchedulerOpen::checkFrequencies() {
+	std::vector<double> delta_vs = performanceCounters->getDeltaVthOfCores(numberOfCores);
+
+	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		double delta_v = delta_vs.at(coreCounter);
+		int frequency = Sim()->getMagicServer()->getFrequency(coreCounter);
+		int newMaxFrequency = maxFrequency * (1 - (delta_v * delta_v_scale_factor)/(vdd-vth));
+		maxFrequencyDynamic.at(coreCounter) = newMaxFrequency;
+
+		if (frequency > newMaxFrequency) {
+			setFrequency(coreCounter, frequency);
+		}
+
+		// cout << "[Scheduler]: maxFrequency for core " << coreCounter << " is " << newMaxFrequency << endl;
+	}
+}
 
 /** executeDVFSPolicy
  * Set DVFS levels according to the used policy.
@@ -1028,6 +1057,10 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 		if (numberOfActiveTasks () + numberOfTasksCompleted () + numberOfTasksInQueue () + numberOfTasksWaitingToSchedule () != numberOfTasks) {
 			cout <<"\n[Scheduler] [Error]: Task State Does Not Match.\n";		
 			exit (1);
+		}
+
+		if (rlb_enabled) {
+			checkFrequencies();
 		}
 	}
 

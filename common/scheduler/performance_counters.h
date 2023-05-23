@@ -11,7 +11,11 @@
 
 class PerformanceCounters {
 public:
-    PerformanceCounters(std::string instPowerFileName, std::string instTemperatureFileName, std::string instCPIStackFileName);
+    PerformanceCounters(std::string instPowerFileName, 
+                        std::string instTemperatureFileName, 
+                        std::string instCPIStackFileName, 
+                        std::string instRvalueFileName,
+                        std::string instDeltaVthFileName);
     double getPowerOfComponent (std::string component) const;
     double getPowerOfCore(int coreId) const;
     double getPeakTemperature () const;
@@ -23,6 +27,9 @@ public:
     int getFreqOfCore(int coreId) const;
     double getIPSOfCore(int coreId) const;
     double getTemperatureOfBank(int bankId) const;
+    double getRvalueOfComponent (std::string component) const;
+    double getRvalueOfCore (int coreId) const;
+    std::vector<double> getDeltaVthOfCores (int numberOfCores) const;
 
     void notifyFreqsOfCores(std::vector<int> frequencies);
 private:
@@ -31,6 +38,8 @@ private:
     std::string instPowerFileName;
     std::string instTemperatureFileName;
     std::string instCPIStackFileName;
+    std::string instRvalueFileName;
+    std::string instDeltaVthFileName;
 
     std::vector<std::string> getCPIStackParts() const;
 };
