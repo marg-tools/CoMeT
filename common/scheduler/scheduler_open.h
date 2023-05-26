@@ -119,7 +119,6 @@ class SchedulerOpen : public SchedulerPinnedBase {
 
 		// Reliability
 		bool rlb_enabled;
-		float vdd;
 		float vth;
 		float delta_v_scale_factor;
 		std::vector<int> maxFrequencyDynamic;

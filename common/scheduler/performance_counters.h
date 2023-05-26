@@ -15,6 +15,7 @@ public:
                         std::string instTemperatureFileName, 
                         std::string instCPIStackFileName, 
                         std::string instRvalueFileName,
+                        std::string instVddFileName,
                         std::string instDeltaVthFileName);
     double getPowerOfComponent (std::string component) const;
     double getPowerOfCore(int coreId) const;
@@ -29,6 +30,7 @@ public:
     double getTemperatureOfBank(int bankId) const;
     double getRvalueOfComponent (std::string component) const;
     double getRvalueOfCore (int coreId) const;
+    std::vector<double> getVddOfCores (int numberOfCores) const;
     std::vector<double> getDeltaVthOfCores (int numberOfCores) const;
 
     void notifyFreqsOfCores(std::vector<int> frequencies);
@@ -39,6 +41,7 @@ private:
     std::string instTemperatureFileName;
     std::string instCPIStackFileName;
     std::string instRvalueFileName;
+    std::string instVddFileName;
     std::string instDeltaVthFileName;
 
     std::vector<std::string> getCPIStackParts() const;

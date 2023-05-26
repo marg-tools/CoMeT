@@ -11,11 +11,13 @@ PerformanceCounters::PerformanceCounters(
 	std::string instTemperatureFileName,
 	std::string instCPIStackFileName,
 	std::string instRvalueFileName,
+	std::string instVddFileName,
 	std::string instDeltaVthFileName) :
 		instPowerFileName(instPowerFileName),
 		instTemperatureFileName(instTemperatureFileName),
 		instCPIStackFileName(instCPIStackFileName),
 		instRvalueFileName(instRvalueFileName),
+		instVddFileName(instVddFileName),
 		instDeltaVthFileName(instDeltaVthFileName) {
 }
 
@@ -278,6 +280,28 @@ double PerformanceCounters::getRvalueOfComponent (std::string component) const {
 double PerformanceCounters::getRvalueOfCore (int coreId) const {
     string component = "Core" + std::to_string(coreId) + "-TP";
     return getRvalueOfComponent(component);
+}
+
+vector<double> PerformanceCounters::getVddOfCores (int numberOfCores) const {
+	ifstream vddLogFile(instVddFileName);
+	string header;
+	string data;
+
+	if (vddLogFile.good()) {
+		getline(vddLogFile, header);
+		getline(vddLogFile, data);
+	}
+
+	std::istringstream issData(data);
+
+	vector<double> vdds;
+	for (int i = 0; i < numberOfCores; i++) {
+		std::string value;
+		getline(issData, value, '\t');
+		vdds.push_back(stod(value));
+	}
+
+	return vdds;
 }
 
 vector<double> PerformanceCounters::getDeltaVthOfCores (int numberOfCores) const {

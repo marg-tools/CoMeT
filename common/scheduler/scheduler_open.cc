@@ -69,10 +69,10 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 		Sim()->getCfg()->getString("hotspot/log_files/combined_insttemperature_trace_file").c_str(),
 		"InstantaneousCPIStack.log",
 		Sim()->getCfg()->getString("reliability/log_files/instant_trace_file").c_str(),
+		"InstantVdd.log",
 		Sim()->getCfg()->getString("reliability/log_files/delta_v_file").c_str());
 
-	rlb_enabled = (bool) Sim()->getCfg()->getString("reliability/enabled").c_str();
-	vdd = (float) Sim()->getCfg()->getFloat("power/vdd");
+	rlb_enabled = Sim()->getCfg()->getBool("reliability/enabled");
 	vth = (float) Sim()->getCfg()->getFloat("power/vth");
 	delta_v_scale_factor = (float) Sim()->getCfg()->getFloat("reliability/delta_v_scale_factor");
 	maxFrequencyDynamic = std::vector<int> (numberOfCores, maxFrequency);
@@ -897,9 +897,11 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
  * Calculate maximum frequency based on change in threshold voltage and adjust core frequencies if needed.
  */
 void SchedulerOpen::checkFrequencies() {
+	std::vector<double> vdds = performanceCounters->getVddOfCores(numberOfCores);
 	std::vector<double> delta_vs = performanceCounters->getDeltaVthOfCores(numberOfCores);
 
 	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
+		double vdd = vdds.at(coreCounter);
 		double delta_v = delta_vs.at(coreCounter);
 		int frequency = Sim()->getMagicServer()->getFrequency(coreCounter);
 		int newMaxFrequency = maxFrequency * (1 - (delta_v * delta_v_scale_factor)/(vdd-vth));
