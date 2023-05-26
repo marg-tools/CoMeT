@@ -8,10 +8,13 @@ import sys, os, sim
 output_dir = sim.config.get('general/output_dir')
 vth = float(sim.config.get('power/vth'))
 vdd_file = 'InstantVdd.log'
+logic_cores_in_x = int(sim.config.get('memory/banks_in_x'))
+logic_cores_in_y = int(sim.config.get('memory/banks_in_y'))
+NUM_LC = logic_cores_in_x * logic_cores_in_y
 
 # get reliability config options
 enabled              = True if sim.config.get('reliability/enabled') =='true' else False
-separate_traces      = False if sim.config.get('core_power/tp') =='true' else True
+subcore_enabled      = False if sim.config.get('core_power/tp') =='true' else True
 acceleration_factor  = sim.config.get('reliability/acceleration_factor')
 delta_v_scale_factor = float(sim.config.get('reliability/delta_v_scale_factor'))
 reliability_exec     = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('reliability/reliability_executable'))
@@ -38,32 +41,34 @@ m_rvalue_trace_file      = sim.config.get('reliability/log_files_mem/rvalue_trac
 m_full_rvalue_trace_file = sim.config.get('reliability/log_files_mem/full_rvalue_trace_file')
 
 
-def write_headers(trace_file, full_trace_file, state_file, delta_v_file, header):
+def write_headers(trace_file, full_trace_file, state_file, delta_v_file, header, data_len=0):
     # create instant, periodic and state trace files with the given header
     header = header.strip()
-    header_len = len(header.split('\t'))
+    data_len += len(header.split('\t'))
     with open(trace_file, "w") as f:
         f.write("%s\n" %(header))
     with open(full_trace_file, "w") as f:
         f.write("%s\n" %(header))
     with open(state_file, "w") as f:
-        f.write("0.0\t"*header_len+"\n")
+        f.write("0.0\t"*data_len+"\n")
     with open(delta_v_file, "w") as f:
-        f.write("0.0\t"*header_len+"\n")
+        f.write("0.0\t"*data_len+"\n")
 
 def init_reliability_files(combined_header, ptrace_header):
     # Initialise separate trace files
     with open(c_temperature_trace_file) as hf:
-        # we get the subcore header from the temperature trace file
-        core_header = hf.readline() 
-        write_headers(c_rvalue_trace_file, c_full_rvalue_trace_file, c_state_file, c_delta_v_file, core_header)
-    hf.close()
+        core_header = hf.readline() # we get the subcore header from the temperature trace file
+    write_headers(c_rvalue_trace_file, c_full_rvalue_trace_file, c_state_file, c_delta_v_file, core_header)
     write_headers(m_rvalue_trace_file, m_full_rvalue_trace_file, m_state_file, m_delta_v_file, ptrace_header)
 
     # Initialise combined trace files
-    if separate_traces:
-        combined_header += 'tmp\t'*80 # TODO: dont hardcode this!
-    write_headers(comb_instant_trace_file, comb_periodic_trace_file, comb_state_file, comb_delta_v_file, combined_header)
+    if subcore_enabled:
+        with open(comb_temperature_trace_file) as f:
+            header_len = len(f.readline().strip().split('\t'))
+            data_len = len(f.readline().strip().split('\t')) - header_len
+        write_headers(comb_instant_trace_file, comb_periodic_trace_file, comb_state_file, comb_delta_v_file, combined_header, data_len)
+    else:
+        write_headers(comb_instant_trace_file, comb_periodic_trace_file, comb_state_file, comb_delta_v_file, combined_header)
 
 def clean_reliability_files():
     # Remove existing trace files
@@ -104,26 +109,29 @@ def execute_reliability(delta_t_ms, timestamp_ms, temperature_trace_file, vdd_tr
         with open(periodic_trace_file, 'a') as rvalues:
             rvalues.write(current_rval.readline())
 
-def write_vdd_file(vdd_filename, reference_file, value, mode):
-    with open(reference_file, 'r') as ref:
-        ref.readline() # ignore header
-        data_len = len(ref.readline().split('\t'))
+def write_vdd_file(vdd_filename, core_len, mem_len, mem_value, mode):
     with open(vdd_file, 'r') as current_vdd:
         with open(vdd_filename, 'w') as new_vdd:
             header = current_vdd.readline()
-            data = current_vdd.readline().strip()
-            header_len = len(header.split('\t'))
             new_vdd.write(header)
+
+            data = current_vdd.readline().strip()
+            data_max = str(max(map(lambda x: float(x), data.strip().split('\t'))))
             if mode == 'combined':
                 new_vdd.write(data+'\t')
-                for _ in range(data_len-header_len):
-                    new_vdd.write(value + '\t')
+                for _ in range(mem_len):
+                    new_vdd.write(mem_value + '\t')
+            elif mode == 'combined_subcore':
+                for _ in range(core_len):
+                    new_vdd.write(data_max + '\t')
+                for _ in range(mem_len-NUM_LC):
+                    new_vdd.write(mem_value + '\t')
             elif mode == 'core':
-                for _ in range(data_len):
-                    new_vdd.write(data.split('\t')[0] + '\t')
+                for _ in range(core_len):
+                    new_vdd.write(data_max + '\t')
             elif mode == 'mem':
-                for _ in range(data_len):
-                    new_vdd.write(value + '\t')
+                for _ in range(mem_len):
+                    new_vdd.write(mem_value + '\t')
             else: 
                 raise(Exception('Invalid mode in call to function write_vdd_file'))
             new_vdd.write('\n')
@@ -135,16 +143,33 @@ def update_reliability_values(delta_t, timestamp):
     delta_t_ms = delta_t/sim.util.Time.MS
     timestamp_ms = timestamp/sim.util.Time.MS
 
-    comb_vdd_file = write_vdd_file('combined_InstantVdd.log', comb_temperature_trace_file, '0.8', 'combined')
-    execute_reliability(delta_t_ms, timestamp_ms, comb_temperature_trace_file,
-                        comb_vdd_file, comb_state_file, comb_delta_v_file,
-                        comb_instant_trace_file, comb_periodic_trace_file)
-    if separate_traces:
-        c_vdd_file = write_vdd_file('InstantVdd_core.log', c_temperature_trace_file, '0.8', 'core')
-        m_vdd_file = write_vdd_file('InstantVdd_mem.log', m_temperature_trace_file, '0.8', 'mem')
+    if subcore_enabled:
+        with open(c_temperature_trace_file) as hf:
+            core_len = len(hf.readline().strip().split('\t'))
+        with open(m_temperature_trace_file) as hf:
+            mem_len = len(hf.readline().strip().split('\t'))
+
+        c_vdd_file = write_vdd_file('InstantVdd_core.log', core_len, mem_len, '0.8', 'core')
+        m_vdd_file = write_vdd_file('InstantVdd_mem.log', core_len, mem_len, '0.8', 'mem')
+        comb_vdd_file = write_vdd_file('combined_InstantVdd.log', core_len, mem_len, '0.8', 'combined_subcore')
+
         execute_reliability(delta_t_ms, timestamp_ms, c_temperature_trace_file,
                             c_vdd_file, c_state_file, c_delta_v_file,
                             c_rvalue_trace_file, c_full_rvalue_trace_file)
         execute_reliability(delta_t_ms, timestamp_ms, m_temperature_trace_file,
                             m_vdd_file, m_state_file, m_delta_v_file,
                             m_rvalue_trace_file, m_full_rvalue_trace_file)
+        execute_reliability(delta_t_ms, timestamp_ms, comb_temperature_trace_file,
+                            comb_vdd_file, comb_state_file, comb_delta_v_file,
+                            comb_instant_trace_file, comb_periodic_trace_file)
+    else:
+        with open(vdd_file) as hf:
+            core_len = len(hf.readline().strip().split('\t'))
+        with open(comb_temperature_trace_file) as hf:
+            mem_len = len(hf.readline().strip().split('\t')) - core_len
+
+        comb_vdd_file = write_vdd_file('combined_InstantVdd.log', core_len, mem_len, '0.8', 'combined')
+
+        execute_reliability(delta_t_ms, timestamp_ms, comb_temperature_trace_file,
+                            comb_vdd_file, comb_state_file, comb_delta_v_file,
+                            comb_instant_trace_file, comb_periodic_trace_file)
