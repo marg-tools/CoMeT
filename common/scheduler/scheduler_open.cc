@@ -21,6 +21,7 @@
 
 #include <iomanip>
 #include <random>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -73,6 +74,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 		Sim()->getCfg()->getString("reliability/log_files/delta_v_file").c_str());
 
 	rlb_enabled = Sim()->getCfg()->getBool("reliability/enabled");
+	subcore_enabled = !(Sim()->getCfg()->getBool("core_power/tp"));
 	vth = (float) Sim()->getCfg()->getFloat("power/vth");
 	delta_v_scale_factor = (float) Sim()->getCfg()->getFloat("reliability/delta_v_scale_factor");
 	maxFrequencyDynamic = std::vector<int> (numberOfCores, maxFrequency);
@@ -899,10 +901,19 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
 void SchedulerOpen::checkFrequencies() {
 	std::vector<double> vdds = performanceCounters->getVddOfCores(numberOfCores);
 	std::vector<double> delta_vs = performanceCounters->getDeltaVthOfCores(numberOfCores);
+	double vdd;
+	double delta_v;
+
+	if (subcore_enabled) {
+		vdd = *max_element(vdds.begin(), vdds.end());
+		delta_v = *max_element(delta_vs.begin(), delta_vs.end());
+	}
 
 	for (int coreCounter = 0; coreCounter < numberOfCores; coreCounter++) {
-		double vdd = vdds.at(coreCounter);
-		double delta_v = delta_vs.at(coreCounter);
+		if (!subcore_enabled) {
+			vdd = vdds.at(coreCounter);
+			delta_v = delta_vs.at(coreCounter);
+		}
 		int frequency = Sim()->getMagicServer()->getFrequency(coreCounter);
 		int newMaxFrequency = maxFrequency * (1 - (delta_v * delta_v_scale_factor)/(vdd-vth));
 		maxFrequencyDynamic.at(coreCounter) = newMaxFrequency;
@@ -911,7 +922,7 @@ void SchedulerOpen::checkFrequencies() {
 			setFrequency(coreCounter, frequency);
 		}
 
-		// cout << "[Scheduler]: maxFrequency for core " << coreCounter << " is " << newMaxFrequency << endl;
+		cout << "[Scheduler]: maxFrequency for core " << coreCounter << " is " << newMaxFrequency << endl;
 	}
 }
 

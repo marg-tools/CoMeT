@@ -6,6 +6,7 @@ import sys, os, sim
 
 # get general config options
 output_dir = sim.config.get('general/output_dir')
+subcore_enabled = False if sim.config.get('core_power/tp') =='true' else True
 vth = float(sim.config.get('power/vth'))
 vdd_file = 'InstantVdd.log'
 logic_cores_in_x = int(sim.config.get('memory/banks_in_x'))
@@ -14,7 +15,6 @@ NUM_LC = logic_cores_in_x * logic_cores_in_y
 
 # get reliability config options
 enabled              = True if sim.config.get('reliability/enabled') =='true' else False
-subcore_enabled      = False if sim.config.get('core_power/tp') =='true' else True
 acceleration_factor  = sim.config.get('reliability/acceleration_factor')
 delta_v_scale_factor = float(sim.config.get('reliability/delta_v_scale_factor'))
 reliability_exec     = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('reliability/reliability_executable'))
@@ -80,18 +80,22 @@ def clean_reliability_files():
 
 def target_freqs(freqs):
     with open(comb_delta_v_file, 'r') as file:
-        delta_v = map(lambda x: float(x), file.readline().strip().split('\t'))
+        delta_vs = map(lambda x: float(x), file.readline().strip().split('\t'))
     with open(vdd_file, 'r') as file:
         file.readline() # ignore header
-        vdd = map(lambda x: float(x), file.readline().strip().split('\t'))
+        vdds = map(lambda x: float(x), file.readline().strip().split('\t'))
 
     # based on equation (1) from
     # Rathore et al. (2019): LifeGuard: A Reinforcement Learning-Based Task 
     # Mapping Strategy for Performance-Centric Aging Management
-    def new_f(f, i):
-        return f / (1 - (delta_v[i] * delta_v_scale_factor)/(vdd[i] - vth))
+    if subcore_enabled:
+        delta_v = max(delta_vs)
+        vdd = max(vdds)
+        new_f = [f / (1 - (delta_v * delta_v_scale_factor)/(vdd - vth)) for f in freqs]
+    else:
+        new_f = [f / (1 - (delta_vs[i] * delta_v_scale_factor)/(vdds[i] - vth)) for i, f in enumerate(freqs)]
 
-    return [new_f(f, i) for i, f in enumerate(freqs)]
+    return new_f
 
 def execute_reliability(delta_t_ms, timestamp_ms, temperature_trace_file, vdd_trace_file, state_file, delta_v_file, instant_trace_file, periodic_trace_file):
     # Setup call to reliability binary `reliability_external`.
