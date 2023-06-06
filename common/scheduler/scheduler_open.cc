@@ -56,6 +56,8 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	numberOfTasks = Sim()->getCfg()->getInt("traceinput/num_apps");
 	numberOfCores = Sim()->getConfig()->getApplicationCores();
 	numberOfBanks = Sim()->getCfg()->getInt("memory/num_banks"); // Required for Dram policy.
+	numberOfComponents = 20 * numberOfCores; // there are 20 subcore components per core according to base.cfg
+	numberOfComponents += (Sim()->getCfg()->getBool("core_power/l3")) ? numberOfCores : 0; // l3 is optional
 
 	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");
 	coresInY = Sim()->getCfg()->getInt("memory/cores_in_y");
@@ -900,10 +902,15 @@ void SchedulerOpen::setFrequency(int coreCounter, int frequency) {
  */
 void SchedulerOpen::checkFrequencies() {
 	std::vector<double> vdds = performanceCounters->getVddOfCores(numberOfCores);
-	std::vector<double> delta_vs = performanceCounters->getDeltaVthOfCores(numberOfCores);
+	std::vector<double> delta_vs;
+	if (subcore_enabled) {
+		delta_vs = performanceCounters->getDeltaVthOfCores(numberOfComponents);
+	} else {
+		delta_vs = performanceCounters->getDeltaVthOfCores(numberOfCores);
+	}
+
 	double vdd;
 	double delta_v;
-
 	if (subcore_enabled) {
 		vdd = *max_element(vdds.begin(), vdds.end());
 		delta_v = *max_element(delta_vs.begin(), delta_vs.end());
