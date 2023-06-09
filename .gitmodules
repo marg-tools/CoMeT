@@ -4,6 +4,6 @@
 [submodule "mbuild"]
 	path = mbuild
 	url = https://github.com/intelxed/mbuild.git
-[submodule "reliability"]
-	path = reliability
+[submodule "hotsniper-reliability"]
+	path = hotsniper-reliability
 	url = https://github.com/spolstra/hotsniper-reliability.git
