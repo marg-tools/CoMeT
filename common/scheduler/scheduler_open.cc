@@ -56,7 +56,7 @@ SchedulerOpen::SchedulerOpen(ThreadManager *thread_manager)
 	numberOfTasks = Sim()->getCfg()->getInt("traceinput/num_apps");
 	numberOfCores = Sim()->getConfig()->getApplicationCores();
 	numberOfBanks = Sim()->getCfg()->getInt("memory/num_banks"); // Required for Dram policy.
-	numberOfComponents = 20 * numberOfCores; // there are 20 subcore components per core according to base.cfg
+	numberOfComponents = 21 * numberOfCores; // there are 21 subcore components per core according to base.cfg
 	numberOfComponents += (Sim()->getCfg()->getBool("core_power/l3")) ? numberOfCores : 0; // l3 is optional
 
 	coresInX = Sim()->getCfg()->getInt("memory/cores_in_x");

@@ -611,7 +611,18 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
        thermalLogFileName.close()
 
   powerInstantaneousFileName.write (Headings+"\n")
-   
+
+  if sniper_config.get_config_bool(cfg, 'reliability/enabled'):
+    data_len = len(Headings.strip().split('\t'))
+    with open(sniper_config.get_config(cfg, 'reliability/log_files_core/rvalue_trace_file'), "w") as f:
+        f.write("%s\n" %(Headings))
+    with open(sniper_config.get_config(cfg, 'reliability/log_files_core/full_rvalue_trace_file'), "w") as f:
+        f.write("%s\n" %(Headings))
+    with open(sniper_config.get_config(cfg, 'reliability/log_files_core/state_file'), "w") as f:
+        f.write("0.0\t"*data_len+"\n")
+    with open(sniper_config.get_config(cfg, 'reliability/log_files_core/delta_v_file'), "w") as f:
+        f.write("0.0\t"*data_len+"\n")
+
   Readings = ""
 
   L3Power = sum([ getpower(cache) for cache in power_dat.get('L3', []) ]) 
