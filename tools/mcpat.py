@@ -612,7 +612,7 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
 
   powerInstantaneousFileName.write (Headings+"\n")
 
-  if sniper_config.get_config_bool(cfg, 'reliability/enabled'):
+  if needInitializing and sniper_config.get_config_bool(cfg, 'reliability/enabled'):
     data_len = len(Headings.strip().split('\t'))
     with open(sniper_config.get_config(cfg, 'reliability/log_files_core/rvalue_trace_file'), "w") as f:
         f.write("%s\n" %(Headings))
