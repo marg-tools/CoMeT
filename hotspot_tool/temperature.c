@@ -103,8 +103,8 @@ thermal_config_t default_thermal_config(void)
 	 */
 	strcpy(config.grid_map_mode, GRID_CENTER_STR);
 	strcpy(config.type, "3Dmem");
-
-        config.steady_state_print_disable = 0;
+	config.subcore_en = 0;
+    config.steady_state_print_disable = 0;
 	config.detailed_3D_used = 0;	//BU_3D: by default detailed 3D modeling is disabled.	
 	return config;
 }
@@ -272,6 +272,9 @@ void thermal_config_add_from_strs(thermal_config_t *config, str_pair *table, int
         if ((idx = get_str_index(table, size, "type")) >= 0)
                 if(sscanf(table[idx].value, "%s", config->type) != 1)
                         fatal("invalid format for configuration  parameter type\n");
+	if ((idx = get_str_index(table, size, "subcore_en")) >= 0)
+		if(sscanf(table[idx].value, "%d", &config->subcore_en) != 1)
+			fatal("invalid format for configuration parameter subcore_en\n");
 	
 	
 	if ((config->t_chip <= 0) || (config->s_sink <= 0) || (config->t_sink <= 0) || 
@@ -312,7 +315,7 @@ void thermal_config_add_from_strs(thermal_config_t *config, str_pair *table, int
  */
 int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_entries)
 {
-	if (max_entries < 51)
+	if (max_entries < 52)
 		fatal("not enough entries in table\n");
 
 	sprintf(table[0].name, "t_chip");
@@ -364,9 +367,10 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[46].name, "grid_layer_file");
 	sprintf(table[47].name, "grid_steady_file");
 	sprintf(table[48].name, "grid_map_mode");
-        sprintf(table[49].name, "all_transient_file");
-        sprintf(table[50].name, "steady_state_print_disable");
-        sprintf(table[51].name, "type");
+	sprintf(table[49].name, "all_transient_file");
+	sprintf(table[50].name, "steady_state_print_disable");
+	sprintf(table[51].name, "type");
+	sprintf(table[52].name, "subcore_en");
 
 	sprintf(table[0].value, "%lg", config->t_chip);
 	sprintf(table[1].value, "%lg", config->k_chip);
@@ -420,8 +424,9 @@ int thermal_config_to_strs(thermal_config_t *config, str_pair *table, int max_en
 	sprintf(table[49].value, "%s", config->all_transient_file);
 	sprintf(table[50].value, "%d", config->steady_state_print_disable);
 	sprintf(table[51].value, "%s", config->type);
+	sprintf(table[52].value, "%d", config->subcore_en);
 
-	return 52;
+	return 53;
 }
 
 /* package parameter routines	*/
@@ -800,11 +805,16 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							
-							if (leakage[j] == 0)
-								power_new[base+j] = 0;
-							else	
-								power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
+							if (model->config->subcore_en == 0)   {
+								if (leakage[j] == 0)
+									power_new[base+j] = 0;
+								 else {	
+									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp[base+j]);
 		 					// printf("YES");
+								 }
+							}
+							else	//when subcore is enabled
+								power_new[base+j] = power[base+j]; //temporarily disable leakage flag and leakage calculation for subcore.
 							
 							temp_old[base+j] = temp[base+j]; //copy temp before update
 						}
@@ -925,7 +935,7 @@ void steady_state_temp(RC_model_t *model, double *power, double *temp)
 	else fatal("unknown model type\n");	
 }
 
-double *temp_first_time = NULL;
+double *temp_previous = NULL;
 
 /* transient (instantaneous) temperature	*/
 void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_power_dump, double time_elapsed)
@@ -941,8 +951,8 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 				//printf("In compute_temp\n");					
 				static int count = 0;
 
-				// Initilize the pointer first. Subsequent calls temp_first_time will hold the value of temperature for the last iteration. 
-				// [FIX]: We might not be able to free the temp_first_time.
+				// Initilize the pointer first. Subsequent calls temp_previous will hold the value of temperature for the last iteration. 
+				// [FIX]: We might not be able to free the temp_previous.
 
 				int base=0;
 				int j, k;
@@ -950,7 +960,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 				double blk_height, blk_width;
 
 				if (count++ == 0){
-					temp_first_time = temp;
+					temp_previous = temp;
 				}
 
 //				for(k=0, base=0; k < model->grid->n_layers; k++) {
@@ -965,10 +975,10 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 //					 		//printf("j=%d,",j);					
 //
 //							if (k==3){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
-//									power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);	
+//									power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j]);	
 //							}
 //							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
-//									power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+//									power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j]);
 //				 					// printf("YES");
 //							}
 //							// temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -991,14 +1001,14 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else
-										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
+										power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
 										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1020,20 +1030,24 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 				 			// printf("j=%d,",j);					
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
-							if (leakage[j] == 0)
-								power_new[base+j] = 0;
-							else{	
-									//printf("volt[j] = %d\n", volt[j]);
-									power_new[base+j] = power[base+j] +  ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+							if (model->config->subcore_en == 0)   {
+								 if (leakage[j] == 0)
+									power_new[base+j] = 0;
+								 else{	
+									power_new[base+j] = power[base+j] +  ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j]);
 		 					// printf("YES");
+							 	}
 							}
+							else { //temporarily disable leakage flag and leakage calculation for subcore.
+								power_new[base+j] = power[base+j];
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
+							}
 						}
 					base += model->grid->layers[k].flp->n_units;	
 				// printf("\n");					
 				// printf("k=%d",k);					
-				}
-                        }
+					}
+                }
 
 
 
@@ -1049,13 +1063,13 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 							blk_height = model->grid->layers[k].flp->units[j].height;
 							blk_width = model->grid->layers[k].flp->units[j].width;
 							if (k==19){ 	// Layer0 : In 3Dmem is an SRAM layer its leakage model is different.
-									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);										//printf("%f ", power[base+j]);
+									power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j]);										//printf("%f ", power[base+j]);
 							}
 							else{		// Layer above the base layer in 3Dmem, have a DRAM leakage model.
 									if (leakage[j] == 0)
 										power_new[base+j] = 0;
 									else	
-										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
+										power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 							}
 							//temp_old[base+j] = temp[base+j]; //copy temp before update
@@ -1081,14 +1095,14 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 									power_new[base+j] = power[base+j];
 								else{
 									if ( (j>=0) && (j<=3) )	// Leakage for Host core. Assuming 4 cores
-										power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j]);
+										power_new[base+j] = power[base+j] + ((float) volt[j]/10) * calc_core_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j]);
 				 					// printf("YES");
 									else				// Leakage for 3Dmem logic core
 									{
 										if (leakage[j-4] == 0)
 											power_new[base+j] = 0;
 										else
-											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
+											power_new[base+j] = power[base+j] + calc_lc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);	
 									}
 								}						
 							}
@@ -1099,7 +1113,7 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 										if (leakage[j] == 0)
 											power_new[base+j] = 0;
 										else	
-											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_first_time[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
+											power_new[base+j] = power[base+j] + calc_leakage(model->config->leakage_mode,blk_height,blk_width,temp_previous[base+j], &model->grid->layers[k].flp->units[j], model->bank_modes);
 				 					// printf("YES");
 								}						
 							}
@@ -1117,8 +1131,8 @@ void compute_temp(RC_model_t *model, double *power, double *temp, double *tot_po
 				tot_power_dump[k] = power_new[k];
 
 			// printf("Calling compute_temp_grid\n");					
-			compute_temp_grid(model->grid, power_new, temp_first_time, time_elapsed);
-			// temp_first_time will hold the value of temperature for the last iteration. 
+			compute_temp_grid(model->grid, power_new, temp_previous, time_elapsed);
+			// temp_previous will hold the value of temperature for the last iteration. 
 			// printf("temp=%u\n",temp);
 			// printf("Returned compute_temp_grid\n");	
 			// printf ("model->last_temp[0] = %f\n",model->last_temp[0]);

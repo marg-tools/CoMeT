@@ -218,6 +218,8 @@ typedef struct thermal_config_t_st
  	int steady_state_print_disable;	
        /* type of memory passed for specific customization DDR, 3Dmem, 2.5D, 3D*/
  	char type[STR_SIZE];	
+	  /* disables the leakage power calculation when using subcore mode for Core */
+ 	int subcore_en;	
 	int detailed_3D_used; //BU_3D: Added parameter to check for heterogenous R-C model 
 }thermal_config_t;
 

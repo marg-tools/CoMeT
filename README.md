@@ -403,7 +403,8 @@ To do your own (automated) evaluations, see the `simulationcontrol.resultlib` pa
 <summary>Click here to open details</summary>
 
 CoMeT also allows running subcore level simulations if one is interested to find out the hot regions within a core. To enable subcore simulations in CoMeT, do the following:
-- In `config/base.cfg`, there is a section named `[core_power]`. Make everything as true except for the tp and l3 being false. These reflect various sub components of the core.
+- In `config/base.cfg`, there is a section named `[core_power]`. Make everything as true except for the `[tp]` and `[l3]` being false. These reflect various sub components of the core.
+- In `config/base.cfg`, there is a section named `[core_thermal]`. Make the parameter `[subcore_en]` as 1 if using the subcore mode.
 - A single core floorplan template is at ./config/hotspot/3Dmem_subcore/template.flp. We use this template for our simulations. If needed, one can change the dimensions.
 - The `floorplanlib` generates multi-core floorplan by repeating these subcore components. A default created floorplan is available (4-core, 3D-ext configuration) in `./config/hotspot/3Dmem_subcore`
       - The extra switch to generate such multi-core floorplan is: --subcore-template config/hotspot/3Dmem_subcore/template.flp

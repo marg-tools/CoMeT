@@ -92,6 +92,7 @@ NUM_LC = logic_cores_in_x * logic_cores_in_y
 #hotspot_config_path = sim.config.get('hotspot/config_path') 
 hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot/tool_path'))
 executable = hotspot_path + 'hotspot'
+c_subcore_en_flag = sim.config.get('core_thermal/subcore_en')
 
 hotspot_config_path = os.getenv('SNIPER_ROOT') + '/' 
 #hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), "/") 
@@ -564,6 +565,7 @@ class memTherm:
                     + ' -sampling_intvl ' + str(interval_sec) \
                     + ' -grid_layer_file ' + c_hotspot_layer_file \
                     + ' -v ' + vdd_str \
+                    + ' -subcore_en ' + c_subcore_en_flag \
                     + ' -detailed_3D on'
                     #+ ' -f ' + c_hotspot_floorplan_file \
      if (c_init_file_external!= "None") or (not first_run):

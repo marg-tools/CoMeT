@@ -346,8 +346,8 @@ void write_vals_power(FILE *fp, double *vals, int size)
 {
   int i;
   for(i=0; i < size-1; i++)
-    fprintf(fp, "%.2f\t", vals[i]);
-  fprintf(fp, "%.2f\n", vals[i]);
+    fprintf(fp, "%.3f\t", vals[i]);
+  fprintf(fp, "%.3f\n", vals[i]);
 }
 
 char **alloc_names(int nr, int nc)

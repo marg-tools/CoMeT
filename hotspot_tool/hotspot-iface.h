@@ -92,6 +92,9 @@ typedef struct thermal_config_t_st
 	char grid_map_mode[STR_SIZE];
 	char all_transient_file[STR_SIZE];
  	int steady_state_print_disable;	
+       /* type of memory passed for specific customization DDR, 3Dmem, 2.5D, 3D*/
+ 	char type[STR_SIZE];	
+ 	int subcore_en;	
 	int detailed_3D_used; //BU_3D: Added parameter to check for heterogenous R-C model 
 }thermal_config_t;
 
