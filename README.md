@@ -413,6 +413,21 @@ CoMeT also allows running subcore level simulations if one is interested to find
 
 </details>
 
+### 3.9 Running reliability simulations
+<details>
+<summary>Click here to open details</summary>
+
+CoMeT can simulate the reliability of cores and subcore components. To use this functionality, do the following:
+
+- In `config/base.cfg`, there is a section `[reliability]`. Make `enabled` true to enable reliability simulations.
+- If you want to use time warping (stretching epochs to reach low reliability faster), change `acceleration_factor` to a higher value. Please not that this will not give realistic results.
+- The same goes for `delta_v_scale_factor`, which can be used to exaggerate changes in threshold voltage.
+
+The resulting reliabilty statistics will show up in the files listed under the sections `[reliability/log_files]`, `[reliability/log_files_mem]`, and `[reliability/log_files_core]`.
+
+</details>
+
+
 ## Code Acknowledgements
 
   Sniper: http://snipersim.org
