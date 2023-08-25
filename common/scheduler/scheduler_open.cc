@@ -912,6 +912,9 @@ void SchedulerOpen::checkFrequencies() {
 	double vdd;
 	double delta_v;
 	if (subcore_enabled) {
+		// TODO:
+		// This calculates the aggregate of all subcore components.
+		// It would be better to calculate a value per core.
 		vdd = *max_element(vdds.begin(), vdds.end());
 		delta_v = *max_element(delta_vs.begin(), delta_vs.end());
 	}
