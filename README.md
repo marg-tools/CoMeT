@@ -423,7 +423,7 @@ CoMeT can simulate the reliability of cores and subcore components. To use this 
 - If you want to use time warping (stretching epochs to reach low reliability faster), change `acceleration_factor` to a higher value. Please not that this will not give realistic results.
 - The same goes for `delta_v_scale_factor`, which can be used to exaggerate changes in threshold voltage.
 
-The resulting reliabilty statistics will show up in the files listed under the sections `[reliability/log_files]`, `[reliability/log_files_mem]`, and `[reliability/log_files_core]`.
+The resulting reliability statistics will show up in the files listed under the sections `[reliability/log_files]`, `[reliability/log_files_mem]`, and `[reliability/log_files_core]`.
 
 </details>
 
