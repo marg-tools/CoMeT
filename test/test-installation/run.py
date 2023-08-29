@@ -22,12 +22,14 @@ CONFIG_DDR = 'gainestown_DDR'
 CONFIG_3Dmem = 'gainestown_3Dmem'
 CONFIG_2_5D = 'gainestown_2_5D'
 CONFIG_3D = 'gainestown_3D'
+CONFIG_3D_l3_stacked = 'gainestown_3D_l3_stacked'
+CONFIG_3D_l3_nonstacked = 'gainestown_3D_l3_non-stacked'
 CONFIG_3D_8_CORES = 'gainestown_3D_8core_2L'
 CONFIG3Dmem_8_CORES = 'gainestown_3Dmem_8core_2L'
 
 test_summary = ''
 pass_count = 0
-test_configs = [CONFIG_3Dmem, CONFIG_DDR, CONFIG_2_5D, CONFIG_3D, CONFIG_3D_8_CORES, CONFIG3Dmem_8_CORES]
+test_configs = [CONFIG_3Dmem, CONFIG_DDR, CONFIG_2_5D, CONFIG_3D, CONFIG_3D_l3_stacked, CONFIG_3D_l3_nonstacked, CONFIG_3D_8_CORES, CONFIG3Dmem_8_CORES]
 
 
 
@@ -115,6 +117,8 @@ def test_video_generation_feature(cfg):
     BANKS_IN_Z = 8
     CORES_IN_Z = 1
     ARCH_TYPE = cfg.strip("gainestown_")
+    L3 = False # should be True if l3 cache power is enabled
+    L3_STACKED = False # should be True if l3 cache is stacked
     if ARCH_TYPE == "DDR":
         BANKS_IN_Z = 1
     if ARCH_TYPE == "2_5D":
@@ -125,6 +129,13 @@ def test_video_generation_feature(cfg):
     if ARCH_TYPE == "3Dmem_8core_2L":
         CORES_IN_Z = 2
         ARCH_TYPE = "3Dmem"
+    if ARCH_TYPE == "3D_l3_stacked":
+        ARCH_TYPE = "3D"
+        L3 = True
+        L3_STACKED = True
+    if ARCH_TYPE == "3D_l3_non-stacked":
+        ARCH_TYPE = "3D"
+        L3 = True
 
     if ENABLE_VIDEO_GENERATION:   
         if os.path.exists(os.path.join(os.path.join(CoMeT_RESULTS, cfg), 'combined_temperature.trace')):
@@ -142,6 +153,10 @@ def test_video_generation_feature(cfg):
                         arch=ARCH_TYPE,
                         banks_z=BANKS_IN_Z,
                         cores_z=CORES_IN_Z)
+            if L3:
+                args += f' --cache_l3 -cache_l3_width 1'
+            if L3_STACKED:
+                args += f' --cache_l3_stacked'
             print('Generating video for {}\n'.format(cfg))
 
             p = subprocess.Popen(['python3', command_line] + args.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, cwd=TEST_CASE_PATH)
@@ -188,7 +203,7 @@ def auto_test():
     f.write("Summary of CoMet Features\n")
     f.write("=========================\n")
     f.write(test_summary)
-    f.write("\n{} of 12 cases passed".format(pass_count))
+    f.write("\n{} of {} cases passed".format(pass_count, len(test_configs) * 2))
 
     print('\nTest for all four configurations and video generation completed. Please check test_summary for details\n')
     print('Simulation results and videos stored in comet_results.\n')

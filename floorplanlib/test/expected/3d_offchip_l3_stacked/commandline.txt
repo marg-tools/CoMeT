@@ -1,0 +1,2 @@
+# command used to create these files:
+create.py --mode 3Dmem --cores 4x4 --corex 1mm --corey 1mm --banks 8x8x2 --bankx 0.9mm --banky 0.9mm --cache_L3 stacked --cachex 4mm --cachey 4mm --out test/actual/3d_offchip_l3_stacked

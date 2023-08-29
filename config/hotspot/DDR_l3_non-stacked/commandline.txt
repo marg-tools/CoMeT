@@ -1,0 +1,2 @@
+# command used to create these files:
+../../floorplanlib/create.py --mode DDR --cores 2x2 --corex 3.414mm --corey 3.414mm --banks 4x4 --bankx 1.707mm --banky 1.707mm --cache_L3 non-stacked --cachex 6.828mm --cachey 6.828mm --out ../../config/hotspot/DDR_l3_non-stacked

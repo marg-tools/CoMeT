@@ -34,6 +34,15 @@ def set_color_palette(num_colors):
         sns.set_palette(pal)
 
 
+def plot_l3_trace(run, name, title, ylabel, traces_function, yMin=None, yMax=None, smooth=None, force_recreate=False):
+    def f():
+        try:
+            traces = traces_function()
+        except KeyboardInterrupt:
+            raise
+        return {'L3': traces}
+    plot_named_traces(run, name, title, ylabel, f, yMin=yMin, yMax=yMax, smooth=smooth, force_recreate=force_recreate)
+
 def plot_core_trace(run, name, title, ylabel, traces_function, active_cores, yMin=None, yMax=None, smooth=None, force_recreate=False):
     def f():
         try:
@@ -128,6 +137,8 @@ def create_plots(run, force_recreate=False):
     plot_core_trace(run, 'ips', 'IPS', 'IPS', lambda: resultlib.get_ips_traces(run), active_cores, yMin=0, yMax=8e9, force_recreate=force_recreate)
     # plot_core_trace(run, 'ipssmooth', 'Smoothed IPS', 'IPS', lambda: resultlib.get_ips_traces(run), active_cores, yMin=0, yMax=8e9, smooth=10, force_recreate=force_recreate)
     plot_cpi_stack_trace(run, active_cores, force_recreate=force_recreate)
+    if resultlib.has_L3_cache(run):    
+        plot_l3_trace(run, 'l3_temperatures', 'L3 temperature', 'Temperature (C)', lambda: resultlib.get_L3_temperature_trace(run), yMin=45, yMax=100, force_recreate=force_recreate)
 
 
 if __name__ == '__main__':

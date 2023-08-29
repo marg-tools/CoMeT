@@ -1,0 +1,2 @@
+# command used to create these files:
+create.py --mode 2.5D --cores 4x4 --corex 1.8mm --corey 1.8mm --banks 8x8x2 --bankx 0.9mm --banky 0.9mm --core_mem_distance 7mm --cache_L3 stacked --cachex 6.4mm --cachey 6.4mm --out test/actual/2.5d_core_l3_stacked

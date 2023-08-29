@@ -174,6 +174,81 @@ def main():
                 '--banks', '2x2x1', '--bankx', '1mm', '--banky', '1mm',
             ]
         ),
+        # L3 tests
+        FloorplanTestConfig(
+            name='2d_l3_non-stacked',
+            commandline_args=[
+                '--mode', 'DDR',
+                '--cores', '4x4', '--corex', '1mm', '--corey', '1mm',
+                '--banks', '8x8', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--cache_L3', 'non-stacked', '--cachex', '1mm', '--cachey', '4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='2d_l3_stacked',
+            commandline_args=[
+                '--mode', 'DDR',
+                '--cores', '4x4', '--corex', '1mm', '--corey', '1mm',
+                '--banks', '8x8', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--cache_L3', 'stacked', '--cachex', '4mm', '--cachey', '4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='3d_offchip_l3_stacked',
+            commandline_args=[
+                '--mode', '3Dmem',
+                '--cores', '4x4', '--corex', '1mm', '--corey', '1mm',
+                '--banks', '8x8x2', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--cache_L3', 'stacked', '--cachex', '4mm', '--cachey', '4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='3d_offchip_l3_non-stacked',
+            commandline_args=[
+                '--mode', '3Dmem',
+                '--cores', '4x4', '--corex', '1mm', '--corey', '1mm',
+                '--banks', '8x8x2', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--cache_L3', 'non-stacked', '--cachex', '1mm', '--cachey', '4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='2.5d_core_l3_stacked',
+            commandline_args=[
+                '--mode', '2.5D',
+                '--cores', '4x4', '--corex', '1.8mm', '--corey', '1.8mm',
+                '--banks', '8x8x2', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--core_mem_distance', '7mm',
+                '--cache_L3', 'stacked', '--cachex', '6.4mm', '--cachey', '6.4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='2.5d_core_l3_non-stacked',
+            commandline_args=[
+                '--mode', '2.5D',
+                '--cores', '4x4', '--corex', '1.8mm', '--corey', '1.8mm',
+                '--banks', '8x8x2', '--bankx', '0.9mm', '--banky', '0.9mm',
+                '--core_mem_distance', '7mm',
+                '--cache_L3', 'non-stacked', '--cachex', '1.8mm', '--cachey', '6.4mm',
+            ]
+        ),
+        FloorplanTestConfig(
+            name='3d_l3_stacked',
+            commandline_args=[
+                '--mode', '3D',
+                '--cores', '4x4', '--corex', '0.9mm', '--corey', '0.9mm',
+                '--banks', '8x8x4', '--bankx', '0.45mm', '--banky', '0.45mm',
+                '--cache_L3', 'stacked', '--cachex', '3.6mm', '--cachey', '3.6mm'
+            ]
+        ),
+        FloorplanTestConfig(
+            name='3d_l3_non-stacked',
+            commandline_args=[
+                '--mode', '3D',
+                '--cores', '4x4', '--corex', '0.45mm', '--corey', '0.9mm',
+                '--banks', '8x8x4', '--bankx', '0.45mm', '--banky', '0.45mm',
+                '--cache_L3', 'non-stacked', '--cachex', '1.8mm', '--cachey', '3.6mm'
+            ]
+        ),
     ]
 
     EXPECT_TO_FAIL_TESTS = [

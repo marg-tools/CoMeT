@@ -143,9 +143,18 @@ def get_core_power_traces(run):
 
 def get_memory_power_traces(run):
     header = _get_header(run, 'combined_power.trace')
-    assert all(h.startswith('B') for h in header[count_cores(run):])  # simple check for order or header
+    start = count_cores(run)
+    if has_L3_cache(run):
+        start += 1 # skip L3 header
+    assert all(h.startswith('B') for h in header[start:])  # simple check for order or header
     traces = _get_traces(run, 'combined_power.trace')
-    return traces[count_cores(run):]
+    return traces[start:]
+
+def get_L3_power_trace(run):
+    header = _get_header(run, 'combined_power.trace')
+    assert header[count_cores(run)].startswith('L3')  # simple check for order or header
+    traces = _get_traces(run, 'combined_power.trace')
+    return traces[count_cores(run)]
 
 
 def get_core_temperature_traces(run):
@@ -157,9 +166,12 @@ def get_core_temperature_traces(run):
 
 def get_memory_temperature_traces(run):
     header = _get_header(run, 'combined_temperature.trace')
-    assert all(h.startswith('B') for h in header[count_cores(run):])  # simple check for order or header
+    start = count_cores(run)
+    if has_L3_cache(run):
+        start += 1 # skip L3 header
+    assert all(h.startswith('B') for h in header[start:])  # simple check for order or header
     traces = _get_traces(run, 'combined_temperature.trace')
-    return traces[count_cores(run):]
+    return traces[start:]
 
 
 def get_core_peak_temperature_traces(run):
@@ -169,6 +181,11 @@ def get_core_peak_temperature_traces(run):
         peak.append(max(values))
     return [peak]
 
+def get_L3_temperature_trace(run):
+    header = _get_header(run, 'combined_temperature.trace')
+    assert header[count_cores(run)].startswith('L3')  # simple check for order or header
+    traces = _get_traces(run, 'combined_temperature.trace')
+    return traces[count_cores(run)]
 
 def get_all_temperature_traces(run):
     traces = _get_named_traces(run, 'combined_temperature.trace')
@@ -266,3 +283,7 @@ def count_cores(run):
 def get_active_cores(run):
     utilization_traces = get_core_utilization_traces(run)
     return [i for i, utilization in enumerate(utilization_traces) if max(utilization) > 0.01]
+
+def has_L3_cache(run):
+    header = _get_header(run, 'combined_temperature.trace')
+    return 'L3' in header

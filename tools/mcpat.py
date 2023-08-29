@@ -454,8 +454,6 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
   id = 0
   Headings = ""
 
-  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
-    Headings += "L3\t" # Private L3
 
   for core in power_dat['Core']:
 #   if sniper_config.get_config_bool(cfg, "core_power/l2"):  
@@ -592,6 +590,9 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
 
    id = id+1
    
+  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
+    Headings += "L3\t" # Private L3
+    
   os.system("touch " + full_power_trace_file)
   needInitializing = os.stat(full_power_trace_file).st_size == 0
   if needInitializing:
@@ -607,9 +608,6 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
 
   L3Power = sum([ getpower(cache) for cache in power_dat.get('L3', []) ]) 
 
-  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
-    Readings += str(L3Power)+"\t"  # Private L3
-  
   amtCores = len(power_dat['Core'])
   for i, core in enumerate(power_dat['Core']):
     totalPower = getpower(core)
@@ -673,6 +671,9 @@ def power_stack(power_dat, cfg, powertype = 'total', nocollapse = False):
     if sniper_config.get_config_bool(cfg, "core_power/tp"):
       Readings += str(totalPower) +"\t" # Total Power
 
+  if sniper_config.get_config_bool(cfg, "core_power/l3"):  
+    Readings += str(L3Power)+"\t"  # Private L3
+
   if (type_of_stack == "DDR" or type_of_stack == "3Dmem"):
     powerInstantaneousFileName.write (Readings+"\r\n")
   else:
@@ -695,9 +696,10 @@ def edit_XML(statsobj, stats, cfg):
 
   l3_cacheSharedCores = long(sniper_config.get_config_default(cfg, 'perf_model/l3_cache/shared_cores', 0))
   l2_cacheSharedCores = long(sniper_config.get_config_default(cfg, 'perf_model/l2_cache/shared_cores', 0))
+  print >> sys.stderr, '\n'*3 + '-'*10
+  print >> sys.stderr, 'l3_cacheSharedCores: ' + str(l3_cacheSharedCores)
   nuca_at_level = False
   private_l2s = True
-
   if long(sniper_config.get_config_default(cfg, 'perf_model/l2_cache/data_access_time', 0)) > 0:
     num_l2s = int(math.ceil(ncores / float(l2_cacheSharedCores)))
     private_l2s = int(sniper_config.get_config(cfg, 'perf_model/l2_cache/shared_cores')) == 1
