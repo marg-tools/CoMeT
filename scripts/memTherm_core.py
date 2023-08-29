@@ -4,6 +4,7 @@ memTherm_core.py
 """
 
 import sys, os, sim
+import reliability as rlb
 
 LOW_POWER = 0
 NORMAL_POWER = 1
@@ -28,6 +29,10 @@ core_thermal_enabled = sim.config.get("core_thermal/enabled")
 mem_dtm = sim.config.get('scheduler/open/dram/dtm')
 lpm_dynamic_power = float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power'))
 lpm_leakage_power = float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power'))
+
+core_frequency_min = float(sim.config.get('perf_model/core/min_frequency'))*1000
+core_frequency_max = float(sim.config.get('perf_model/core/max_frequency'))*1000
+core_frequency_step = float(sim.config.get('perf_model/core/frequency_step_size'))*1000
 
 #define constants
 #_enable = 1
@@ -92,7 +97,6 @@ NUM_LC = logic_cores_in_x * logic_cores_in_y
 #hotspot_config_path = sim.config.get('hotspot/config_path') 
 hotspot_path = os.path.join(os.getenv('SNIPER_ROOT'), sim.config.get('hotspot/tool_path'))
 executable = hotspot_path + 'hotspot'
-c_subcore_en_flag = sim.config.get('core_thermal/subcore_en')
 
 hotspot_config_path = os.getenv('SNIPER_ROOT') + '/' 
 #hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), "/") 
@@ -347,7 +351,11 @@ class memTherm:
     with open(full_power_trace_file, "w") as f:
         f.write("%s\n" %(ptrace_header))
     f.close()
-    
+
+    if rlb.enabled:
+        rlb.clean_reliability_files()
+        rlb.init_reliability_files(combined_header, ptrace_header)
+
     mem_header = gen_mem_header()
     with open(full_bank_mode_trace_file, "w") as f:
         f.write("%s\n" %(mem_header))
@@ -565,7 +573,6 @@ class memTherm:
                     + ' -sampling_intvl ' + str(interval_sec) \
                     + ' -grid_layer_file ' + c_hotspot_layer_file \
                     + ' -v ' + vdd_str \
-                    + ' -subcore_en ' + c_subcore_en_flag \
                     + ' -detailed_3D on'
                     #+ ' -f ' + c_hotspot_floorplan_file \
      if (c_init_file_external!= "None") or (not first_run):
@@ -655,7 +662,10 @@ class memTherm:
 
   def get_core_vdd_for_hotspot(self):
     lfreq = [ sim.dvfs.get_frequency(core) for core in range(sim.config.ncores) ]
-    lvdd = [ self.ES.get_vdd_from_freq(f) for f in lfreq ]
+    if rlb.enabled:
+      lvdd = [ self.ES.get_vdd_from_freq(f) for f in rlb.target_freqs(lfreq) ]
+    else:
+      lvdd = [ self.ES.get_vdd_from_freq(f) for f in lfreq ]
     lvdd = [ v/1.2 for v in lvdd ]          #normalize to 1.2 volts
     lvdd = [ round(v, 1) for v in lvdd ]    #round to 1 digit decimal
     vdd_str = ""
@@ -694,6 +704,11 @@ class memTherm:
     self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
     self.format_trace_file(True, c_power_trace_file_total, power_trace_file_total, combined_power_trace_file_total, combined_instpower_trace_file_total)
       #concatenate the per interval temperature trace into a single file
+
+    # Update reliability values of all the cores.
+    if rlb.enabled:
+        rlb.update_reliability_values(time_delta, time)
+
     os.system("cp " + hotspot_all_transient_file + " " + init_file)
     os.system("tail -1 " + temperature_trace_file + ">>" + full_temperature_trace_file)
     os.system("tail -1 " + power_trace_file + " >>" + full_power_trace_file)
@@ -722,8 +737,10 @@ def build_dvfs_table(tech):
     # McPAT does not support technology nodes smaller than 22nm and is operated at 22nm.
     # The scaling is then done in tools/mcpat.py.
     def v(f):
-      return 0.6 + f / 4000.0 * 0.8
-    return [ (f, v(f))  for f in reversed(range(0, 4000+1, 100))]
+      return 0.6 + f / core_frequency_max * 0.8
+    return [ (f, v(f))  for f in reversed(range(int(core_frequency_min), 
+                                                int(core_frequency_max)+1, 
+                                                int(core_frequency_step))) ]
   elif tech == 45:
     return [ (2000, 1.2), (1800, 1.1), (1500, 1.0), (1000, 0.9), (0, 0.8) ]
   else:
@@ -782,14 +799,19 @@ class EnergyStats:
 
   def get_vdd_from_freq(self, f):
     # Assume self.dvfs_table is sorted from highest frequency to lowest
+    if f > core_frequency_max:
+      raise ValueError('Could not find a Vdd for invalid frequency %f exceeding the core\'s maximum frequency' % f)
     for _f, _v in self.dvfs_table:
       if f >= _f:
         return _v
-    assert ValueError('Could not find a Vdd for invalid frequency %f' % f)
+    raise ValueError('Could not find a Vdd for invalid frequency %f' % f)
 
   def gen_config(self, outputbase):
     freq = [ sim.dvfs.get_frequency(core) for core in range(sim.config.ncores) ]
-    vdd = [ self.get_vdd_from_freq(f) for f in freq ]
+    if rlb.enabled:
+      vdd = [ self.get_vdd_from_freq(f) for f in rlb.target_freqs(freq) ]
+    else:
+      vdd = [ self.get_vdd_from_freq(f) for f in freq ]
     configfile = outputbase+'.cfg'
     cfg = open(configfile, 'w')
     cfg.write('''

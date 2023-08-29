@@ -34,17 +34,17 @@ def set_color_palette(num_colors):
         sns.set_palette(pal)
 
 
-def plot_core_trace(run, name, title, ylabel, traces_function, active_cores, yMin=None, yMax=None, smooth=None, force_recreate=False):
+def plot_core_trace(run, name, title, ylabel, traces_function, active_cores, yMin=None, yMax=None, smooth=None, force_recreate=False, xlabel='Epoch'):
     def f():
         try:
             traces = traces_function()
         except KeyboardInterrupt:
             raise
         return collections.OrderedDict(('Core {}'.format(core), traces[core]) for core in active_cores)
-    plot_named_traces(run, name, title, ylabel, f, yMin=yMin, yMax=yMax, smooth=smooth, force_recreate=force_recreate)
+    plot_named_traces(run, name, title, ylabel, f, yMin=yMin, yMax=yMax, smooth=smooth, force_recreate=force_recreate, xlabel=xlabel)
 
 
-def plot_named_traces(run, name, title, ylabel, traces_function, yMin=None, yMax=None, smooth=None, force_recreate=False):
+def plot_named_traces(run, name, title, ylabel, traces_function, yMin=None, yMax=None, smooth=None, force_recreate=False, xlabel='Epoch'):
     filename = os.path.join(resultlib.find_run(run), '{}.png'.format(name))
 
     if not os.path.exists(filename) or force_recreate:
@@ -75,7 +75,7 @@ def plot_named_traces(run, name, title, ylabel, traces_function, yMin=None, yMax
 
         plt.title('{} {}'.format(title, run))
         plt.legend()
-        plt.xlabel('Epoch')
+        plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.grid()
         plt.grid(which='minor', linestyle=':')
@@ -122,6 +122,8 @@ def create_plots(run, force_recreate=False):
     plot_core_trace(run, 'frequency', 'Frequency', 'Frequency (GHz)', lambda: resultlib.get_core_freq_traces(run), active_cores, yMin=0, yMax=4.1e9, force_recreate=force_recreate)
     plot_core_trace(run, 'core_temperature', 'Core temperature', 'Core Temperature (C)', lambda: resultlib.get_core_temperature_traces(run), active_cores, yMin=45, yMax=100, force_recreate=force_recreate)
     plot_named_traces(run, 'all_temperatures', 'All temperatures', 'Temperature (C)', lambda: resultlib.get_all_temperature_traces(run), yMin=45, yMax=100, force_recreate=force_recreate)
+    plot_core_trace(run, 'core_rvalues', 'Core R-values', 'Reliability', lambda: resultlib.get_rvalues_traces(run), active_cores, force_recreate=force_recreate, xlabel='time (ms) * acceleration factor')
+    plot_named_traces(run, 'all_rvalues', 'All R-values', 'Reliability', lambda: resultlib.get_all_rvalues_traces(run), force_recreate=force_recreate, xlabel='time (ms) * acceleration factor')
     plot_core_trace(run, 'core_power', 'Core power', 'Power (W)', lambda: resultlib.get_core_power_traces(run), active_cores, yMin=0, force_recreate=force_recreate)
     plot_core_trace(run, 'core_utilization', 'Core utilization', 'Core Utilization', lambda: resultlib.get_core_utilization_traces(run), active_cores, yMin=0, force_recreate=force_recreate)
     plot_core_trace(run, 'cpi', 'CPI', 'CPI', lambda: resultlib.get_cpi_traces(run), active_cores, yMin=0, force_recreate=force_recreate)

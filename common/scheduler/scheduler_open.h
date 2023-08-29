@@ -63,6 +63,7 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		int banksInX;
 		int banksInY;
 		int banksInZ;
+		int numberOfComponents;
 
 		PerformanceCounters *performanceCounters;
 
@@ -116,6 +117,14 @@ class SchedulerOpen : public SchedulerPinnedBase {
 		void initMigrationPolicy(String policyName);
 		void executeMigrationPolicy(SubsecondTime time);
 		void migrateThread(thread_id_t thread_id, core_id_t core_id);
+
+		// Reliability
+		bool rlb_enabled;
+		bool subcore_enabled;
+		float vth;
+		float delta_v_scale_factor;
+		std::vector<int> maxFrequencyDynamic;
+		void checkFrequencies();
 
 		std::string formatTime(SubsecondTime time);
 

@@ -6,9 +6,19 @@
 
 using namespace std;
 
-PerformanceCounters::PerformanceCounters(std::string instPowerFileName, std::string instTemperatureFileName, std::string instCPIStackFileName)
-    : instPowerFileName(instPowerFileName), instTemperatureFileName(instTemperatureFileName), instCPIStackFileName(instCPIStackFileName) {
-
+PerformanceCounters::PerformanceCounters(
+	std::string instPowerFileName,
+	std::string instTemperatureFileName,
+	std::string instCPIStackFileName,
+	std::string instRvalueFileName,
+	std::string instVddFileName,
+	std::string instDeltaVthFileName) :
+		instPowerFileName(instPowerFileName),
+		instTemperatureFileName(instTemperatureFileName),
+		instCPIStackFileName(instCPIStackFileName),
+		instRvalueFileName(instRvalueFileName),
+		instVddFileName(instVddFileName),
+		instDeltaVthFileName(instDeltaVthFileName) {
 }
 
 /** getPowerOfComponent
@@ -230,4 +240,86 @@ void PerformanceCounters::notifyFreqsOfCores(std::vector<int> newFrequencies) {
  */
 double PerformanceCounters::getIPSOfCore(int coreId) const {
 	return 1e6 * getFreqOfCore(coreId) / getCPIOfCore(coreId);
+}
+
+/** getRvalueOfComponent
+    Returns the latest reliability value of the component `component`.
+    Return -1 if rvalue value not found.
+*/
+double PerformanceCounters::getRvalueOfComponent (std::string component) const {
+    ifstream rvalueLogFile(instRvalueFileName);
+    string header;
+    string footer;
+
+    if (rvalueLogFile.good()) {
+        getline(rvalueLogFile, header);
+        getline(rvalueLogFile, footer);
+    }
+
+    std::istringstream issHeader(header);
+    std::istringstream issFooter(footer);
+    std::string token;
+
+    while(getline(issHeader, token, '\t')) {
+        std::string value;
+        getline(issFooter, value, '\t');
+
+        if (token == component) {
+            return stod(value);
+        }
+    }
+
+    return -1;
+}
+
+/** getRvalueOfCore
+ * Return the latest reliability value of the given core.
+ * Requires "tp" (total power) to be tracked in base.cfg.
+ * Return -1 if power is not tracked.
+ */
+double PerformanceCounters::getRvalueOfCore (int coreId) const {
+    string component = "Core" + std::to_string(coreId) + "-TP";
+    return getRvalueOfComponent(component);
+}
+
+vector<double> PerformanceCounters::getVddOfCores (int numberOfCores) const {
+	ifstream vddLogFile(instVddFileName);
+	string header;
+	string data;
+
+	if (vddLogFile.good()) {
+		getline(vddLogFile, header);
+		getline(vddLogFile, data);
+	}
+
+	std::istringstream issData(data);
+
+	vector<double> vdds;
+	for (int i = 0; i < numberOfCores; i++) {
+		std::string value;
+		getline(issData, value, '\t');
+		vdds.push_back(stod(value));
+	}
+
+	return vdds;
+}
+
+vector<double> PerformanceCounters::getDeltaVthOfCores (int numberOfCores) const {
+	ifstream deltaVthLogFile(instDeltaVthFileName);
+	string data;
+
+	if (deltaVthLogFile.good()) {
+		getline(deltaVthLogFile, data);
+	}
+
+	std::istringstream issData(data);
+
+	vector<double> delta_vs;
+	for (int i = 0; i < numberOfCores; i++) {
+		std::string value;
+		getline(issData, value, '\t');
+		delta_vs.push_back(stod(value));
+	}
+
+	return delta_vs;
 }
