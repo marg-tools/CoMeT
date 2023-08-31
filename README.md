@@ -66,7 +66,7 @@ cd .. # return to the base Sniper directory (while running inside of Docker)
 
 ### Compiling Sniper
 ```sh
-make # or use 'make -j N' where N is the number of cores in your machine to use parallel make
+make
 ```
 
 
