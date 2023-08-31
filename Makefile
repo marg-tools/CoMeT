@@ -126,8 +126,8 @@ ifneq ($(DEBUG),)
 endif
 
 hotsniper-reliability:
-	-git submodule update --init hotsniper-reliabilityX || echo "Warning: cannot retrieve $@ submodule"
-	-make -f Makefile.ubuntu-20.04 -C hotsniper-reliabilityX/ || echo "Warning: cannot compile the $@ submodule"
+	@git submodule update --init hotsniper-reliability || echo "Warning: cannot retrieve $@ submodule"
+	@make -f Makefile.ubuntu-20.04 -C hotsniper-reliability/ || echo "Warning: cannot compile the $@ submodule"
 
 configscripts: dependencies
 	@mkdir -p config
