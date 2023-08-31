@@ -126,6 +126,8 @@ ifneq ($(DEBUG),)
 endif
 
 hotsniper-reliability:
+	git submodule init
+	git submodule update
 	make -f Makefile.ubuntu-20.04 -C hotsniper-reliability/
 
 configscripts: dependencies
