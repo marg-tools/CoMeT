@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 const char* output_direction_names[] = {
-   "up", "down", "left", "right", "---", "self", "peer", "destination"
+   "up", "down", "left", "right", "forward", "backward", "---", "self", "peer", "destination"
 };
 static_assert(NetworkModelEMeshHopByHop::MAX_OUTPUT_DIRECTIONS == sizeof(output_direction_names) / sizeof(output_direction_names[0]),
               "Not enough values in output_direction_names");
@@ -72,9 +72,9 @@ NetworkModelEMeshHopByHop::NetworkModelEMeshHopByHop(Network* net, EStaticNetwor
    registerStatsMetric(name, m_core_id, "contention-delay", &m_total_contention_delay);
    registerStatsMetric(name, m_core_id, "total-delay", &m_total_packet_latency);
 
-   computeMeshDimensions(m_mesh_width, m_mesh_height);
+   computeMeshDimensions(m_mesh_width, m_mesh_height, m_mesh_depth);
 
-   if (m_core_id % m_concentration != 0 || m_core_id >= m_concentration * m_mesh_width * m_mesh_height)
+   if (m_core_id % m_concentration != 0 || m_core_id >= m_concentration * m_mesh_width * m_mesh_height * m_mesh_depth)
    {
       m_fake_node = true;
       return;
@@ -103,11 +103,13 @@ NetworkModelEMeshHopByHop::createQueueModels(String name)
 {
    SubsecondTime min_processing_time = m_link_bandwidth.getPeriod();
 
-   // Initialize the queue models for all the '4' output directions
+   // Initialize the queue models for all the '6' output directions
    m_queue_models[DOWN] = QueueModel::create(name+".link-down", m_core_id, m_queue_model_type, min_processing_time);
    m_queue_models[LEFT] = QueueModel::create(name+".link-left", m_core_id, m_queue_model_type, min_processing_time);
    m_queue_models[UP] = QueueModel::create(name+".link-up", m_core_id, m_queue_model_type, min_processing_time);
    m_queue_models[RIGHT] = QueueModel::create(name+".link-right", m_core_id, m_queue_model_type, min_processing_time);
+   m_queue_models[FORWARD] = QueueModel::create(name+".link-forward", m_core_id, m_queue_model_type, min_processing_time);
+   m_queue_models[BACKWARD] = QueueModel::create(name+".link-backward", m_core_id, m_queue_model_type, min_processing_time);
 
    m_injection_port_queue_model = QueueModel::create(name+".link-in", m_core_id, m_queue_model_type, min_processing_time);
    m_ejection_port_queue_model = QueueModel::create(name+".link-out", m_core_id, m_queue_model_type, min_processing_time);
@@ -157,23 +159,30 @@ NetworkModelEMeshHopByHop::routePacket(const NetPacket &pkt, std::vector<Hop> &n
 
          // Broadcast tree is enabled
          // Build the broadcast tree
-         SInt32 sx, sy, cx, cy;
+         SInt32 sx, sy, sz, cx, cy, cz;
 
-         computePosition(pkt.sender, sx, sy);
-         computePosition(m_core_id, cx, cy);
+         computePosition(pkt.sender, sx, sy, sz);
+         computePosition(m_core_id, cx, cy, cz);
 
-         if (cy >= sy)
-            addHop(UP, NetPacket::BROADCAST, computeCoreId(cx,cy+1), curr_time, pkt_length, nextHops, requester);
-         if (cy <= sy)
-            addHop(DOWN, NetPacket::BROADCAST, computeCoreId(cx,cy-1), curr_time, pkt_length, nextHops, requester);
-         if (cy == sy)
+         if (cz >= sz)
+            addHop(FORWARD, NetPacket::BROADCAST, computeCoreId(cx,cy,cz+1), curr_time, pkt_length, nextHops, requester);
+         if (cz <= sz)
+            addHop(BACKWARD, NetPacket::BROADCAST, computeCoreId(cx,cy,cz-1), curr_time, pkt_length, nextHops, requester);
+         if (cz == sz)
          {
-            if (cx >= sx)
-               addHop(RIGHT, NetPacket::BROADCAST, computeCoreId(cx+1,cy), curr_time, pkt_length, nextHops, requester);
-            if (cx <= sx)
-               addHop(LEFT, NetPacket::BROADCAST, computeCoreId(cx-1,cy), curr_time, pkt_length, nextHops, requester);
-            if (cx == sx)
-               addHop(SELF, m_core_id, m_core_id, curr_time, pkt_length, nextHops, requester);
+            if (cy >= sy)
+               addHop(UP, NetPacket::BROADCAST, computeCoreId(cx,cy+1,cz), curr_time, pkt_length, nextHops, requester);
+            if (cy <= sy)
+               addHop(DOWN, NetPacket::BROADCAST, computeCoreId(cx,cy-1,cz), curr_time, pkt_length, nextHops, requester);
+            if (cy == sy)
+            {
+               if (cx >= sx)
+                  addHop(RIGHT, NetPacket::BROADCAST, computeCoreId(cx+1,cy,cz), curr_time, pkt_length, nextHops, requester);
+               if (cx <= sx)
+                  addHop(LEFT, NetPacket::BROADCAST, computeCoreId(cx-1,cy,cz), curr_time, pkt_length, nextHops, requester);
+               if (cx == sx)
+                  addHop(SELF, m_core_id, m_core_id, curr_time, pkt_length, nextHops, requester);
+            }
          }
       }
       else
@@ -260,6 +269,9 @@ NetworkModelEMeshHopByHop::processReceivedPacket(NetPacket& pkt)
    m_total_bytes_received += pkt_length;
    m_total_packet_latency += packet_latency;
    m_total_contention_delay += contention_delay;
+
+   // printf("packages received: %d\n", m_total_packets_received);
+   // printf("%" PRIu64 "\n", m_total_packet_latency.getNS());
 }
 
 void
@@ -284,31 +296,34 @@ NetworkModelEMeshHopByHop::addHop(OutputDirection direction,
 SInt32
 NetworkModelEMeshHopByHop::computeDistance(core_id_t sender, core_id_t receiver)
 {
-   SInt32 sx, sy, dx, dy;
+   SInt32 sx, sy, sz, dx, dy, dz;
 
-   computePosition(sender, sx, sy);
-   computePosition(receiver, dx, dy);
+   computePosition(sender, sx, sy, sz);
+   computePosition(receiver, dx, dy, dz);
 
    if (m_wrap_around)
       return std::min(abs(sx - dx), m_mesh_width - abs(sx - dx))
-           + std::min(abs(sy - dy), m_mesh_height - abs(sy - dy));
+           + std::min(abs(sy - dy), m_mesh_height - abs(sy - dy))
+           + std::min(abs(sz - dz), m_mesh_depth - abs(sz - dz));
    else
-      return abs(sx - dx) + abs(sy - dy);
+      return abs(sx - dx) + abs(sy - dy) + abs(sz - dz);
 }
 
 void
-NetworkModelEMeshHopByHop::computePosition(core_id_t core_id, SInt32 &x, SInt32 &y)
+NetworkModelEMeshHopByHop::computePosition(core_id_t core_id, SInt32 &x, SInt32 &y, SInt32 &z)
 {
    x = (core_id / m_concentration) % m_mesh_width;
-   y = (core_id / m_concentration) / m_mesh_width;
+   y = (core_id / m_concentration) % (m_mesh_width * m_mesh_height) / m_mesh_width;
+   z = (core_id / m_concentration) / (m_mesh_width * m_mesh_height);
 }
 
 core_id_t
-NetworkModelEMeshHopByHop::computeCoreId(SInt32 x, SInt32 y)
+NetworkModelEMeshHopByHop::computeCoreId(SInt32 x, SInt32 y, SInt32 z)
 {
    x = (x + m_mesh_width) % m_mesh_width;
    y = (y + m_mesh_height) % m_mesh_height;
-   return (y * m_mesh_width + x) * m_concentration;
+   z = (z + m_mesh_depth) % m_mesh_depth;
+   return (z * m_mesh_width * m_mesh_height + y * m_mesh_width + x) * m_concentration;
 }
 
 SubsecondTime
@@ -402,30 +417,40 @@ NetworkModelEMeshHopByHop::getNextDest(SInt32 final_dest, OutputDirection& direc
       return m_core_id - m_core_id % m_concentration;
    }
 
-   SInt32 sx, sy, dx, dy;
+   SInt32 sx, sy, sz, dx, dy, dz;
 
-   computePosition(m_core_id, sx, sy);
-   computePosition(final_dest, dx, dy);
+   computePosition(m_core_id, sx, sy, sz);
+   computePosition(final_dest, dx, dy, dz);
 
    if ((sx > dx) ^ (m_wrap_around && abs(sx - dx) > (m_mesh_width+1) / 2))
    {
       direction = LEFT;
-      return computeCoreId(sx-1,sy);
+      return computeCoreId(sx-1,sy,sz);
    }
    else if (sx != dx)
    {
       direction = RIGHT;
-      return computeCoreId(sx+1,sy);
+      return computeCoreId(sx+1,sy,sz);
    }
    else if ((sy > dy) ^ (m_wrap_around && abs(sy - dy) > (m_mesh_height+1) / 2))
    {
       direction = DOWN;
-      return computeCoreId(sx,sy-1);
+      return computeCoreId(sx,sy-1,sz);
    }
    else if (sy != dy)
    {
       direction = UP;
-      return computeCoreId(sx,sy+1);
+      return computeCoreId(sx,sy+1,sz);
+   }
+   else if ((sz > dz)  ^ (m_wrap_around && abs(sz - dz) > (m_mesh_depth+1) / 2))
+   {
+      direction = BACKWARD;
+      return computeCoreId(sx,sy,sz-1);
+   }
+   else if (sz != dz)
+   {
+      direction = FORWARD;
+      return computeCoreId(sx,sy,sz+1);
    }
    else
    {
@@ -454,7 +479,7 @@ NetworkModelEMeshHopByHop::isEnabled()
 }
 
 void
-NetworkModelEMeshHopByHop::computeMeshDimensions(SInt32 &mesh_width, SInt32 &mesh_height)
+NetworkModelEMeshHopByHop::computeMeshDimensions(SInt32 &mesh_width, SInt32 &mesh_height, SInt32 &mesh_depth)
 {
    SInt32 core_count = Config::getSingleton()->getApplicationCores();
    UInt32 smt_cores = Sim()->getCfg()->getInt("perf_model/core/logical_cpus");
@@ -469,38 +494,45 @@ NetworkModelEMeshHopByHop::computeMeshDimensions(SInt32 &mesh_width, SInt32 &mes
          case 1: // line / ring
             mesh_width = core_count / concentration;
             mesh_height = 1;
+            mesh_depth = 1;
             break;
          case 2: // 2-d mesh / torus
             mesh_width = (SInt32) floor (sqrt(core_count / concentration));
             mesh_height = (SInt32) ceil (1.0 * core_count / concentration / mesh_width);
+            mesh_depth = 1;
             break;
          default:
             LOG_PRINT_ERROR("Invalid value %d for dimensions, only 1 (line/ring) and 2 (mesh/torus) are currently supported", dimensions);
       }
 
-      LOG_ASSERT_ERROR(core_count == (concentration * mesh_height * mesh_width), "Cannot build a mesh with %d cores (concentration %d), increase NumApplicationCores to %d for a %d x %d mesh or configure network/emesh_hop_by_hop/size=WIDTH:HEIGHT to manually specify mesh dimensions", core_count, concentration, concentration * mesh_width * mesh_height, mesh_width, mesh_height);
+      LOG_ASSERT_ERROR(core_count == (concentration * mesh_height * mesh_width), "Cannot build a mesh with %d cores (concentration %d), increase NumApplicationCores to %d for a %d x %d mesh or configure network/emesh_hop_by_hop/size=WIDTH:HEIGHT:DEPTH to manually specify mesh dimensions", core_count, concentration, concentration * mesh_width * mesh_height, mesh_width, mesh_height);
    }
    else
    {
       // ":"-separated, "," is for heterogeneity
-      int res = sscanf(size.c_str(), "%d:%d", &mesh_width, &mesh_height);
-      LOG_ASSERT_ERROR(res == 2, "Invalid mesh size \"%s\", expected \"width:height\"", size.c_str());
+      int res = sscanf(size.c_str(), "%d:%d:%d", &mesh_width, &mesh_height, &mesh_depth);
+      LOG_ASSERT_ERROR((res == 3 || res == 2), "Invalid mesh size \"%s\", expected \"width:height:depth\"", size.c_str());
+      if (res == 2)
+      {
+         mesh_depth = 1;
+      }
 
-      LOG_ASSERT_ERROR(core_count == (concentration * mesh_height * mesh_width), "Invalid mesh size %s for %d cores (concentration %d): %d x %d (x %d) == %d != %d", size.c_str(), core_count, concentration, mesh_width, mesh_height, concentration, concentration * mesh_width * mesh_height, core_count);
+      LOG_ASSERT_ERROR(core_count == (concentration * mesh_height * mesh_width * mesh_depth), "Invalid mesh size %s for %d cores (concentration %d): %d x %d x %d (x %d) == %d != %d", size.c_str(), core_count, concentration, mesh_width, mesh_height, mesh_depth, concentration, concentration * mesh_width * mesh_height * mesh_depth, core_count);
    }
 }
 
 std::pair<bool,SInt32>
 NetworkModelEMeshHopByHop::computeCoreCountConstraints(SInt32 core_count)
 {
-   SInt32 mesh_width, mesh_height;
-   computeMeshDimensions(mesh_width, mesh_height);
+   SInt32 mesh_width, mesh_height, mesh_depth;
+   computeMeshDimensions(mesh_width, mesh_height, mesh_depth);
 
-   assert(core_count <= mesh_width * mesh_height);
-   assert(core_count > (mesh_width - 1) * mesh_height);
-   assert(core_count > mesh_width * (mesh_height - 1));
+   assert(core_count <= mesh_width * mesh_height * mesh_depth);
+   assert(core_count > (mesh_width - 1) * mesh_height * mesh_depth);
+   assert(core_count > mesh_width * (mesh_height - 1) * mesh_depth);
+   assert(core_count > mesh_width * mesh_height * (mesh_depth - 1));
 
-   return std::make_pair(true,mesh_height * mesh_width);
+   return std::make_pair(true,mesh_height * mesh_width * mesh_depth);
 }
 
 std::pair<bool, std::vector<core_id_t> >
@@ -509,8 +541,8 @@ NetworkModelEMeshHopByHop::computeMemoryControllerPositions(SInt32 num_memory_co
    UInt32 smt_cores = Sim()->getCfg()->getInt("perf_model/core/logical_cpus");
    SInt32 concentration = Sim()->getCfg()->getInt("network/emesh_hop_by_hop/concentration") * smt_cores;
    SInt32 dimensions = Sim()->getCfg()->getInt("network/emesh_hop_by_hop/dimensions");
-   SInt32 mesh_width, mesh_height;
-   computeMeshDimensions(mesh_width, mesh_height);
+   SInt32 mesh_width, mesh_height, mesh_depth;
+   computeMeshDimensions(mesh_width, mesh_height, mesh_depth);
 
    // core_id_list_along_perimeter : list of cores along the perimeter of the chip in clockwise order starting from (0,0)
    std::vector<core_id_t> core_id_list_along_perimeter;
