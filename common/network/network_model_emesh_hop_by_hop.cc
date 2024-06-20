@@ -269,9 +269,6 @@ NetworkModelEMeshHopByHop::processReceivedPacket(NetPacket& pkt)
    m_total_bytes_received += pkt_length;
    m_total_packet_latency += packet_latency;
    m_total_contention_delay += contention_delay;
-
-   // printf("packages received: %d\n", m_total_packets_received);
-   // printf("%" PRIu64 "\n", m_total_packet_latency.getNS());
 }
 
 void
