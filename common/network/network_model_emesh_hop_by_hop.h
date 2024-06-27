@@ -17,6 +17,8 @@ class NetworkModelEMeshHopByHop : public NetworkModel
          DOWN,
          LEFT,
          RIGHT,
+         FORWARD,
+         BACKWARD,
          NUM_OUTPUT_DIRECTIONS,
          // Directions below are fake and do not have a corresponding queue
          SELF,
@@ -29,6 +31,7 @@ class NetworkModelEMeshHopByHop : public NetworkModel
       // Fields
       SInt32 m_mesh_width;
       SInt32 m_mesh_height;
+      SInt32 m_mesh_depth;
 
       QueueModel* m_queue_models[NUM_OUTPUT_DIRECTIONS];
       QueueModel* m_injection_port_queue_model;
@@ -48,8 +51,8 @@ class NetworkModelEMeshHopByHop : public NetworkModel
       SubsecondTime m_total_packet_latency;
 
       // Functions
-      void computePosition(core_id_t core, SInt32 &x, SInt32 &y);
-      core_id_t computeCoreId(SInt32 x, SInt32 y);
+      void computePosition(core_id_t core, SInt32 &x, SInt32 &y, SInt32 &z);
+      core_id_t computeCoreId(SInt32 x, SInt32 y, SInt32 z);
       SInt32 computeDistance(core_id_t sender, core_id_t receiver);
 
       void addHop(OutputDirection direction, core_id_t final_dest, core_id_t next_dest, SubsecondTime pkt_time, UInt32 pkt_length, std::vector<Hop>& nextHops, core_id_t requester, subsecond_time_t *queue_delay_stats = NULL);
@@ -83,7 +86,7 @@ class NetworkModelEMeshHopByHop : public NetworkModel
 
       void routePacket(const NetPacket &pkt, std::vector<Hop> &nextHops);
       void processReceivedPacket(NetPacket &pkt);
-      static void computeMeshDimensions(SInt32 &mesh_width, SInt32 &mesh_height);
+      static void computeMeshDimensions(SInt32 &mesh_width, SInt32 &mesh_height, SInt32 &mesh_depth);
       static std::pair<bool,std::vector<core_id_t> > computeMemoryControllerPositions(SInt32 num_memory_controllers, SInt32 core_count);
       static std::pair<bool,SInt32> computeCoreCountConstraints(SInt32 core_count);
 
