@@ -1,5 +1,8 @@
 <!-- # *CoMeT*: Integrated <ins>Co</ins>re and <ins>Me</ins>mory <ins>T</ins>hermal Simulation Toolchain for 2D, 2.5D, and 3D Processors-->
-# *CoMeT*: An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems
+
+# <img src="https://github.com/marg-tools/CoMeT/blob/main/Logo.png" width="50" height="50">CoMeT 
+
+*An Integrated Interval Thermal Simulation Toolchain for 2D, 2.5D, and 3D Processor-Memory Systems*
 
 With the growing power density in both cores and memories (esp. 3D), thermal issues significantly impact performance and reliability. Thus, increasingly researchers have become interested in understanding the performance, power, and thermal effects of the proposed changes in hardware and software. *CoMeT* is an integrated <ins>Co</ins>re and <ins>Me</ins>mory <ins>T</ins>hermal simulation toolchain, providing performance, power, and temperature parameters at regular intervals (epoch) for both cores and memory. It enables computer architects to evaluate various core and main memory integration options (3D, 2.5D, 2D) and analyze runtime management policies. 
 
