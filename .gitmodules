@@ -7,3 +7,6 @@
 [submodule "hotsniper-reliability"]
 	path = hotsniper-reliability
 	url = https://github.com/spolstra/hotsniper-reliability.git
+[submodule "cacti"]
+	path = cacti
+	url = https://github.com/HewlettPackard/cacti
