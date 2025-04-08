@@ -45,7 +45,9 @@ Please refer to [CoMeT User Manual](https://github.com/marg-tools/CoMeT/blob/mai
 
 ### Cloning the repo
 
-`git clone https://github.com/marg-tools/CoMeT.git` 
+`git clone --recurse-submodules https://github.com/marg-tools/CoMeT.git` 
+
+The `--recurse-submodules` is required so all submodules could be downloaded (including CACTI 3DD)
 
 ### PinPlay
 Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
