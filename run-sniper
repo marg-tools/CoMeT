@@ -229,7 +229,7 @@ def generate_cacti_config(cacti_out):
       line = cacti_out.readline()
       outputs = line.strip().split(',')
       if len(outputs) <= 26:
-        print "[CACTI] Too many outputs: %s\n" % len(outputs)
+        print >> sys.stderr, "[CACTI] Too many outputs: %s\n" % len(outputs)
       cacti_out_cfg_file.write("[perf_model/cacti]\n")
       cacti_out_cfg_file.write("tech_node = " + outputs[0] + "\n")
       cacti_out_cfg_file.write("capacity = " + outputs[1] + "\n")
@@ -270,9 +270,9 @@ def run_cacti_file(cacti_config_path, cacti_in):
     print '[CACTI] Finished running CACTI\n'
     cacti_out = cacti_in + ".cfg.out"
     cacti_out_temp_dir = os.path.join(os.path.dirname(cacti_config_path), cacti_out)
-    print '[CACTI] Temp dirname: %s \n' % cacti_out_temp_dir
     cmd = ['mv', cacti_out_temp_dir, curdir]
     subprocess.call(cmd, cwd=CACTI_ROOT)
+    print '[CACTI] Cacti output file generated: %s\n' % cacti_out
     return generate_cacti_config(cacti_out)
 
 record_trace_passthrough = [ 'pid-continue', 'stop-address=', 'frontend-option=', 'maxthreads=' ]
@@ -333,16 +333,13 @@ for o, a in opts:
     else:
       configfiles.extend(add_config_file(a))
   if o == '--cacti':
-    # print '[DEBUG] Option:', o, 'Argument:', a
     cactifile = findcacticonfig(a)
     if not cactifile:
       print >> sys.stderr, 'Cannot find CACTI config file', a
       sys.exit(1)
-    # sniperoptions.append('-g --cacti/config=%s' % cactifile)
     print '[CACTI] Cacti is running with config file %s\n' % cactifile
     cacti_out = None
     cacti_out = run_cacti_file(cactifile, a)
-    print '[CACTI] Cacti output file is %s\n' % cacti_out
     cacti_enabled = True
   if o == '-g':
     if not a.startswith('-'):
@@ -735,7 +732,7 @@ if tracegen:
 
 
 if cacti_enabled and cacti_out != None:
-  print('[CACTI] Cacti configurations have been added.\n')
+  print('\n[CACTI] Cacti configurations have been added.\n')
   sniperoptions.append('-g --perf_model/dram/cacti_enabled=true')
   sniperoptions.append('--config=%s' % cacti_out)
 else:

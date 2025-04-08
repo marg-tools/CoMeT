@@ -53,7 +53,7 @@ The `--recurse-submodules` is required so all submodules could be downloaded (in
 Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
 ```sh
 wget --user-agent="Mozilla"  https://www.intel.com/content/dam/develop/external/us/en/protected/pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
-tar xf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
+tar -xzf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 mv pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux pin_kit
 ```
 
@@ -73,7 +73,12 @@ cd .. # return to the base Sniper directory (while running inside of Docker)
 ```sh
 make
 ```
-
+### Compiling CACTI
+```sh
+cd cacti
+make
+cd ..
+```
 
 ### Compiling HotSpot
 Let us compile the [HotSpot] simulator, which shipped with *CoMeT*.
