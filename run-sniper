@@ -17,7 +17,6 @@ def usage():
         '  [-c <sniper-config>]' + \
         '  [-c [objname:]<name[.cfg]>,<name2[.cfg]>,...]' + \
         '  [-c <sniper-options: section/key=value>]' + \
-        '  [--cacti <filename>]' + \
         '  [-s <script>]' + \
         '  [--roi]' + \
         '  [--roi-script]' + \
@@ -109,7 +108,6 @@ tracegen = None
 trace_extra_args = []
 verbose = False
 use_pa = True
-cacti_enabled = False
 
 
 if not sys.argv[1:]:
@@ -127,13 +125,7 @@ def findfile(filename, extension, paths, subpaths = ('.')):
 
 def findconfig(filename, extension = '.cfg'):
   global curdir
-  #print 'Current Directory', curdir, '\n'
   return findfile(filename, extension, (curdir, os.path.join(HOME, 'config')))
-
-def findcacticonfig(filename, extension = '.cfg'):
-  global curdir
-  # print 'Current Directory', curdir, '\n'
-  return findfile(filename, extension, (curdir, os.path.join(HOME, 'config_cacti')))
 
 def findtrace(trace, suffix = '.sift'):
   global curdir
@@ -206,75 +198,6 @@ def va2pa_valid():
   else:
     return True
 
-
-
-
-def generate_cacti_config(cacti_out):
-  global curdir
-  cacti_output = os.path.join(curdir, cacti_out)
-  cacti_output_config = os.path.join(curdir, "cacti_output.cfg")
-
-  if not os.path.exists(cacti_output):
-    print >> sys.stderr, 'CACTI output file was not generated %s does not exist' % cacti_output
-    sys.exit(1)
-
-  if not os.path.exists(cacti_output_config):
-      print "[CACTI] Creating CACTI config file: %s\n" % cacti_output_config
-  else:
-      print "[CACTI] Overwriting existing CACTI config file: %s\n" % cacti_output_config
-
-  with open(cacti_output_config, 'w') as cacti_out_cfg_file:
-    with open(cacti_output, 'r') as cacti_out:
-      cacti_out.readline()
-      line = cacti_out.readline()
-      outputs = line.strip().split(',')
-      if len(outputs) <= 26:
-        print >> sys.stderr, "[CACTI] Too many outputs: %s\n" % len(outputs)
-      cacti_out_cfg_file.write("[perf_model/cacti]\n")
-      cacti_out_cfg_file.write("tech_node = " + outputs[0] + "\n")
-      cacti_out_cfg_file.write("capacity = " + outputs[1] + "\n")
-      cacti_out_cfg_file.write("number_of_banks = " + outputs[2] + "\n")
-      cacti_out_cfg_file.write("associativity = " + outputs[3] + "\n")
-      cacti_out_cfg_file.write("output_width = " + outputs[4] + "\n")
-      cacti_out_cfg_file.write("access_time = " + outputs[5] + "\n")
-      cacti_out_cfg_file.write("random_cycle_time = " + outputs[6] + "\n")
-      cacti_out_cfg_file.write("dynamic_search_energy = " + outputs[7] + "\n")
-      cacti_out_cfg_file.write("dynamic_read_energy = " + outputs[8] + "\n")
-      cacti_out_cfg_file.write("dynamic_write_energy = " + outputs[9] + "\n")
-      cacti_out_cfg_file.write("standby_leakage_per_bank = " + outputs[10] + "\n")
-      cacti_out_cfg_file.write("area = " + outputs[11] + "\n")
-      cacti_out_cfg_file.write("Ndwl = " + outputs[12] + "\n")
-      cacti_out_cfg_file.write("Ndbl = " + outputs[13] + "\n")
-      cacti_out_cfg_file.write("Nspd = " + outputs[14] + "\n")
-      cacti_out_cfg_file.write("Ndcm = " + outputs[15] + "\n")
-      cacti_out_cfg_file.write("Ndsam_level_1 = " + outputs[16] + "\n")
-      cacti_out_cfg_file.write("Ndsam_level_2 = " + outputs[17] + "\n")
-      cacti_out_cfg_file.write("data_array_area_efficiency = " + outputs[18] + "\n")
-      cacti_out_cfg_file.write("Ntwl = " + outputs[19] + "\n")
-      cacti_out_cfg_file.write("Ntbl = " + outputs[20] + "\n")
-      cacti_out_cfg_file.write("Ntspd = " + outputs[21] + "\n")
-      cacti_out_cfg_file.write("Ntcm = " + outputs[22] + "\n")
-      cacti_out_cfg_file.write("Ntsam_level_1 = " + outputs[23] + "\n")
-      cacti_out_cfg_file.write("Ntsam_level_2 = " + outputs[24] + "\n")
-      cacti_out_cfg_file.write("tag_array_area_efficiency = " + outputs[25] + "\n")
-  
-  print "[CACTI] Config file %s created successfully.\n" % cacti_output_config
-
-  return cacti_output_config
-
-def run_cacti_file(cacti_config_path, cacti_in):
-    global curdir
-    CACTI_ROOT = os.path.join(HOME, 'cacti')
-    cmd = ['./cacti', '-infile', cacti_config_path]
-    subprocess.call(cmd, cwd=CACTI_ROOT)
-    print '[CACTI] Finished running CACTI\n'
-    cacti_out = cacti_in + ".cfg.out"
-    cacti_out_temp_dir = os.path.join(os.path.dirname(cacti_config_path), cacti_out)
-    cmd = ['mv', cacti_out_temp_dir, curdir]
-    subprocess.call(cmd, cwd=CACTI_ROOT)
-    print '[CACTI] Cacti output file generated: %s\n' % cacti_out
-    return generate_cacti_config(cacti_out)
-
 record_trace_passthrough = [ 'pid-continue', 'stop-address=', 'frontend-option=', 'maxthreads=' ]
 
 try:
@@ -303,7 +226,6 @@ try:
       "pid=",
       "isa=",
       "frontend=",
-      "cacti=",
     ] + record_trace_passthrough
   )
 except getopt.GetoptError, e:
@@ -332,15 +254,6 @@ for o, a in opts:
       heteroconfig = make_hetero_config(cfg.split(','), objname=obj)
     else:
       configfiles.extend(add_config_file(a))
-  if o == '--cacti':
-    cactifile = findcacticonfig(a)
-    if not cactifile:
-      print >> sys.stderr, 'Cannot find CACTI config file', a
-      sys.exit(1)
-    print '[CACTI] Cacti is running with config file %s\n' % cactifile
-    cacti_out = None
-    cacti_out = run_cacti_file(cactifile, a)
-    cacti_enabled = True
   if o == '-g':
     if not a.startswith('-'):
       a = '--'+a
@@ -729,15 +642,6 @@ if tracegen:
       threading.Thread(target = run_sniper.run_program_redirect, args = (app_id, run_sift_recorder, tracecmd, outputdir)).start()
     else:                    # inline output
       threading.Thread(target = run_sift_recorder, args = (tracecmd,)).start()
-
-
-if cacti_enabled and cacti_out != None:
-  print('\n[CACTI] Cacti configurations have been added.\n')
-  sniperoptions.append('-g --perf_model/dram/cacti_enabled=true')
-  sniperoptions.append('--config=%s' % cacti_out)
-else:
-  sniperoptions.append('-g --perf_model/dram/cacti_enabled=false')
-
 
 sniperoptions = ' '.join(sniperoptions)
 
