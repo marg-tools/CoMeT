@@ -22,7 +22,19 @@ DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
    m_total_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+
+   SubsecondTime m_dram_access_cost = SubsecondTime::Zero();
+
+   printf("\n[ACCESS]Enable Cacti mode: %d\n", Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"));
+
+   if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
+      printf("\n[ACCESS]Varibale Latency\n");
+      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/access_time")));
+   }
+   else {
+      printf("\n[ACCESS]Fixed Latency\n");
+      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
+   }
 
    // Read the low power access cost.
    m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime

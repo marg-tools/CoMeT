@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <sstream>
+#include <regex>
 
 #define LOW_POWER 0 // Used for memory power mode.
 #define NORMAL_POWER 1
@@ -233,13 +234,97 @@ void addCactiConfig(String outputConfigFile, config::Config *cfg){
    return;
 }
 
+bool addValues(const std::string& cactiLocation, std::unordered_map<std::string, std::string>& newValues) {
+   std::ifstream input(cactiLocation);
+   if (!input.is_open()) {
+       std::cerr << "[CACTI] Error: Failed to open CACTI file for reading\n";
+       return false;
+   }
+
+   std::ostringstream buffer;
+   std::string line;
+   // std::regex cfgRegex(R"(^-(.*?)\s+(.*)$)");
+   // std::smatch match;
+
+   while (std::getline(input, line)) {
+      bool modified = false;
+      if (!line.empty() && line[0] == '-') {
+         // printf("[CACTI] Found line: %s\n", line.c_str());
+
+         for(auto& pair : newValues) {
+            std::string key = pair.first;
+            std::string value = pair.second;
+
+            if(line.find(key) != std::string::npos && line.find("NUCA") == std::string::npos) {
+               printf("[CACTI] Found key: %s\n", key.c_str());
+               std::string newLine = "-" + key + " " + value + "\n";
+               printf("[CACTI] Replacing line: %s with %s\n", line.c_str(), newLine.c_str());
+               buffer << newLine;
+               newValues.erase(key);
+               modified = true;
+               break;
+            }
+         }
+      }
+      if (!modified) {
+         buffer << line << '\n'; // keep original line if not modified
+      }
+   }
+   input.close();
+
+   if(newValues.size() > 0) {
+      printf("[CACTI] Error: Not all keys were found in the CACTI file\n");
+      return false;
+   }
+
+   std::ofstream output(cactiLocation);
+   if (!output.is_open()) {
+       std::cerr << "[CACTI] Error: Failed to open CACTI file for writing\n";
+       return false;
+   }
+   output << buffer.str();
+   output.close();
+
+   return true;
+}
+      
+
+bool modifyCactiFile(String cactiLocation, config::Config *cfg)
+{
+   printf("[CACTI] Modifying CACTI file: %s\n", cactiLocation.c_str());
+   std::ifstream readFile(cactiLocation.c_str());
+   if (!readFile.is_open()) {
+      fprintf(stderr, "[CACTI] Error: Failed to open CACTI file for reading\n");
+      return false;
+   }
+
+   std::unordered_map<std::string, std::string> newValues;
+   newValues["Core count"] = std::to_string(cfg->getInt("general/total_cores"));
+   newValues["UCA bank count"] = std::to_string(cfg->getInt("memory/num_banks"));
+   newValues["size (Gb)"] = std::to_string((float)cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size") * 0.001);
+   newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
+   //newValues["associativity"] = std::to_string(cfg->getInt("perf_model/l3_cache/associativity"));
+   
+   newValues["stacked die count"] = std::to_string(cfg->getInt("memory/banks_in_z"));
+
+   if(addValues(cactiLocation.c_str(), newValues) == false) {
+      fprintf(stderr, "[CACTI] Error: Failed to modify CACTI file\n");
+      return false;
+   }
+   return true;
+}
+
 void setCacti(config::Config *cfg)
 {
    String cactiLocation = findCactiFile(cfg);
-   printf("[CACTI] test\n");
    if (!cactiLocation.empty())
    {
-      printf("[CACTI] test1\n");
+
+      if(modifyCactiFile(cactiLocation, cfg) == false) {
+         disableCacti(cfg);
+         return;
+      }
+
       String CACTI_OUT = cfg->getString("general/output_dir") + "/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg" + ".out";
       
       if(runCacti(cactiLocation, CACTI_OUT) == false) {

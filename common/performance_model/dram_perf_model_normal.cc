@@ -13,7 +13,17 @@ DramPerfModelNormal::DramPerfModelNormal(core_id_t core_id,
    m_total_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   SubsecondTime dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   SubsecondTime dram_latency = SubsecondTime::Zero();
+
+   printf("\n[ACCESS]Enable Cacti mode: %d\n", Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"));
+   if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
+      printf("\n[ACCESS]Varibale Latency\n");
+      dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/access_time")));
+   }
+   else {
+      dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
+   }
+   
    SubsecondTime dram_latency_stddev = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/normal/standard_deviation")));
 
    m_dram_access_cost = new NormalTimeDistribution(dram_latency, dram_latency_stddev);
