@@ -177,7 +177,8 @@ String makeConfig(String CACTI_OUT, config::Config *cfg)
       printf("Key %s\n", keys.at(i).c_str());
    }
    */
-   if (keys.size() >= 28) {
+
+   if (keys.size() >= 36) {
       fprintf(stderr, "[CACTI] Error: Too many keys in CACTI output file\n");
       return "";
    }
@@ -209,7 +210,14 @@ String makeConfig(String CACTI_OUT, config::Config *cfg)
    outFile << "Ntsam_level_1 = " << keys[23] << std::endl;
    outFile << "Ntsam_level_2 = " << keys[24] << std::endl;
    outFile << "tag_array_area_efficiency = " << keys[25] << std::endl;
-
+   outFile << "data_width = " << keys[26] << std::endl;
+   outFile << "activation_energy = " << keys[27] << std::endl;
+   outFile << "read_energy = " << keys[28] << std::endl;
+   outFile << "write_energy = " << keys[29] << std::endl;
+   outFile << "precharge_energy = " << keys[30] << std::endl;
+   outFile << "row_cycle_time = " << keys[31] << std::endl;
+   outFile << "TSV_latency = " << keys[32] << std::endl;
+   outFile << "bus_frequency = " << keys[33] << std::endl;
    readFile.close();
    outFile.close();
 
@@ -300,17 +308,72 @@ bool modifyCactiFile(String cactiLocation, config::Config *cfg)
 
    std::unordered_map<std::string, std::string> newValues;
    newValues["Core count"] = std::to_string(cfg->getInt("general/total_cores"));
-   newValues["UCA bank count"] = std::to_string(cfg->getInt("memory/num_banks"));
-   newValues["size (Gb)"] = std::to_string((float)cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size") * 0.001);
-   newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
-   //newValues["associativity"] = std::to_string(cfg->getInt("perf_model/l3_cache/associativity"));
-   
-   newValues["stacked die count"] = std::to_string(cfg->getInt("memory/banks_in_z"));
+   if (cfg->getInt("memory/num_banks") % cfg->getInt("memory/banks_in_z") != 0) {
+      fprintf(stderr, "[CACTI] Error: Number of banks is not divisible by number of stacked dies\n");
+      return false;
+   } else {
+      newValues["UCA bank count"] = std::to_string(cfg->getInt("memory/num_banks") / cfg->getInt("memory/banks_in_z"));
 
-   if(addValues(cactiLocation.c_str(), newValues) == false) {
-      fprintf(stderr, "[CACTI] Error: Failed to modify CACTI file\n");
+      newValues["size (Gb)"] = std::to_string((float)cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size") * 0.001);
+      newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
+      //newValues["associativity"] = std::to_string(cfg->getInt("perf_model/l3_cache/associativity"));
+      
+      newValues["stacked die count"] = std::to_string(cfg->getInt("memory/banks_in_z"));
+
+      if(addValues(cactiLocation.c_str(), newValues) == false) {
+         fprintf(stderr, "[CACTI] Error: Failed to modify CACTI file\n");
+         return false;
+      }
+      return true;
+   }
+}
+
+bool calculateFinalValues(config::Config *cfg) {
+
+   int dataWidth = cfg->getInt("perf_model/dram/cacti/data_width");
+   int blockSize = cfg->getInt("perf_model/l3_cache/cache_block_size");
+   if (dataWidth == 0) {
+      fprintf(stderr, "[CACTI] Error: data_width is zero\n");
       return false;
    }
+   
+   float activationEnergy = cfg->getFloat("perf_model/dram/cacti/activation_energy");
+   float readEnergy = cfg->getFloat("perf_model/dram/cacti/read_energy");
+   float writeEnergy = cfg->getFloat("perf_model/dram/cacti/write_energy");
+   float prechargeEnergy = cfg->getFloat("perf_model/dram/cacti/precharge_energy");
+   
+   float rowCycleTime = cfg->getFloat("perf_model/dram/cacti/row_cycle_time");
+   float TSVLatency = cfg->getFloat("perf_model/dram/cacti/TSV_latency");
+   float busFrequency = cfg->getFloat("perf_model/dram/cacti/bus_frequency");
+   
+   if (blockSize <= 0 || activationEnergy < 0 || readEnergy < 0 || writeEnergy < 0 || prechargeEnergy < 0 || rowCycleTime < 0 || busFrequency <= 0) {
+      fprintf(stderr, "[CACTI] Error: Invalid configuration values for CACTI calculation\n");
+      return false;
+   }
+      
+   float finalEnergyPerRefresh = activationEnergy + prechargeEnergy;
+   int burstCount = blockSize / dataWidth;
+
+   float finalReadEnergy = finalEnergyPerRefresh +  (burstCount * readEnergy);
+   float finalWriteEnergy = finalEnergyPerRefresh +  (burstCount * writeEnergy);
+   
+   float transferLatency = TSVLatency + (burstCount * (1.0 / busFrequency));
+
+   if (transferLatency < 0) {
+      fprintf(stderr, "[CACTI] Error: Transfer latency is negative\n");
+      return false;
+   }
+
+   printf("[CACTI] TSV Latency: %f seconds\n", TSVLatency);
+   printf("[CACTI] Transfer latency: %f seconds\n", transferLatency);
+   float finalLatency = rowCycleTime + transferLatency;
+
+   cfg->set("perf_model/dram/cacti/final_read_energy", finalReadEnergy);
+   cfg->set("perf_model/dram/cacti/final_write_energy", finalWriteEnergy);
+   cfg->set("perf_model/dram/cacti/final_latency", finalLatency);
+   cfg->set("perf_model/dram/cacti/final_energy_per_refresh", finalEnergyPerRefresh);
+   cfg->set("perf_model/dram/cacti/burst_count", (float)burstCount);
+
    return true;
 }
 
@@ -341,6 +404,16 @@ void setCacti(config::Config *cfg)
       printf("[CACTI] CACTI config file created\n");  
 
       addCactiConfig(outputConfigFile, cfg);
+
+      printf("[CACTI] Calculating final latency and read/write energy\n");
+
+      if(calculateFinalValues(cfg) == false) {
+         fprintf(stderr, "[CACTI] Error: Failed to calculate final values\n");
+         disableCacti(cfg);
+         return;
+      }
+      printf("[CACTI] Final values calculated\n");
+
       printf("[CACTI] CACTI finished successfully\n");
       
    }

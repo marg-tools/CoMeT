@@ -18,7 +18,7 @@ DramPerfModelNormal::DramPerfModelNormal(core_id_t core_id,
    printf("\n[ACCESS]Enable Cacti mode: %d\n", Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"));
    if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
       printf("\n[ACCESS]Varibale Latency\n");
-      dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/access_time")));
+      dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/final_latency")));
    }
    else {
       dram_latency = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));

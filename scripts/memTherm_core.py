@@ -13,10 +13,19 @@ bank_size=int(sim.config.get('memory/bank_size'))
 no_columns = 1                                      # in Kilo
 no_bits_per_column = 8                              # 8 bits per column. Hence 8Kb row buffer.
 no_rows= bank_size/no_columns/no_bits_per_column    # in Kilo, number of rows per bank
+
+
 energy_per_read_access = float(sim.config.get('memory/energy_per_read_access'))
 energy_per_write_access = float(sim.config.get('memory/energy_per_write_access'))
-logic_core_power = float(sim.config.get('memory/logic_core_power'))
 energy_per_refresh_access = float(sim.config.get('memory/energy_per_refresh_access'))
+
+if(sim.config.get_bool('perf_model/dram/cacti/enable_cacti')):
+  energy_per_read_access = float(sim.config.get('perf_model/dram/cacti/final_read_energy'))
+  energy_per_write_access = float(sim.config.get('perf_model/dram/cacti/final_write_energy'))
+  energy_per_refresh_access = float(sim.config.get('perf_model/dram/cacti/final_energy_per_refresh'))
+  print("Using CACTI for energy calculation read energy %f, write energy %f and refresh energy %f \n" % (energy_per_read_access,energy_per_write_access, energy_per_refresh_access))
+
+logic_core_power = float(sim.config.get('memory/logic_core_power'))
 sampling_interval = int(sim.config.get('hotspot/sampling_interval'))    #time in ns
 interval_sec = sampling_interval * 1e-9
 timestep = sampling_interval/1000                       # in uS. Should be in sync with hotspot.config (sampling_intvl)
