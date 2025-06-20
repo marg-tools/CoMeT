@@ -9,4 +9,4 @@
 	url = https://github.com/spolstra/hotsniper-reliability.git
 [submodule "cacti"]
 	path = cacti
-	url = https://github.com/HewlettPackard/cacti.git
+url = https://github.com/sejproo/cacti.git
