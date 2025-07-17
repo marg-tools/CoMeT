@@ -23,8 +23,6 @@ DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
    m_total_access_latency(SubsecondTime::Zero())
 {
 
-   SubsecondTime m_dram_access_cost = SubsecondTime::Zero();
-
    printf("\n[ACCESS]Enable Cacti mode: %d\n", Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"));
 
    if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {

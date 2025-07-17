@@ -314,7 +314,7 @@ bool modifyCactiFile(String cactiLocation, config::Config *cfg)
    } else {
       newValues["UCA bank count"] = std::to_string(cfg->getInt("memory/num_banks") / cfg->getInt("memory/banks_in_z"));
 
-      newValues["size (Gb)"] = std::to_string((float)cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size") * 0.001);
+      newValues["size (Gb)"] = std::to_string((float)(cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size")) / 1024.0f);
       newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
       //newValues["associativity"] = std::to_string(cfg->getInt("perf_model/l3_cache/associativity"));
       
@@ -352,12 +352,12 @@ bool calculateFinalValues(config::Config *cfg) {
    }
       
    float finalEnergyPerRefresh = activationEnergy + prechargeEnergy;
-   int burstCount = blockSize / dataWidth;
+   int burstCount = ceil((double) blockSize / dataWidth);
 
    float finalReadEnergy = finalEnergyPerRefresh +  (burstCount * readEnergy);
    float finalWriteEnergy = finalEnergyPerRefresh +  (burstCount * writeEnergy);
    
-   float transferLatency = TSVLatency + (burstCount * (1.0 / busFrequency));
+   float transferLatency = TSVLatency + (burstCount * (1000.0 / busFrequency));
 
    if (transferLatency < 0) {
       fprintf(stderr, "[CACTI] Error: Transfer latency is negative\n");
@@ -372,7 +372,7 @@ bool calculateFinalValues(config::Config *cfg) {
    cfg->set("perf_model/dram/cacti/final_write_energy", finalWriteEnergy);
    cfg->set("perf_model/dram/cacti/final_latency", finalLatency);
    cfg->set("perf_model/dram/cacti/final_energy_per_refresh", finalEnergyPerRefresh);
-   cfg->set("perf_model/dram/cacti/burst_count", (float)burstCount);
+   cfg->set("perf_model/dram/cacti/burst_count", (SInt64)burstCount);
 
    return true;
 }
