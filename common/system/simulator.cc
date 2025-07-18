@@ -89,8 +89,6 @@ String findCactiFile(config::Config *cfg)
    String outDir = cfg->getString("general/output_dir") + "/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg";
    String configDir = Simulator::ROOT_DIR + "/config_cacti/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg";
 
-   // printf("[CACTI] config file in output dir: %s\n", outDir.c_str());
-   // printf("[CACTI] config file in config dir: %s\n", configDir.c_str());
    
    if (access(outDir.c_str(), F_OK) == 0)
    {
@@ -119,7 +117,6 @@ bool runCacti(String cactiLocation, String CACTI_OUT) {
       CMD = "cd " + CACTI_DIR + " && " + CMD;
    }
    
-   // String command = "cd " + CACTI_DIR + " && " + CMD + " > " + CACTI_OUT;
    int ret_code = system(CMD.c_str());
    if (ret_code != 0) {
       fprintf(stderr, "[CACTI] Error: Failed to execute command\n");
@@ -172,11 +169,6 @@ String makeConfig(String CACTI_OUT, config::Config *cfg)
       keys.push_back(key);
       token = std::strtok(NULL, ","); 
    }
-   /*
-   for(long unsigned int i = 0; i < keys.size(); i++) {
-      printf("Key %s\n", keys.at(i).c_str());
-   }
-   */
 
    if (keys.size() >= 36) {
       fprintf(stderr, "[CACTI] Error: Too many keys in CACTI output file\n");
@@ -251,22 +243,19 @@ bool addValues(const std::string& cactiLocation, std::unordered_map<std::string,
 
    std::ostringstream buffer;
    std::string line;
-   // std::regex cfgRegex(R"(^-(.*?)\s+(.*)$)");
-   // std::smatch match;
 
    while (std::getline(input, line)) {
       bool modified = false;
       if (!line.empty() && line[0] == '-') {
-         // printf("[CACTI] Found line: %s\n", line.c_str());
 
          for(auto& pair : newValues) {
             std::string key = pair.first;
             std::string value = pair.second;
 
             if(line.find(key) != std::string::npos && line.find("NUCA") == std::string::npos) {
-               printf("[CACTI] Found key: %s\n", key.c_str());
+               //printf("[CACTI] Found key: %s\n", key.c_str());
                std::string newLine = "-" + key + " " + value + "\n";
-               printf("[CACTI] Replacing line: %s with %s\n", line.c_str(), newLine.c_str());
+               //printf("[CACTI] Replacing line: %s with %s\n", line.c_str(), newLine.c_str());
                buffer << newLine;
                newValues.erase(key);
                modified = true;
@@ -316,7 +305,6 @@ bool modifyCactiFile(String cactiLocation, config::Config *cfg)
 
       newValues["size (Gb)"] = std::to_string((float)(cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size")) / 1024.0f);
       newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
-      //newValues["associativity"] = std::to_string(cfg->getInt("perf_model/l3_cache/associativity"));
       
       newValues["stacked die count"] = std::to_string(cfg->getInt("memory/banks_in_z"));
 
@@ -364,8 +352,6 @@ bool calculateFinalValues(config::Config *cfg) {
       return false;
    }
 
-   printf("[CACTI] TSV Latency: %f seconds\n", TSVLatency);
-   printf("[CACTI] Transfer latency: %f seconds\n", transferLatency);
    float finalLatency = rowCycleTime + transferLatency;
 
    cfg->set("perf_model/dram/cacti/final_read_energy", finalReadEnergy);

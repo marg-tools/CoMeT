@@ -92,8 +92,7 @@ void handle_args(const string_vec & args, config::ConfigFile & cfg)
 }
 
 void handle_generic_arg(const String &str, config::ConfigFile & cfg)
-{   
-   printf("(DEBUG) Handling argument: %s\n", str.c_str());
+{
    string_vec split_args;
 
    boost::split( split_args, str, boost::algorithm::is_any_of("=") );

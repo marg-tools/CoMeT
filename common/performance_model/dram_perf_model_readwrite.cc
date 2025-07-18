@@ -16,10 +16,8 @@ DramPerfModelReadWrite::DramPerfModelReadWrite(core_id_t core_id,
    m_total_write_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   printf("\n[ACCESS]Enable Cacti mode: %d\n", Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"));
 
    if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
-      printf("\n[ACCESS]Varibale Latency\n");
       m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/final_latency")));
    }
    else {
