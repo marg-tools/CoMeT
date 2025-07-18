@@ -108,7 +108,6 @@ executable = hotspot_path + 'hotspot'
 hotspot_config_path = os.getenv('SNIPER_ROOT') + '/' 
 #hotspot_config_path = os.path.join(os.getenv('SNIPER_ROOT'), "/") 
 if sim.config.get('hotspot/init_file_external_mem') == "None":
-    print("Verification: hotspot/init_file_external_mem is set to None")
     init_file_external = "None"
 else:
     init_file_external = hotspot_config_path + sim.config.get('hotspot/init_file_external_mem')
