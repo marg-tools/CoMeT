@@ -10,3 +10,4 @@
 [submodule "cacti"]
 	path = cacti
 	url = https://github.com/sejproo/cacti.git
+	branch = master
