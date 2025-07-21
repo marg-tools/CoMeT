@@ -45,9 +45,7 @@ Please refer to [CoMeT User Manual](https://github.com/marg-tools/CoMeT/blob/mai
 
 ### Cloning the repo
 
-`git clone --recurse-submodules https://github.com/marg-tools/CoMeT.git` 
-
-The `--recurse-submodules` is required so all submodules could be downloaded (including CACTI 3DD)
+`git clone https://github.com/marg-tools/CoMeT.git` 
 
 ### PinPlay
 Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
@@ -55,6 +53,11 @@ Download and extract Pinplay 3.2 to the root *CoMeT* directory as ```pin_kit```
 wget --user-agent="Mozilla"  https://www.intel.com/content/dam/develop/external/us/en/protected/pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 tar -xzf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 mv pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux pin_kit
+```
+### Extracting CACTI
+Extract CACTI-3DD to the root *CoMeT* directory as ```cacti```
+```sh
+tar -xzvf cacti.tar.gz
 ```
 
 ### Docker
