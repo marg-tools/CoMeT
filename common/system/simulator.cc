@@ -27,8 +27,11 @@
 #include "instruction_tracer.h"
 #include "memory_tracker.h"
 #include "circular_log.h"
+#include "handle_args.h"
 
+#include <vector>
 #include <sstream>
+#include <regex>
 
 #define LOW_POWER 0 // Used for memory power mode.
 #define NORMAL_POWER 1
@@ -45,10 +48,388 @@ void Simulator::allocate()
    m_singleton = new Simulator();
 }
 
+void disableCacti(config::Config *cfg) {
+
+   printf("[CACTI] Disabling CACTI\n");
+
+   config::ConfigFile *cfgFile = dynamic_cast<config::ConfigFile *>(cfg);
+
+   String cmd = "--perf_model/dram/cacti/enable_cacti=false";
+
+   if (cfgFile) {
+      handle_generic_arg(cmd, *cfgFile);
+   } else {
+      fprintf(stderr, "Failed to cast `Config` to `ConfigFile` in addCactiConfig.\n");
+   }
+
+   return;
+
+}
+
+String Simulator::ROOT_DIR = Simulator::getRootDirectory();
+
+String Simulator::getRootDirectory() {
+   String sim_root = "";
+   const char* env_roots[] = {"SNIPER_ROOT", "GRAPHITE_ROOT"};
+
+   for (unsigned int i = 0; i < 2; ++i)
+   {
+      sim_root = getenv(env_roots[i]);
+      if (sim_root.empty() == false)
+         return String(sim_root);
+   }
+
+   fprintf(stderr, "Root directory not found. Please set SNIPER_ROOT or GRAPHITE_ROOT environment variable.\n");
+   throw std::runtime_error("Root directory not found.");
+}
+
+
+String findCactiFile(config::Config *cfg)
+{
+   String outDir = cfg->getString("general/output_dir") + "/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg";
+   String configDir = Simulator::ROOT_DIR + "/config_cacti/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg";
+
+   
+   if (access(outDir.c_str(), F_OK) == 0)
+   {
+      printf("[CACTI] Cacti is running with config file: %s\n", outDir.c_str());
+      return outDir;
+   }
+
+   if (access(configDir.c_str(), F_OK) == 0)
+   {
+      printf("[CACTI] Configuration file found: %s\n", configDir.c_str());
+      return configDir;
+   }
+
+   return "";
+}
+
+bool runCacti(String cactiLocation, String CACTI_OUT) {
+
+   String CACTI_DIR = Simulator::ROOT_DIR + "/cacti/";
+
+   String CMD = "./cacti -infile " + cactiLocation;
+
+   if(cactiLocation + ".out" != CACTI_OUT) {
+      CMD = "cd " + CACTI_DIR + " && " + CMD + " && mv " + cactiLocation + ".out " + CACTI_OUT;
+   } else {
+      CMD = "cd " + CACTI_DIR + " && " + CMD;
+   }
+   
+   int ret_code = system(CMD.c_str());
+   if (ret_code != 0) {
+      fprintf(stderr, "[CACTI] Error: Failed to execute command\n");
+      return false;
+   } else {
+      printf("[CACTI] Command executed successfully, output file: %s\n", CACTI_OUT.c_str());
+      return true;
+   }
+
+}
+
+String makeConfig(String CACTI_OUT, config::Config *cfg)
+{
+   String outputConfigFile = cfg->getString("general/output_dir") + "/" + "cacti_output.cfg";
+   if (access(CACTI_OUT.c_str(), F_OK) != 0) {
+      fprintf(stderr, "[CACTI] Error: CACTI output file not found\n");
+      return "";
+   }
+   if(access(outputConfigFile.c_str(), F_OK) == 0) {
+      printf("[CACTI] Overwriting existing CACTI config file: %s\n", outputConfigFile.c_str());
+   } else {
+      printf("[CACTI] Creating new CACTI config file: %s\n", outputConfigFile.c_str());
+   }
+
+   std::ofstream outFile(outputConfigFile.c_str());
+   if (!outFile.is_open()) {
+      fprintf(stderr, "[CACTI] Error: Failed to open output file for writing\n");
+      return "";
+   }
+   std::ifstream readFile(CACTI_OUT.c_str());
+   if (!readFile.is_open()) {
+      fprintf(stderr, "[CACTI] Error: Failed to open CACTI output file for reading\n");
+      return "";
+   }
+   String line;
+   std::getline(readFile, line);
+   if(!std::getline(readFile, line)) {
+      fprintf(stderr, "[CACTI] Error: Failed to read CACTI output file\n");
+      return "";
+   }
+
+   std::vector<String> keys;
+
+   char* c_line = new char[line.size() + 1];
+   std::strcpy(c_line, line.c_str());
+
+   char* token = std::strtok(c_line, ",");
+   while (token != NULL) {
+      String key = token;
+      keys.push_back(key);
+      token = std::strtok(NULL, ","); 
+   }
+
+   if (keys.size() >= 36) {
+      fprintf(stderr, "[CACTI] Error: Too many keys in CACTI output file\n");
+      return "";
+   }
+   
+   outFile << "[perf_model/dram/cacti]" << std::endl;
+   outFile << "tech_node = " << keys[0] << std::endl;
+   outFile << "capacity = " << keys[1] << std::endl;
+   outFile << "number_of_banks = " << keys[2] << std::endl;
+   outFile << "associativity = " << keys[3] << std::endl;
+   outFile << "output_width = " << keys[4] << std::endl;
+   outFile << "access_time = " << keys[5] << std::endl;
+   outFile << "random_cycle_time = " << keys[6] << std::endl;
+   outFile << "dynamic_search_energy = " << keys[7] << std::endl;
+   outFile << "dynamic_read_energy = " << keys[8] << std::endl;
+   outFile << "dynamic_write_energy = " << keys[9] << std::endl;
+   outFile << "standby_leakage_per_bank = " << keys[10] << std::endl;
+   outFile << "area = " << keys[11] << std::endl;
+   outFile << "Ndwl = " << keys[12] << std::endl;
+   outFile << "Ndbl = " << keys[13] << std::endl;
+   outFile << "Nspd = " << keys[14] << std::endl;
+   outFile << "Ndcm = " << keys[15] << std::endl;
+   outFile << "Ndsam_level_1 = " << keys[16] << std::endl;
+   outFile << "Ndsam_level_2 = " << keys[17] << std::endl;
+   outFile << "data_array_area_efficiency = " << keys[18] << std::endl;
+   outFile << "Ntwl = " << keys[19] << std::endl;
+   outFile << "Ntbl = " << keys[20] << std::endl;
+   outFile << "Ntspd = " << keys[21] << std::endl;
+   outFile << "Ntcm = " << keys[22] << std::endl;
+   outFile << "Ntsam_level_1 = " << keys[23] << std::endl;
+   outFile << "Ntsam_level_2 = " << keys[24] << std::endl;
+   outFile << "tag_array_area_efficiency = " << keys[25] << std::endl;
+   outFile << "data_width = " << keys[26] << std::endl;
+   outFile << "activation_energy = " << keys[27] << std::endl;
+   outFile << "read_energy = " << keys[28] << std::endl;
+   outFile << "write_energy = " << keys[29] << std::endl;
+   outFile << "precharge_energy = " << keys[30] << std::endl;
+   outFile << "row_cycle_time = " << keys[31] << std::endl;
+   outFile << "TSV_latency = " << keys[32] << std::endl;
+   outFile << "bus_frequency = " << keys[33] << std::endl;
+   readFile.close();
+   outFile.close();
+
+   return outputConfigFile;
+   
+
+}
+
+void addCactiConfig(String outputConfigFile, config::Config *cfg){
+
+   
+   config::ConfigFile *cfgFile = dynamic_cast<config::ConfigFile *>(cfg);
+
+   if (cfgFile) {
+      String arg = "--config=" + outputConfigFile;
+      handle_generic_arg(arg, *cfgFile);
+   } else {
+      fprintf(stderr, "Failed to cast `Config` to `ConfigFile` in addCactiConfig.\n");
+      disableCacti(cfg);
+   }
+
+   return;
+}
+
+bool addValues(const std::string& cactiLocation, std::unordered_map<std::string, std::string>& newValues) {
+   std::ifstream input(cactiLocation);
+   if (!input.is_open()) {
+       std::cerr << "[CACTI] Error: Failed to open CACTI file for reading\n";
+       return false;
+   }
+
+   std::ostringstream buffer;
+   std::string line;
+
+   while (std::getline(input, line)) {
+      bool modified = false;
+      if (!line.empty() && line[0] == '-') {
+
+         for(auto& pair : newValues) {
+            std::string key = pair.first;
+            std::string value = pair.second;
+
+            if(line.find(key) != std::string::npos && line.find("NUCA") == std::string::npos) {
+               //printf("[CACTI] Found key: %s\n", key.c_str());
+               std::string newLine = "-" + key + " " + value + "\n";
+               //printf("[CACTI] Replacing line: %s with %s\n", line.c_str(), newLine.c_str());
+               buffer << newLine;
+               newValues.erase(key);
+               modified = true;
+               break;
+            }
+         }
+      }
+      if (!modified) {
+         buffer << line << '\n'; // keep original line if not modified
+      }
+   }
+   input.close();
+
+   if(newValues.size() > 0) {
+      printf("[CACTI] Error: Not all keys were found in the CACTI file\n");
+      return false;
+   }
+
+   std::ofstream output(cactiLocation);
+   if (!output.is_open()) {
+       std::cerr << "[CACTI] Error: Failed to open CACTI file for writing\n";
+       return false;
+   }
+   output << buffer.str();
+   output.close();
+
+   return true;
+}
+      
+
+bool modifyCactiFile(String cactiLocation, config::Config *cfg)
+{
+   printf("[CACTI] Modifying CACTI file: %s\n", cactiLocation.c_str());
+   std::ifstream readFile(cactiLocation.c_str());
+   if (!readFile.is_open()) {
+      fprintf(stderr, "[CACTI] Error: Failed to open CACTI file for reading\n");
+      return false;
+   }
+
+   std::unordered_map<std::string, std::string> newValues;
+   newValues["Core count"] = std::to_string(cfg->getInt("general/total_cores"));
+   if (cfg->getInt("memory/num_banks") % cfg->getInt("memory/banks_in_z") != 0) {
+      fprintf(stderr, "[CACTI] Error: Number of banks is not divisible by number of stacked dies\n");
+      return false;
+   } else {
+      newValues["UCA bank count"] = std::to_string(cfg->getInt("memory/num_banks") / cfg->getInt("memory/banks_in_z"));
+
+      newValues["size (Gb)"] = std::to_string((float)(cfg->getInt("memory/num_banks") * cfg->getInt("memory/bank_size")) / 1024.0f);
+      newValues["block size (bytes)"] = std::to_string(cfg->getInt("perf_model/l3_cache/cache_block_size"));
+      
+      newValues["stacked die count"] = std::to_string(cfg->getInt("memory/banks_in_z"));
+
+      if(addValues(cactiLocation.c_str(), newValues) == false) {
+         fprintf(stderr, "[CACTI] Error: Failed to modify CACTI file\n");
+         return false;
+      }
+      return true;
+   }
+}
+
+bool calculateFinalValues(config::Config *cfg) {
+
+   int dataWidth = cfg->getInt("perf_model/dram/cacti/data_width");
+   int blockSize = cfg->getInt("perf_model/l3_cache/cache_block_size");
+   if (dataWidth == 0) {
+      fprintf(stderr, "[CACTI] Error: data_width is zero\n");
+      return false;
+   }
+   
+   float activationEnergy = cfg->getFloat("perf_model/dram/cacti/activation_energy");
+   float readEnergy = cfg->getFloat("perf_model/dram/cacti/read_energy");
+   float writeEnergy = cfg->getFloat("perf_model/dram/cacti/write_energy");
+   float prechargeEnergy = cfg->getFloat("perf_model/dram/cacti/precharge_energy");
+   
+   float rowCycleTime = cfg->getFloat("perf_model/dram/cacti/row_cycle_time");
+   float TSVLatency = cfg->getFloat("perf_model/dram/cacti/TSV_latency");
+   float busFrequency = cfg->getFloat("perf_model/dram/cacti/bus_frequency");
+   
+   if (blockSize <= 0 || activationEnergy < 0 || readEnergy < 0 || writeEnergy < 0 || prechargeEnergy < 0 || rowCycleTime < 0 || busFrequency <= 0) {
+      fprintf(stderr, "[CACTI] Error: Invalid configuration values for CACTI calculation\n");
+      return false;
+   }
+      
+   float finalEnergyPerRefresh = activationEnergy + prechargeEnergy;
+   int burstCount = ceil((double) blockSize / dataWidth);
+
+   float finalReadEnergy = finalEnergyPerRefresh +  (burstCount * readEnergy);
+   float finalWriteEnergy = finalEnergyPerRefresh +  (burstCount * writeEnergy);
+   
+   float transferLatency = TSVLatency + (burstCount * (1000.0 / busFrequency));
+
+   if (transferLatency < 0) {
+      fprintf(stderr, "[CACTI] Error: Transfer latency is negative\n");
+      return false;
+   }
+
+   float finalLatency = rowCycleTime + transferLatency;
+
+   cfg->set("perf_model/dram/cacti/final_read_energy", finalReadEnergy);
+   cfg->set("perf_model/dram/cacti/final_write_energy", finalWriteEnergy);
+   cfg->set("perf_model/dram/cacti/final_latency", finalLatency);
+   cfg->set("perf_model/dram/cacti/final_energy_per_refresh", finalEnergyPerRefresh);
+   cfg->set("perf_model/dram/cacti/burst_count", (SInt64)burstCount);
+
+   return true;
+}
+
+void setCacti(config::Config *cfg)
+{
+   String cactiLocation = findCactiFile(cfg);
+   if (!cactiLocation.empty())
+   {
+
+      if(modifyCactiFile(cactiLocation, cfg) == false) {
+         disableCacti(cfg);
+         return;
+      }
+
+      String CACTI_OUT = cfg->getString("general/output_dir") + "/" + cfg->getString("perf_model/dram/cacti/file_name") + ".cfg" + ".out";
+      
+      if(runCacti(cactiLocation, CACTI_OUT) == false) {
+         disableCacti(cfg);
+         return;
+      }
+
+      printf("[CACTI] Generating output configuration file\n");
+      String outputConfigFile = makeConfig(CACTI_OUT, cfg);
+      if (outputConfigFile.empty()) {
+         disableCacti(cfg);
+         return;   
+      }   
+      printf("[CACTI] CACTI config file created\n");  
+
+      addCactiConfig(outputConfigFile, cfg);
+
+      printf("[CACTI] Calculating final latency and read/write energy\n");
+
+      if(calculateFinalValues(cfg) == false) {
+         fprintf(stderr, "[CACTI] Error: Failed to calculate final values\n");
+         disableCacti(cfg);
+         return;
+      }
+      printf("[CACTI] Final values calculated\n");
+
+      printf("[CACTI] CACTI finished successfully\n");
+      
+   }
+   else
+   {
+      fprintf(stderr, "[CACTI] Failed to set Cacti because configuration file could not be found.\n");
+      disableCacti(cfg);
+   }
+}
+
 void Simulator::setConfig(config::Config *cfg, Config::SimulationMode mode)
 {
+
+   if(ROOT_DIR.empty()) {
+      fprintf(stderr, "[CACTI] Error: Root directory not found.\n");
+      disableCacti(cfg);
+   } else {
+      printf("[CACTI] Project root directory: %s\n", ROOT_DIR.c_str());
+
+      if(cfg->getBool("perf_model/dram/cacti/enable_cacti") == true) {
+         printf("[CACTI] Executing cacti\n");
+         setCacti(cfg);
+      } else {
+         printf("[CACTI] Cacti is disabled.\n");
+      }
+   }
+
    m_config_file = cfg;
    m_mode = mode;
+   
 }
 
 void Simulator::createDecoder()

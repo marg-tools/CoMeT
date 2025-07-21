@@ -54,6 +54,11 @@ wget --user-agent="Mozilla"  https://www.intel.com/content/dam/develop/external/
 tar xf pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux.tar.gz
 mv pinplay-drdebug-3.2-pin-3.2-81205-gcc-linux pin_kit
 ```
+### Extracting CACTI
+Extract CACTI-3DD to the root *CoMeT* directory as ```cacti```
+```sh
+tar -xzvf cacti.tar.gz
+```
 
 ### Docker
 *CoMeT* compiles and runs inside a Docker container. Therefore, we need to download & install Docker. For more info: https://docs.docker.com/engine/install/ubuntu/
@@ -71,7 +76,12 @@ cd .. # return to the base Sniper directory (while running inside of Docker)
 ```sh
 make
 ```
-
+### Compiling CACTI
+```sh
+cd cacti
+make
+cd ..
+```
 
 ### Compiling HotSpot
 Let us compile the [HotSpot] simulator, which shipped with *CoMeT*.

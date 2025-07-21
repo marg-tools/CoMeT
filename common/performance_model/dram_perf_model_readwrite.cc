@@ -16,7 +16,13 @@ DramPerfModelReadWrite::DramPerfModelReadWrite(core_id_t core_id,
    m_total_write_queueing_delay(SubsecondTime::Zero()),
    m_total_access_latency(SubsecondTime::Zero())
 {
-   m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+
+   if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
+      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/final_latency")));
+   }
+   else {
+      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
+   }
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
    {

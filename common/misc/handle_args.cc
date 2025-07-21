@@ -13,7 +13,6 @@ static char*prog_name;
 using namespace boost::algorithm;
 
 
-void handle_generic_arg(const String &str, config::ConfigFile & cfg);
 void handle_args(const string_vec & args);
 
 void usage_error(const char*error_msg, ...)
