@@ -170,8 +170,8 @@ String makeConfig(String CACTI_OUT, config::Config *cfg)
       token = std::strtok(NULL, ","); 
    }
 
-   if (keys.size() >= 36) {
-      fprintf(stderr, "[CACTI] Error: Too many keys in CACTI output file\n");
+   if (keys.size() < 34) {
+      fprintf(stderr, "[CACTI] Error: Too few keys in CACTI output file\n");
       return "";
    }
    
