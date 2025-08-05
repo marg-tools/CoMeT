@@ -46,6 +46,9 @@ public:
    static void allocate();
    static void release();
 
+   static String getRootDirectory();
+   static String ROOT_DIR;
+
    UInt64 m_bank_modes[MAX_NUM_OF_BANKS];
 
    SyscallServer* getSyscallServer() { return m_syscall_server; }
