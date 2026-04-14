@@ -27,14 +27,14 @@ def example2():
                       ):
         min_parallelism = runlib.get_feasible_parallelisms(benchmark)[0]
         max_parallelism = runlib.get_feasible_parallelisms(benchmark)[-1]
-        for freq in (1, 2, 3, 4):
+        for freq in (4,):
             for parallelism in (min_parallelism, max_parallelism):
                 # you can also use try_run instead
                 runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], runlib.get_instance(benchmark, parallelism, input_set='simsmall'))
 
 
 def example():
-    for freq in (1, 2, 3, 4):  # when adding a new frequency level, make sure that it is also added in base.cfg
+    for freq in (4,):  # when adding a new frequency level, make sure that it is also added in base.cfg
         runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
 
 
@@ -43,7 +43,7 @@ def case_study():
 
 
 def main():
-    example()
+    example2()
     case_study()
 
 
