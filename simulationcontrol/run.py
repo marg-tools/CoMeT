@@ -43,7 +43,7 @@ def case_study():
 
 
 def main():
-    example()
+    example2()
     case_study()
 
 

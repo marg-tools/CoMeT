@@ -1,0 +1,14 @@
+Interval.dat
+Temp
+Temperature.init
+cpi-stack.png
+energystats-temp.*
+sim.*
+*.trace
+*.init
+cacti*
+hotspot/
+apps/
+splash2/
+parsec/
+tools/
