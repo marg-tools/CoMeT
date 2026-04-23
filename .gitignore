@@ -48,7 +48,7 @@ results/
 
 # dependencies
 boost_1_38_0
-#pin_kit
+pin_kit
 linux_2_6_32
 mcpat
 python_kit
@@ -72,4 +72,4 @@ sift
 xed
 pin.tar.gz
 
-# pin_kit/
+pin_kit/
