@@ -222,4 +222,227 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
     address_ptr = address;
    
     SInt32 memory_controllers_interleaving = 0;
-    memory_controllers_interleaving = Sim(
+    memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+    if(Sim()->getMagicServer()->inROI())
+    {
+
+        if(on_entry_to_roi_write==0)
+        {
+            on_entry_to_roi_write=1;
+            roi_start_time_write = now.getUS();
+            write_last_printed_timestamp = roi_start_time_write;
+        }
+        num_of_dram_writes++;
+    
+        #ifdef DEBUG
+        static int access_count = 1;
+        printf("Dir. MSI: Write Access Count = %d\n",access_count++);
+        #endif
+
+        UInt32 i = 0;
+        if(total_access_count==0){
+            registerStatsMetric("dram", 0 , "mywrites", &m_writes);
+            for(i = 0; i < NUM_OF_BANKS; i = i + 1){
+                write_access_count_per_bank[i]=0;
+                write_access_count_per_bank_lowpower[i]=0;
+            }
+        }
+
+        ++total_access_count;
+        
+        //write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+
+        if(TYPE_OF_STACK ==  "3Dmem" || TYPE_OF_STACK == "2.5D") {
+            if(ENABLE_CHANNEL_PARTITIONING)
+                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+            else {
+                write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
+                MCP_FLAG++;
+                if(MCP_FLAG == NUM_OF_CHANNELS)
+                    MCP_FLAG = 0;
+            }
+        }
+        else {
+            if(TYPE_OF_STACK == "3D") {
+                if(ENABLE_CHANNEL_PARTITIONING)
+                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                else {
+                    write_bank_accessed = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*1);
+                    MCP_FLAG++;
+                    if(MCP_FLAG == (NUM_OF_CHANNELS*1))
+                        MCP_FLAG = 0;
+                }
+            }
+            else {
+                if(TYPE_OF_STACK ==  "DDR") {
+                    write_bank_accessed = ((address & BANK_MASK) >> BANK_OFFSET_IN_PA);
+                }
+                else {
+                    printf("Invalid type of stack\n");
+                    exit(0);
+                }
+            }
+            
+        }
+        
+        //printf("\nWrite banked accessed %d\n", write_bank_accessed) ;
+        UInt64 current_time = now.getUS();
+        //printf("Current time is put()%u\n", current_time);
+        
+        
+        if (current_time > ACCUMULATION_TIME + write_interval_start_time){
+            write_interval_start_time = current_time - (current_time % ACCUMULATION_TIME);
+            wrt.push_back(write_trace_data());
+            while(write_last_printed_timestamp + ACCUMULATION_TIME < write_interval_start_time){
+                wrt[write_adv_count].wr_interval_start_time = write_last_printed_timestamp + ACCUMULATION_TIME;
+                wrt[write_adv_count].write_access_count_per_epoch = 0;
+                for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                    wrt[write_adv_count].bank_write_access_count[i] = 0;
+                    wrt[write_adv_count].bank_write_access_count_lowpower[i] = 0;
+                }
+                ++write_adv_count;
+                write_last_printed_timestamp =  write_last_printed_timestamp + ACCUMULATION_TIME;
+                wrt.push_back(write_trace_data());
+            }
+
+            wrt[write_adv_count].wr_interval_start_time = write_interval_start_time;
+            wrt[write_adv_count].write_access_count_per_epoch = write_access_count;
+            //printf("\nWrite:");
+            for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+                //printf("%d,", write_access_count_per_bank[i]);
+                wrt[write_adv_count].bank_write_access_count[i] = write_access_count_per_bank[i];
+                write_access_count_export[i] = write_access_count_per_bank[i];
+                write_access_count_per_bank[i]=0;
+
+                wrt[write_adv_count].bank_write_access_count_lowpower[i] = write_access_count_per_bank_lowpower[i];
+                write_access_count_export_lowpower[i] = write_access_count_per_bank_lowpower[i];
+                write_access_count_per_bank_lowpower[i]=0;
+              }
+            ++write_adv_count;
+            write_access_count=0;
+            write_last_printed_timestamp = write_interval_start_time;
+        }
+        else {
+            if (Sim()->m_bank_modes[read_bank_accessed] == NORMAL_POWER)
+            {
+                ++write_access_count_per_bank[write_bank_accessed];
+            }
+            else
+            {
+                ++write_access_count_per_bank_lowpower[write_bank_accessed];
+            }
+            ++write_access_count;
+        }
+    }
+}
+
+//  Moved this to a separate function to be used by other files.
+UInt32
+get_address_bank(IntPtr address, core_id_t requester)
+{
+    SInt32 memory_controllers_interleaving = 0;
+    memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+    UInt32 bank = -1;
+
+    if(TYPE_OF_STACK ==  "3Dmem" || TYPE_OF_STACK == "2.5D") {
+        if(ENABLE_CHANNEL_PARTITIONING) {
+            bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+            return bank;
+        }
+        else {
+            bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % NUM_OF_CHANNELS;
+            return bank;
+        }
+    }
+    else {
+        if(TYPE_OF_STACK == "3D") {
+            if(ENABLE_CHANNEL_PARTITIONING)
+            {
+                bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + (requester/memory_controllers_interleaving);
+                return bank;
+            }
+            else {
+                bank = (((address & BANK_MASK) >> BANK_OFFSET_IN_PA) & BANKS_PER_CHANNEL) * BANKS_PER_LAYER + MCP_FLAG % (NUM_OF_CHANNELS*1);
+                return bank;
+            }
+        }
+        else {
+            if(TYPE_OF_STACK ==  "DDR") {
+                bank = ((address & BANK_MASK) >> BANK_OFFSET_IN_PA);
+                return bank;
+            }
+            else {
+                printf("Invalid type of stack\n");
+                return -1;
+            }
+        }
+    }
+}
+
+dram_xyz_t get_address_xyz(IntPtr address, core_id_t requester, UInt32 model_bank)
+{
+    dram_xyz_t xyz;
+
+    UInt32 memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+    UInt32 banks_per_channel = NUM_OF_BANKS / NUM_OF_CHANNELS;
+    UInt32 bank_mask = banks_per_channel - 1;
+
+    UInt32 raw_bank = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+
+    xyz.z_bank = raw_bank & bank_mask;
+    xyz.y_layer = raw_bank / banks_per_channel;
+
+    if (ENABLE_CHANNEL_PARTITIONING)
+        xyz.x_channel = requester / memory_controllers_interleaving;
+    else
+        xyz.x_channel = MCP_FLAG % (NUM_OF_CHANNELS * 1);
+
+    check_address_xyz(address, model_bank, xyz);
+
+    return xyz;
+}
+
+bool check_address_xyz(IntPtr address, UInt32 model_bank, const dram_xyz_t &xyz)
+{
+    UInt32 banks_per_channel = NUM_OF_BANKS / NUM_OF_CHANNELS;
+    UInt32 raw_bank = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+    UInt32 raw_reconstructed = xyz.y_layer * banks_per_channel + xyz.z_bank;
+    UInt32 model_reconstructed = xyz.z_bank * NUM_OF_CHANNELS + xyz.x_channel;
+
+    bool ok = true;
+
+    if ((xyz.x_channel >= NUM_OF_CHANNELS) ||
+        (xyz.z_bank >= banks_per_channel) ||
+        (raw_reconstructed != raw_bank) ||
+        (model_reconstructed != model_bank))
+        ok = false;
+
+    printf("[XYZ CHECK] %s\n", ok ? "OK" : "FAIL");
+    printf("  addr=%lu\n", (unsigned long)address);
+    printf("  x=%u y=%u z=%u\n", xyz.x_channel, xyz.y_layer, xyz.z_bank);
+    printf("  raw_bank=%u reconstructed_raw=%u\n", raw_bank, raw_reconstructed);
+    printf("  model_bank=%u reconstructed_model=%u\n", model_bank, model_reconstructed);
+
+    return ok;
+}
+
+SubsecondTime computeDramPenalty(const dram_xyz_t &xyz)
+{
+    static const SubsecondTime penalty_x_ns =
+        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_x");
+
+    static const SubsecondTime penalty_y_ns =
+        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_y");
+
+    static const SubsecondTime penalty_z_ns =
+        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_z");
+
+    SubsecondTime penalty = penalty_x_ns * xyz.x_channel + penalty_y_ns * xyz.y_layer + penalty_z_ns * xyz.z_bank;
+
+    printf("DRAM penalty = %lu ns\n", penalty.getNS());
+
+    return penalty;
+}
