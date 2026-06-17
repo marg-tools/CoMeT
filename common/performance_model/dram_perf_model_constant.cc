@@ -79,8 +79,8 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
 
    UInt32 bank_nr = get_address_bank(address, requester);
    int bank_mode = Sim()->m_bank_modes[bank_nr];
-
    dram_xyz_t xyz = get_address_xyz(address, requester, bank_nr);
+
    SubsecondTime base_latency;
 
    // Distinguish between dram power modes.
@@ -93,13 +93,15 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
       base_latency = m_dram_access_cost;
    }
 
-   SubsecondTime access_latency = queue_delay + processing_time + base_latency + dram_penalty;
-   // SubsecondTime access_latency = queue_delay + processing_time + base_latency;
+   double xyz_factor = computeXYZLatencyFactor(xyz);
+   SubsecondTime effective_latency = base_latency * xyz_factor;
+
+   SubsecondTime access_latency = queue_delay + processing_time + effective_latency;
 
    perf->updateTime(pkt_time);
    perf->updateTime(pkt_time + queue_delay, ShmemPerf::DRAM_QUEUE);
    perf->updateTime(pkt_time + queue_delay + processing_time, ShmemPerf::DRAM_BUS);
-   perf->updateTime(pkt_time + queue_delay + processing_time + m_dram_access_cost, ShmemPerf::DRAM_DEVICE);
+   perf->updateTime(pkt_time + queue_delay + processing_time + effective_latency, ShmemPerf::DRAM_DEVICE);
 
    // Update Memory Counters
    m_num_accesses ++;

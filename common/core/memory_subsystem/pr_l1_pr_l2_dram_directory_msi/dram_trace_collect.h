@@ -39,9 +39,18 @@ struct write_trace_data
       UInt32 bank_write_access_count_lowpower[MAX_NUM_OF_BANKS];
 };
 
+struct dram_xyz_t
+{
+   UInt32 x_channel;
+   UInt32 y_layer;
+   UInt32 z_bank;
+};
+
 void read_memory_config(core_id_t requester);
 void dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m_reads);
 void dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m_writes);
 UInt32 get_address_bank(IntPtr address, core_id_t requester);
-dram_xyz_t get_address_xyz(IntPtr address, core_id_t requester, UInt32 model_bank)
-bool check_address_xyz(IntPtr address, UInt32 model_bank, const dram_xyz_t &xyz)
+dram_xyz_t get_address_xyz(IntPtr address, core_id_t requester, UInt32 model_bank);
+bool check_address_xyz(IntPtr address, UInt32 model_bank, const dram_xyz_t &xyz);
+double computeXYZLatencyFactor(const dram_xyz_t &xyz);
+

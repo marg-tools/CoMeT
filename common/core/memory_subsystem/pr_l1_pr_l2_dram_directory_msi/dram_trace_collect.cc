@@ -410,39 +410,45 @@ bool check_address_xyz(IntPtr address, UInt32 model_bank, const dram_xyz_t &xyz)
     UInt32 banks_per_channel = NUM_OF_BANKS / NUM_OF_CHANNELS;
     UInt32 raw_bank = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
     UInt32 raw_reconstructed = xyz.y_layer * banks_per_channel + xyz.z_bank;
-    UInt32 model_reconstructed = xyz.z_bank * NUM_OF_CHANNELS + xyz.x_channel;
+    UInt32 model_reconstructed = xyz.z_bank * BANKS_PER_LAYER + xyz.x_channel;
 
     bool ok = true;
-
     if ((xyz.x_channel >= NUM_OF_CHANNELS) ||
         (xyz.z_bank >= banks_per_channel) ||
         (raw_reconstructed != raw_bank) ||
         (model_reconstructed != model_bank))
         ok = false;
-
-    printf("[XYZ CHECK] %s\n", ok ? "OK" : "FAIL");
-    printf("  addr=%lu\n", (unsigned long)address);
-    printf("  x=%u y=%u z=%u\n", xyz.x_channel, xyz.y_layer, xyz.z_bank);
-    printf("  raw_bank=%u reconstructed_raw=%u\n", raw_bank, raw_reconstructed);
-    printf("  model_bank=%u reconstructed_model=%u\n", model_bank, model_reconstructed);
-
     return ok;
 }
 
-SubsecondTime computeDramPenalty(const dram_xyz_t &xyz)
+double computeXYZLatencyFactor(const dram_xyz_t &xyz)
 {
-    static const SubsecondTime penalty_x_ns =
-        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_x");
+    bool latency_enabled =
+        Sim()->getCfg()->getBool("perf_model/dram/xyz_latency/enabled");
+    UInt64 NUM_OF_LAYERS = NUM_OF_CHANNELS;
 
-    static const SubsecondTime penalty_y_ns =
-        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_y");
+    if (!latency_enabled){
+        return 1.0;
+    }
 
-    static const SubsecondTime penalty_z_ns =
-        SubsecondTime::NS() * Sim()->getCfg()->getInt("perf_model/dram/penalty/spatial_penalty_z");
+    if (NUM_OF_CHANNELS <= 1 || NUM_OF_LAYERS <= 1 || (NUM_OF_BANKS / NUM_OF_CHANNELS) <= 1){
+        return 1.0;
+    }
 
-    SubsecondTime penalty = penalty_x_ns * xyz.x_channel + penalty_y_ns * xyz.y_layer + penalty_z_ns * xyz.z_bank;
+    double x = (double)xyz.x_channel / (NUM_OF_CHANNELS - 1);
+    double y = (double)xyz.y_layer / (NUM_OF_LAYERS - 1);
+    double z = (double)xyz.z_bank / ((NUM_OF_BANKS / NUM_OF_CHANNELS) - 1);
 
-    printf("DRAM penalty = %lu ns\n", penalty.getNS());
+    double channel_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/channel_weight");
+    double tsv_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/TSV_weight");
+    double bank_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/bank_weight");
+    double local_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/locality_weight");
 
-    return penalty;
+    const double distance = (x * x + y * y + z * z) / 3.0;
+    const double spatial_score = channel_w * x + tsv_w * y + bank_w * z + local_w * distance;
+
+    double kSensitivity = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/sensitivity");
+    double factor = 1.0 + (spatial_score - 0.5) * kSensitivity;
+
+    return factor;
 }
