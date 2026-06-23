@@ -380,3 +380,75 @@ get_address_bank(IntPtr address, core_id_t requester)
         }
     }
 }
+
+dram_xyz_t get_address_xyz(IntPtr address, core_id_t requester, UInt32 model_bank)
+{
+    dram_xyz_t xyz;
+
+    UInt32 memory_controllers_interleaving = Sim()->getCfg()->getInt("perf_model/dram/controllers_interleaving");
+
+    UInt32 banks_per_channel = NUM_OF_BANKS / NUM_OF_CHANNELS;
+    UInt32 bank_mask = banks_per_channel - 1;
+
+    UInt32 raw_bank = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+
+    xyz.z_bank = raw_bank & bank_mask;
+    xyz.y_layer = raw_bank / banks_per_channel;
+
+    if (ENABLE_CHANNEL_PARTITIONING)
+        xyz.x_channel = requester / memory_controllers_interleaving;
+    else
+        xyz.x_channel = MCP_FLAG % (NUM_OF_CHANNELS * 1);
+
+    check_address_xyz(address, model_bank, xyz);
+
+    return xyz;
+}
+
+bool check_address_xyz(IntPtr address, UInt32 model_bank, const dram_xyz_t &xyz)
+{
+    UInt32 banks_per_channel = NUM_OF_BANKS / NUM_OF_CHANNELS;
+    UInt32 raw_bank = (address & BANK_MASK) >> BANK_OFFSET_IN_PA;
+    UInt32 raw_reconstructed = xyz.y_layer * banks_per_channel + xyz.z_bank;
+    UInt32 model_reconstructed = xyz.z_bank * BANKS_PER_LAYER + xyz.x_channel;
+
+    bool ok = true;
+    if ((xyz.x_channel >= NUM_OF_CHANNELS) ||
+        (xyz.z_bank >= banks_per_channel) ||
+        (raw_reconstructed != raw_bank) ||
+        (model_reconstructed != model_bank))
+        ok = false;
+    return ok;
+}
+
+double computeXYZLatencyFactor(const dram_xyz_t &xyz)
+{
+    bool latency_enabled =
+        Sim()->getCfg()->getBool("perf_model/dram/xyz_latency/enabled");
+    UInt64 NUM_OF_LAYERS = NUM_OF_CHANNELS;
+
+    if (!latency_enabled){
+        return 1.0;
+    }
+
+    if (NUM_OF_CHANNELS <= 1 || NUM_OF_LAYERS <= 1 || (NUM_OF_BANKS / NUM_OF_CHANNELS) <= 1){
+        return 1.0;
+    }
+
+    double x = (double)xyz.x_channel / (NUM_OF_CHANNELS - 1);
+    double y = (double)xyz.y_layer / (NUM_OF_LAYERS - 1);
+    double z = (double)xyz.z_bank / ((NUM_OF_BANKS / NUM_OF_CHANNELS) - 1);
+
+    double channel_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/channel_weight");
+    double tsv_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/TSV_weight");
+    double bank_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/bank_weight");
+    double local_w = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/locality_weight");
+
+    const double distance = (x * x + y * y + z * z) / 3.0;
+    const double spatial_score = channel_w * x + tsv_w * y + bank_w * z + local_w * distance;
+
+    double kSensitivity = Sim()->getCfg()->getFloat("perf_model/dram/xyz_latency/sensitivity");
+    double factor = 1.0 + (spatial_score - 0.5) * kSensitivity;
+
+    return factor;
+}
